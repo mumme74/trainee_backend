@@ -1,0 +1,56 @@
+{
+  "name": "node_auth_backen_tutorial",
+  "version": "0.0.1",
+  "description": "Tutorial abaout Oath2 ",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=test mocha --timeout 5000 __tests__/server/**/*.test.js",
+    "report": "NODE_ENV=test nyc --reporter=lcov mocha --timeout 5000 __tests__/server/**/*.test.js",
+    "text-report": "NODE_ENV=test nyc --reporter=text-sumary mocha --timout 5000",
+    "nyc": "NODE_ENV=test nyc mocha --timeout 5000 __tests__/server/**/*.test.js",
+    "backend-start-dev": "NODE_ENV=development nodemon server/index.js --harmony",
+    "backend-start": "NODE_ENV=production node server/index.js",
+    "frontend-start-dev": "NODE_ENV=development npm start --prefix client"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "errorhandler": "^1.5.1",
+    "express-promise-router": "^4.1.0",
+    "google-auth-library": "^7.3.0",
+    "joi": "^17.4.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.13.2",
+    "morgan": "^1.10.0",
+    "passport": "^0.4.1",
+    "passport-facebook-token": "^4.0.0",
+    "passport-google-oauth": "^2.0.0",
+    "passport-google-verify-token": "^2.0.0",
+    "passport-http-bearer": "^1.0.1",
+    "passport-jwt": "^4.0.0",
+    "passport-local": "^1.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "chai-http": "^4.3.0",
+    "eslint": "^7.30.0",
+    "faker": "^5.5.3",
+    "mocha": "^9.0.2",
+    "nodemon": "^2.0.9",
+    "nyc": "^15.1.0",
+    "rewire": "^5.0.0",
+    "sinon": "^11.1.1",
+    "sinon-chai": "^3.7.0"
+  },
+  "nyc": {
+    "exclude": [
+      "__tests__",
+      "node_modules"
+    ],
+    "cache": false,
+    "report-dir": "./__tests__/report"
+  }
+}
