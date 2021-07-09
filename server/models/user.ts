@@ -1,10 +1,12 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+import {Schema, model, connect  } from "mongoose";
+import bcrypt from "bcrypt";
 
-const Schema = mongoose.Schema;
+import {IUser } from "../types"
+
+
 
 // create a schema
-const userSchema = new Schema({
+const userSchema = new Schema<IUser>({
   method: {
     type: String,
     enum: ["local", "google"],
@@ -74,7 +76,7 @@ userSchema.methods.isValidPassword = async function (newPassword) {
 };
 
 // create a model
-const User = mongoose.model("user", userSchema);
+const User = model("user", userSchema);
 
 // export the model
-module.exports = User;
+export default User;

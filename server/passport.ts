@@ -1,16 +1,19 @@
-require("dotenv").config();
-const passport = require("passport");
-const JwtStrategy = require("passport-jwt").Strategy;
-const { ExtractJwt } = require("passport-jwt");
-const LocalStrategy = require("passport-local").Strategy;
-const GoogleStrategy = require("passport-google-verify-token").Strategy;
+import dotenv from "dotenv"
+dotenv.config();
+import passport from "passport";
+import {Strategy as JwtStrategy } from "passport-jwt";
+import { ExtractJwt } from "passport-jwt";
+import {Strategy as LocalStrategy } from "passport-local";
+import {Strategy as GoogleStrategy } from "passport-google-verify-token";
 
-const User = require("./models/user");
+import { AuthRequest } from "./types";
+import {Request, Response} from "express";
 
-const port = process.env.PORT;
-const host = process.env.HOST;
-const protocol = process.env.PROTOCOL;
-const userUrl = `${protocol}//${host}:${port}/users`;
+import User from "./models/user";
+
+
+
+const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
 // JSON web token strategy
 passport.use(
@@ -19,7 +22,7 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromHeader("authorization"),
       secretOrKey: process.env.JWT_SECRET,
     },
-    async (payload, done) => {
+    async (payload: any, done: Function) => {
       try {
         // find the user specified in token
         const user = await User.findById(payload.sub);
@@ -32,7 +35,7 @@ passport.use(
         // Otherwise, return the user
         done(null, user, "User found");
       } catch (err) {
-        done(error, false, err.message);
+        done(err, false, err.message);
       }
     }
   )
@@ -44,7 +47,7 @@ passport.use(
     {
       usernameField: "login", // change default behavior and listen to email first
     },
-    async (login, password, done) => {
+    async (login: string, password: string, done: Function) => {
       try {
         // find the user given  the email
         const user = await User.findOne({
@@ -81,12 +84,12 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
     },
-    async (parsedToken, googleId, done) => {
+    async (parsedToken: any , googleId: string, done: Function) => {
       //console.log(parsedToken);
       //console.log(googleId);
 
       try {
-        const auds = Array.isArray(parsedToken.aud) ? parsedToken.aud : [parsedToken.aud];
+        const auds: [string] = Array.isArray(parsedToken.aud) ? parsedToken.aud : [parsedToken.aud];
         if (!auds.find((aud) => aud === process.env.GOOGLE_CLIENT_ID))
           throw new Error("Wrong google OAuth clientId!");
 

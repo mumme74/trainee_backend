@@ -1,11 +1,11 @@
 const nodeEnv = process.env.NODE_ENV || "development";
-require("dotenv").config({ path: `.env.${nodeEnv}` });
-const express = require("express");
-const morgan = require("morgan");
-const mongoose = require("mongoose");
-const path = require("path");
-const cors = require("cors");
-const errorHandler = require("errorhandler");
+import dotenv from "dotenv"
+dotenv.config({ path: `.env.${nodeEnv}` }); // must be done bofore any other imports
+
+import express, { Request, Response } from "express";
+import  morgan from "morgan";
+import mongoose from "mongoose";
+import cors from "cors";
 
 mongoose.Promise = global.Promise;
 
@@ -45,18 +45,16 @@ app.use((req, res) => {
 });
 
 const showErrors = nodeEnv === "development";
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response) => {
   const errObj = {
     error: {
       message: "500: Internal Server Error",
       status: 500,
-      error: showErrors ? {message: err.message, stack: err.stack.split('\n')}: undefined,
+      error: showErrors ? {message: err.message, stack: err.stack?.split('\n')}: undefined,
     },
   };
   res.status(500).json(errObj);
   console.log(err);
 });
 
-//app.use(errorHandler({ dumpExceptions: showErrors, showStack: true }));
-
-module.exports = app;
+export default app;
