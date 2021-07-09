@@ -33,6 +33,9 @@ function errorHandler(dispatch, err) {
 function loginHandler(dispatch, responseData, actionType) {
   const token = responseData.access_token;
   if (!token) return errorHandler(new Error("Recieved empty token"));
+  
+  axios.defaults.headers.common["Authorization"] = token;
+  localStorage.setItem("JWT_TOKEN", token);
 
   dispatch({
     type: actionType,
@@ -40,8 +43,6 @@ function loginHandler(dispatch, responseData, actionType) {
   });
 
   setUserInfo(responseData.user)(dispatch);
-  axios.defaults.headers.common["Authorization"] = token;
-  localStorage.setItem("JWT_TOKEN", token);
 }
 
 // the common code between signUp and login
