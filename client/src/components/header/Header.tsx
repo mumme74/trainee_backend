@@ -1,12 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { connect } from "react-redux";
-import { compose } from "redux";
-import * as actions from "../../redux/actions";
 
 import User from "./User";
 
-function Header(props) {
+export default function Header() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary p-2">
       <Link className="navbar-brand ml-3" to="/">
@@ -27,11 +24,3 @@ function Header(props) {
     </nav>
   );
 }
-
-const mapStateToProps = (state) => {
-  return {
-    isAuthenticated: state.auth.isAuthenticated,
-  };
-};
-
-export default compose(connect(mapStateToProps, actions))(Header);

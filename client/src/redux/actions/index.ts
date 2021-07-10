@@ -10,13 +10,14 @@ import {
   refreshUserInfo,
 } from "./user";
 import { DASHBOARD_GET_DATA } from "./types";
+import { AppDispatch } from "../store";
 
 /*
     Flow in redux, from event to store
     ActionCreators -> create/returns Actions({..}) -> dispatch action -> middlewares -> reducers
  */
-export function getSecret(path) {
-  return async (dispatch) => {
+export function getSecret(path: string) {
+  return async (dispatch: AppDispatch) => {
     try {
       const res = await axios.get(`${SERVERURL}${path}`);
       console.log("get secret:", res);
@@ -39,7 +40,6 @@ export {
   logout,
   login,
   oAuthGoogle,
-
   // user (me)
   errorUserInfo,
   setUserInfo,

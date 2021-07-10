@@ -2,8 +2,16 @@ import React, { useEffect } from "react";
 import { connect } from "react-redux";
 
 import * as actions from "../redux/actions";
+import { RootState } from "../redux/store";
 
-function Dashboard(props) {
+type StatePropsT = {
+  secret: string;
+};
+type StateActionsT = {
+  getSecret: (path: string) => void;
+};
+
+function Dashboard(props: StatePropsT & StateActionsT) {
   useEffect(() => {
     (async function () {
       await props.getSecret("/users/secret");
@@ -23,8 +31,7 @@ function Dashboard(props) {
   );
 }
 
-function mapStateToProps(state) {
-    console.log(state)
+function mapStateToProps(state: RootState): StatePropsT {
   return {
     secret: state.dash.secret,
   };

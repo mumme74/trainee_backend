@@ -1,0 +1,9 @@
+// tsconfig.server.json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "server" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */,
+    "outDir": "build/server"
+  },
+  "exclude": ["client"]
+}

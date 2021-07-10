@@ -2,7 +2,15 @@ import React from "react";
 
 import classes from "./Avatar.module.css";
 
-export default function Avatar(props) {
+type JsxProps = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  picture: string;
+  onClick: () => void;
+};
+
+export default function Avatar(props: JsxProps) {
   const avatarTitle = `${props.firstName} ${props.lastName}\n ${props.email}`;
   const initials =
     (props.firstName ? props.firstName[0] : "?") +

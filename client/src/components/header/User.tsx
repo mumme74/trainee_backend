@@ -3,10 +3,23 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { compose } from "redux";
 import * as actions from "../../redux/actions";
+import { RootState } from "../../redux/store";
 
 import Avatar from "./Avatar";
 
-function User(props) {
+type StateProps = {
+  isAuthenticated: boolean;
+  firstName: string;
+  lastName: string;
+  picture: string;
+  email: string;
+};
+
+type JsxProps = {
+  logout: () => void;
+};
+
+function User(props: StateProps & JsxProps) {
   return (
     <React.Fragment>
       {!props.isAuthenticated ? (
@@ -24,7 +37,6 @@ function User(props) {
         </React.Fragment>
       ) : (
         <Avatar
-          userName={props.userName}
           firstName={props.firstName}
           lastName={props.lastName}
           email={props.email}
@@ -36,10 +48,9 @@ function User(props) {
   );
 }
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: RootState): StateProps => {
   return {
     isAuthenticated: state.auth.isAuthenticated,
-    userName: state.user.userName,
     firstName: state.user.firstName,
     lastName: state.user.lastName,
     picture: state.user.picture,

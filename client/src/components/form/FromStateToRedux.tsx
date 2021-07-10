@@ -1,5 +1,5 @@
 import { connect } from "react-redux";
-import {FormSpy} from 'react-final-form';
+/*import {FormSpy} from 'react-final-form';
 import { updateFormState } from "../../actions/formAction";
 
 
@@ -8,3 +8,4 @@ const FormStateToRedux = ({ form, updateFormState }) => (
 );
 
 export default connect(null, { updateFormState })(FormStateToRedux);
+*/

@@ -1,7 +1,18 @@
 import React from "react";
+import { FieldRenderProps } from "react-final-form";
 
+/*
+type StatePropsT = {
+  caption: string;
+  input: [any];
+  placeholder?: string;
+  autocomplete: string;
+  meta: { active: boolean; error: string; touched: boolean };
+};
+*/
+type Props = FieldRenderProps<string, any>;
 
-export default function FormRow(props) {
+const FormRow: React.FC<Props> = (props: Props) => {
   return (
     <div className={"row p-1" + (props.meta.active ? " bg-info" : "")}>
       <label className="col-sm-2">{props.caption}</label>
@@ -9,7 +20,7 @@ export default function FormRow(props) {
         {...props.input}
         className="col-sm form-control"
         placeholder={props.placeholder || props.caption}
-        autoComplete={props.autocomplete || 'on'}
+        autoComplete={props.autocomplete || "on"}
       />
       {props.meta.error && props.meta.touched && (
         <div className="row">
@@ -19,4 +30,5 @@ export default function FormRow(props) {
       )}
     </div>
   );
-}
+};
+export default FormRow;

@@ -2,20 +2,36 @@ import React, { useEffect } from "react";
 import { Form, Field } from "react-final-form";
 import { connect } from "react-redux";
 import { compose } from "redux";
+import { History } from "history";
 
 import FormRow from "../form/FormRow";
 import val from "../form/validators";
 import * as actions from "../../redux/actions";
 import OAuthLogin from "./OAuthLogin";
+import { RootState } from "../../redux/store";
+import { IAuth, ISignUpNewUserForm } from "../../redux/actions/types";
 
+type StatePropsT = {
+  isAuthenticated: boolean;
+  error: IAuth["error"];
+};
 
-function SignUp(props) {
+type ActionPropsT = {
+  signUp: (data: ISignUpNewUserForm) => void;
+  history: History;
+};
 
-  const onSubmit = async (formData) => {
+interface IFormData extends ISignUpNewUserForm {
+  confirm: string;
+}
+
+function SignUp(props: StatePropsT & ActionPropsT) {
+  const onSubmit = async (formData: IFormData) => {
     try {
       console.log("submit");
       // we need to call a actionCreator
-      await props.signUp(formData);
+      const data = { ...formData, confirm: undefined };
+      props.signUp(data);
     } catch (err) {
       console.error(err);
     }
@@ -111,7 +127,7 @@ function SignUp(props) {
   );
 }
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: RootState) => {
   return {
     error: state.auth.error,
     isAuthenticated: state.auth.isAuthenticated,

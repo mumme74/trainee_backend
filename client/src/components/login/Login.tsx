@@ -2,19 +2,32 @@ import React, { useEffect } from "react";
 import { Form, Field } from "react-final-form";
 import { connect } from "react-redux";
 import { compose } from "redux";
+import { History } from "history";
 
 import FormRow from "../form/FormRow";
 import val from "../form/validators";
 import * as actions from "../../redux/actions";
 import OAuthLogin from "./OAuthLogin";
-import { SERVERURL } from "../../config/config";
+import { RootState } from "../../redux/store";
+import { IAuth } from "../../redux/actions/types";
+import { ILoginData } from "../../redux/actions/auth";
 
-function Login(props) {
-  const onSubmit = async (formData) => {
+type StatePropsT = {
+  error: IAuth["error"];
+  isAuthenticated: boolean;
+};
+
+type ActionPropsT = {
+  login: (data: ILoginData) => void;
+  history: History;
+};
+
+const Login: React.FC<StatePropsT & ActionPropsT> = (props) => {
+  const onSubmit = async (formData: ILoginData) => {
     try {
       console.log("submit");
       // we need to call a actionCreator
-      await props.login(formData);
+      props.login(formData);
     } catch (err) {
       console.error(err);
     }
@@ -28,17 +41,16 @@ function Login(props) {
 
   return (
     <React.Fragment>
-      <a href={`${SERVERURL}/users/oauth/google?state=12345`}>Sign In with Google</a>
       <OAuthLogin />
       <Form
         onSubmit={onSubmit}
         validate={(values) => {
-          let errObj = {};
+          let errObj: { login?: string } = {};
           if (values.login?.length < 3) {
             if (values.login.indexOf("@") > -1) {
               errObj.login = val.userName(values.login);
             } else {
-              errObj.login = val.emailValidator(values.email);
+              errObj.login = val.emailValidator(values.login);
             }
           }
           return errObj;
@@ -85,9 +97,9 @@ function Login(props) {
       </Form>
     </React.Fragment>
   );
-}
+};
 
-const mapStateToProps = (state) => {
+const mapStateToProps = (state: RootState) => {
   return {
     error: state.auth.error,
     isAuthenticated: state.auth.isAuthenticated,

@@ -1,17 +1,19 @@
+import { AnyAction } from "redux";
 import {
   AUTH_ERROR,
   AUTH_SIGN_UP,
   AUTH_SIGN_IN,
   AUTH_SIGN_OUT,
+  IAuth,
 } from "../actions/types";
 
-const DEFAULT_STATE = {
+const DEFAULT_STATE: IAuth = {
   isAuthenticated: false,
   token: "",
   error: {},
 };
 
-function authReducer(state = DEFAULT_STATE, action) {
+function authReducer(state: IAuth = DEFAULT_STATE, action: AnyAction) {
   switch (action.type) {
     case AUTH_SIGN_IN:
     case AUTH_SIGN_UP: // fallthrough

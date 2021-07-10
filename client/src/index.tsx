@@ -9,7 +9,7 @@ import Dashboard from "./components/Dashboard";
 import SignUp from "./components/login/SignUp";
 import Login from "./components/login/Login";
 import authGuard from "./components/HOCs/authGuard";
-import initStore from "./redux/store";
+import { initStore } from "./redux/store";
 import Unauthorized from "./components/Unauthorized";
 
 const store = initStore();
