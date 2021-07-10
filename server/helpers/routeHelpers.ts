@@ -27,14 +27,14 @@ export const schemas = {
         loginSchema: Joi.object().keys({
             login: [
                 Joi.string().email().required(),
-                Joi.string().alphanum().min(3).max(30).required(),
+                Joi.string().min(3).max(30).required(),
             ],
             password: Joi.string().required()
         }),
         newUserSchema: Joi.object().keys({
-            firstName: Joi.string().alphanum().min(2).max(30).required(),
-            lastName: Joi.string().alphanum().min(2).max(50).required(),
-            userName: Joi.string().alphanum().pattern(/[^@]{3,}/).max(30).required(),
+            firstName: Joi.string().min(2).max(30).required(),
+            lastName: Joi.string().min(2).max(50).required(),
+            userName: Joi.string().pattern(/[^@]{3,}/).max(30).required(),
             email: Joi.string().email().required(),
             password: Joi.string().pattern(/^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/).required() 
         })

@@ -6,9 +6,6 @@ import { ExtractJwt } from "passport-jwt";
 import {Strategy as LocalStrategy } from "passport-local";
 import {Strategy as GoogleStrategy } from "passport-google-verify-token";
 
-import { AuthRequest } from "./types";
-import {Request, Response} from "express";
-
 import User from "./models/user";
 
 
@@ -54,7 +51,7 @@ passport.use(
           $or: [{ email: login }, { userName: login }],
         });
 
-        console.log(user, login);
+        //console.log(user, login);
 
         // if not, handle it
         if (!user) {

@@ -1,7 +1,7 @@
 import {Schema, model, connect  } from "mongoose";
 import bcrypt from "bcrypt";
 
-import {IUser } from "../types"
+import type {IUser } from "../types"
 
 
 

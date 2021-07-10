@@ -4,7 +4,7 @@ import { Request, Response, NextFunction} from 'express';
 
 import User from "../models/user";
 
-import {IUser, AuthRequest, AuthResponse} from "../types";
+import type {IUser, AuthRequest, AuthResponse} from "../types";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -82,7 +82,7 @@ const UsersController = {
     const authReq = (req as AuthRequest)
     // login succeded from google oauth
     // generate token
-    console.log("req.user", authReq.user);
+    //console.log("req.user", authReq.user);
 
     const token = signToken(authReq.user, authReq.tokenExpiresIn);
     return res.status(200).json(loginResponse(token, authReq.user));

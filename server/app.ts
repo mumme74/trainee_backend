@@ -3,9 +3,11 @@ import dotenv from "dotenv"
 dotenv.config({ path: `.env.${nodeEnv}` }); // must be done bofore any other imports
 
 import express, { Request, Response } from "express";
-import  morgan from "morgan";
+import morgan from "morgan";
 import mongoose from "mongoose";
 import cors from "cors";
+
+import sanitize from './helpers/sanitize';
 
 mongoose.Promise = global.Promise;
 
@@ -24,8 +26,13 @@ mongoose.connect(connectionString, {
   useUnifiedTopology: true,
 });
 
+// crate the global app
 const app = express();
+
+// cross origin
 app.use(cors({ origin: process.env.CORS_HOST }));
+
+sanitize.preJsonParse(app);
 
 // middleware
 if (process.env.NODE_ENV !== "test") {
@@ -33,6 +40,8 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 app.use(express.json());
+
+sanitize.postJsonParse(app);
 
 // Routes
 app.use("/users", require("./routes/users"));
