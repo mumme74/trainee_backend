@@ -8,6 +8,7 @@ export const AUTH_SIGN_IN = "AUTH_SIGN_IN;";
 export const USER_INFO_SET = "USER_INFO_SET";
 export const USER_INFO_CLEARED = "USER_INFO_CLEARED";
 export const USER_INFO_ERROR = "USER_INFO_ERROR";
+export const USER_INFO_CLEAR_ERROR = "USER_INFO_CLEAR_ERROR";
 
 // currently stale, for user form
 export const UPDATE_FORM_STATE =
@@ -23,7 +24,8 @@ interface IUserBase {
   email: string;
   picture: string;
   method: string;
-  googleId: string;
+  googleId?: string;
+  hd?: string;
   error: { message?: string; error?: Error };
 }
 export interface ISignUpNewUserForm extends IUserBase {

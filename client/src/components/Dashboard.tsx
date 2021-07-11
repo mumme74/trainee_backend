@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 
 import * as actions from "../redux/actions";
@@ -6,6 +7,7 @@ import { RootState } from "../redux/store";
 
 type StatePropsT = {
   secret: string;
+  isAuthenticated: boolean;
 };
 type StateActionsT = {
   getSecret: (path: string) => void;
@@ -13,10 +15,10 @@ type StateActionsT = {
 
 function Dashboard(props: StatePropsT & StateActionsT) {
   useEffect(() => {
-    (async function () {
+    (async function (isAuth: boolean) {
       await props.getSecret("/users/secret");
-    })();
-  }, [props]);
+    })(props.isAuthenticated);
+  }, [props.getSecret, props.isAuthenticated]);
 
   return (
     <div>
@@ -27,6 +29,7 @@ function Dashboard(props: StatePropsT & StateActionsT) {
           <p>{props.secret}</p>
         </React.Fragment>
       )}
+      <Link to="/profile">Your profile page</Link>
     </div>
   );
 }
@@ -34,6 +37,7 @@ function Dashboard(props: StatePropsT & StateActionsT) {
 function mapStateToProps(state: RootState): StatePropsT {
   return {
     secret: state.dash.secret,
+    isAuthenticated: state.auth.isAuthenticated,
   };
 }
 

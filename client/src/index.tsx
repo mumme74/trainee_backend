@@ -11,6 +11,7 @@ import Login from "./components/login/Login";
 import authGuard from "./components/HOCs/authGuard";
 import { initStore } from "./redux/store";
 import Unauthorized from "./components/Unauthorized";
+import Profile from "./components/studentAccess/Profile";
 
 const store = initStore();
 
@@ -24,6 +25,7 @@ ReactDOM.render(
             <Route path="/signup" component={SignUp} exact />
             <Route path="/login" component={Login} exact />
             <Route path="/unauthorized" component={Unauthorized} exact />
+            <Route path="/profile" component={authGuard(Profile)} exact />
             <Route path="/*" component={Home} />
           </Switch>
         </App>

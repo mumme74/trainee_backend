@@ -3,6 +3,7 @@ import {
   USER_INFO_CLEARED,
   USER_INFO_ERROR,
   USER_INFO_SET,
+  USER_INFO_CLEAR_ERROR,
   IUser,
 } from "../actions/types";
 
@@ -32,9 +33,14 @@ export default function userReducer(state = DEFAULT_STATE, action: AnyAction) {
       return {
         ...DEFAULT_STATE,
       };
+    case USER_INFO_CLEAR_ERROR:
+      return {
+        ...state,
+        error: {},
+      };
     case USER_INFO_ERROR:
       return {
-        ...DEFAULT_STATE,
+        ...state,
         error: action.payload,
       };
     default:

@@ -3,10 +3,12 @@ import { OAuth2Client }  from "google-auth-library";
 import { Request, Response, NextFunction} from 'express';
 
 import User from "../models/user";
+import mongoose from "mongoose";
 
 import type {IUser, AuthRequest, AuthResponse} from "../types";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const ObjectId = mongoose.Types.ObjectId;
 
 
 const signToken = (user: IUser, expiresInMinutes: number = 60*8): string => {
@@ -23,12 +25,15 @@ const signToken = (user: IUser, expiresInMinutes: number = 60*8): string => {
 
 const userInfoResponse = (user:IUser) => {
   return {
+    id: user.id,
+    method: user.method,
     userName: user.userName,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
     picture: user.picture,
-    googleId: user.google.id
+    googleId: user?.google?.id,
+    hd: user?.google?.hd
   }
 }
 
@@ -91,6 +96,39 @@ const UsersController = {
   myInfo: (req: Request, res: Response) => {
     const authReq = (req as AuthRequest)
     return res.status(200).json(userInfoResponse(authReq.user));
+  },
+
+  saveMyUserInfo: async (req: Request, res: Response) => {
+    const authReq = (req as AuthRequest);
+    const user = await User.findOneAndUpdate(
+      { "_id": new ObjectId(authReq.user.id) },
+      {
+        firstName: authReq.body.firstName,
+        lastName: authReq.body.lastName,
+        email:  authReq.body.email,
+        picture: authReq.body.picture,
+      },
+      { returnOriginal: false, new: true }
+    );
+    if (!user) {
+      return res.status(404).json({error:{message:"User not found"}});
+    }
+    return res.status(200).json(userInfoResponse(user));
+  },
+
+  changeMyPassword: async (req: Request, res: Response) => {
+    const authReq = (req as AuthRequest);
+    const user = await User.findOneAndUpdate(
+      { "_id": new ObjectId(authReq.user.id) },
+      {
+        password: authReq.body.password
+      },
+      { returnOriginal: false, new: true }
+    );
+    if (!user) {
+      return res.status(404).json({success:false, error:{message:"User not found"}});
+    }
+    return res.status(200).json({success:true});
   },
 
   secret: async (req: Request, res: Response, next: NextFunction) => {

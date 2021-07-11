@@ -5,6 +5,7 @@ import {
   AUTH_ERROR,
   AUTH_SIGN_OUT,
   AUTH_SIGN_IN,
+  IAuth,
   IUser,
   ISignUpNewUserForm,
 } from "./types";
@@ -84,19 +85,6 @@ function loginHandler(
 
   setUserInfo(responseData.user)(dispatch);
 }
-
-/*
-// the common code between signUp and login
-async function signUpIn(dispatch: AppDispatch, data: IAuth, path: string, actionType) {
-  try {
-    console.log("ActionCreator called");
-
-    const res = await axios.post(`${SERVERURL}${path}`, data);
-    loginHandler(dispatch, res.data, actionType);
-  } catch (err) {
-    errorHandler(dispatch, err);
-  }
-}*/
 
 export const oAuthGoogle = (data: any) => {
   return async (dispatch: AppDispatch) => {

@@ -30,6 +30,12 @@ router
 
 router.route("/myinfo").get(passportJWT, UsersController.myInfo);
 
+router.route("/savemyuserinfo").post(passportJWT,
+  validateBody(schemas.saveMyUserInfoSchema), UsersController.saveMyUserInfo);
+
+  router.route("/changemypassword").post(passportJWT,
+    validateBody(schemas.passwordSchema), UsersController.changeMyPassword);
+
 router.route("/secret").get(passportJWT, UsersController.secret);
 
 module.exports = router;

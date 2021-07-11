@@ -107,7 +107,7 @@ passport.use(
               hd: parsedToken.hd,
             },
           },
-          { returnOriginal: false, upsert: true }
+          { returnOriginal: false, new: true, upsert: true }
         );
 
         return done(null, newUser);

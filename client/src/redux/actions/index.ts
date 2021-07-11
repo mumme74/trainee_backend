@@ -6,6 +6,8 @@ import { signUp, logout, login, oAuthGoogle } from "./auth";
 import {
   errorUserInfo,
   setUserInfo,
+  saveMyUserInfo,
+  changeMyPassword,
   clearUserInfo,
   refreshUserInfo,
 } from "./user";
@@ -43,6 +45,8 @@ export {
   // user (me)
   errorUserInfo,
   setUserInfo,
+  saveMyUserInfo,
+  changeMyPassword,
   clearUserInfo,
   refreshUserInfo,
 };

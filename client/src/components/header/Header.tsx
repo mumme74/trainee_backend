@@ -7,7 +7,24 @@ export default function Header() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary p-2">
       <Link className="navbar-brand ml-3" to="/">
-        CodeWorkr API Auth
+        Trai
+        <div
+          style={{
+            transform: "rotate(345deg)",
+            display: "inline-block",
+          }}
+        >
+          n
+        </div>
+        e
+        <div
+          style={{
+            transform: "rotate(25deg)",
+            display: "inline-block",
+          }}
+        >
+          e
+        </div>
       </Link>
       <div className="collapse navbar-collapse justify-content-between">
         <ul className="navbar-nav mr-auto">
