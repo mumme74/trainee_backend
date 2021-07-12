@@ -41,8 +41,22 @@ function User(props: StateProps & JsxProps) {
           lastName={props.lastName}
           email={props.email}
           picture={props.picture}
-          onClick={props.logout}
-        />
+        >
+          <Link className="dropdown-item" to="/student/dashboard">
+            Dashboard
+          </Link>
+          <Link className="dropdown-item" to="/student/profile">
+            Edit my profile
+          </Link>
+          <div className="dropdown-divider"></div>
+          <button className="dropdown-item btn" onClick={props.logout}>
+            Log out
+          </button>
+          <div className="dropdown-divider"></div>
+          <Link className="dropdown-item" to="/about">
+            About
+          </Link>
+        </Avatar>
       )}
     </React.Fragment>
   );

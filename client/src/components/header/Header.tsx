@@ -1,30 +1,46 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { connect } from "react-redux";
+import Logo from "./Logo";
 
 import User from "./User";
+import { AppDispatch, RootState } from "../../redux/store";
+import { toggleSidemenu } from "../../redux/actions";
 
-export default function Header() {
+type StatePropsT = {
+  isShown: boolean;
+};
+
+function mapStateToProps(state: RootState): StatePropsT {
+  return {
+    isShown: state.sidemenu.isShown,
+  };
+}
+
+type ActionPropsT = {
+  toogleSidemenu: (e: any) => void;
+};
+
+function mapDispatchToProps(dispatch: AppDispatch): ActionPropsT {
+  return {
+    toogleSidemenu: (e) => toggleSidemenu()(dispatch),
+  };
+}
+
+const Header: React.FC<StatePropsT & ActionPropsT> = (props) => {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary p-2">
+      <ul className="navbar-nav ml-0 h3">
+        <span
+          className="nav-link"
+          style={{ cursor: "pointer" }}
+          onClick={props.toogleSidemenu}
+        >
+          &#8801;
+        </span>
+      </ul>
       <Link className="navbar-brand ml-3" to="/">
-        Trai
-        <div
-          style={{
-            transform: "rotate(345deg)",
-            display: "inline-block",
-          }}
-        >
-          n
-        </div>
-        e
-        <div
-          style={{
-            transform: "rotate(25deg)",
-            display: "inline-block",
-          }}
-        >
-          e
-        </div>
+        <Logo />
       </Link>
       <div className="collapse navbar-collapse justify-content-between">
         <ul className="navbar-nav mr-auto">
@@ -40,4 +56,6 @@ export default function Header() {
       </div>
     </nav>
   );
-}
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Header);

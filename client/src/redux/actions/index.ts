@@ -11,6 +11,8 @@ import {
   clearUserInfo,
   refreshUserInfo,
 } from "./user";
+import { setSidemenuIsShown, toggleSidemenu } from "./sidemenu";
+
 import { DASHBOARD_GET_DATA } from "./types";
 import { AppDispatch } from "../store";
 
@@ -49,4 +51,7 @@ export {
   changeMyPassword,
   clearUserInfo,
   refreshUserInfo,
+  // sidemenu
+  setSidemenuIsShown,
+  toggleSidemenu,
 };

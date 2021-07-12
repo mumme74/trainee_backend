@@ -17,6 +17,10 @@ export const UPDATE_FORM_STATE =
 // dashboard
 export const DASHBOARD_GET_DATA = "DASHBOARD_GET_DATA";
 
+// sidemenu
+export const SIDEMENU_SET_IS_SHOWN = "SIDEMENU_SET_IS_SHOWN";
+export const SIDEMENU_TOGGLE = "SIDEMENU_TOGGLE";
+
 interface IUserBase {
   userName: string;
   firstName: string;
