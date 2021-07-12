@@ -14,12 +14,12 @@ const ObjectId = mongoose.Types.ObjectId;
 const signToken = (user: IUser, expiresInMinutes: number = 60*8): string => {
   return JWT.sign(
     {
-      iss: "node_authentication",
+      iss: process.env.APP_NAME,
       sub: user.id,
-      iat: new Date().getTime(),
-      exp: new Date().setDate(new Date().getSeconds() + expiresInMinutes),
+      iat: Math.floor(new Date().getTime() / 1000), // need to be seconds not milliseconds
+      exp: Math.floor(new Date(new Date().setMinutes(expiresInMinutes)).getTime()/ 1000),
     },
-    process.env.JWT_SECRET+""
+    process.env.JWT_SECRET + ""
   );
 };
 

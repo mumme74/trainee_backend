@@ -7,8 +7,7 @@ import {Strategy as LocalStrategy } from "passport-local";
 import {Strategy as GoogleStrategy } from "passport-google-verify-token";
 
 import User from "./models/user";
-
-
+import { AuthRequest } from "./types";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -80,8 +79,9 @@ passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
+      passReqToCallback: true,
     },
-    async (parsedToken: any , googleId: string, done: Function) => {
+    async (req: Express.Request, parsedToken: any , googleId: string, done: Function) => {
       //console.log(parsedToken);
       //console.log(googleId);
 
@@ -89,6 +89,13 @@ passport.use(
         const auds: [string] = Array.isArray(parsedToken.aud) ? parsedToken.aud : [parsedToken.aud];
         if (!auds.find((aud) => aud === process.env.GOOGLE_CLIENT_ID))
           throw new Error("Wrong google OAuth clientId!");
+
+        // we need to make exp from millisconds since epoch to minutes
+        const expiresAt = Math.floor(parsedToken.exp / 60) - Math.floor(new Date().getTime() / 60000);
+        if (expiresAt < 0)
+         throw new Error("Expiration date was already passed on google token");
+
+        (req as AuthRequest).tokenExpiresIn = expiresAt;
 
         // find, update or create a new one
         const email = parsedToken.email_verified ? parsedToken.email : null;
