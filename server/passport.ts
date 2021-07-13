@@ -8,6 +8,7 @@ import {Strategy as GoogleStrategy } from "passport-google-verify-token";
 
 import User from "./models/user";
 import { AuthRequest } from "./types";
+import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -100,7 +101,7 @@ passport.use(
         // find, update or create a new one
         const email = parsedToken.email_verified ? parsedToken.email : null;
         if (!email) throw new Error("Not a verified google email!");
-        const newUser = await User.findOneAndUpdate(
+        const user = await User.findOneAndUpdate(
           { "google.id": googleId },
           {
             method: "google",
@@ -117,7 +118,24 @@ passport.use(
           { returnOriginal: false, new: true, upsert: true }
         );
 
-        return done(null, newUser);
+        // a new record would probably ha the same time in creat and update timestamps
+        if (Math.floor(user.createdAt.getTime()/1000) ===
+            Math.floor(user.updatedAt.getTime()/1000)) 
+        {
+          // check if user is a teacher
+          if (passAsTeacher(user)) {
+            user.roles.push("teacher");
+            // a super admin?
+            if (passAsSuperAdmin(user)) {
+              user.roles.push("super")
+            }
+            const res = await User.updateOne({"_id": user._id},{roles: user.roles});
+            if (!res || res.n !== 1 || res.ok !== 1 || res.nModified !== 1) 
+            throw new Error("Could not save escalated roles when creating user")
+          }
+        }
+
+        return done(null, user);
       } catch (err) {
         console.log(err.message);
         return done(err, false, err.message);

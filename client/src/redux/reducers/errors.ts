@@ -1,5 +1,6 @@
 import {
   ERROR_AUTENTICATION_EXPIRED,
+  ERROR_CLEAR_ALL,
   ERROR_COMMUNICATION,
   ERROR_COMMUNICATION_CLEAR,
 } from "../actions/types";
@@ -29,6 +30,11 @@ export function errorReducer(state = DEFAULT_STATE, action: AnyAction) {
       };
       ret.errors.push(payload);
       return ret;
+    case ERROR_CLEAR_ALL:
+      return <StateT>{
+        ...state,
+        errors: [],
+      };
     case ERROR_COMMUNICATION_CLEAR:
       return <StateT>{
         ...state,

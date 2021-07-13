@@ -14,6 +14,7 @@ export const USER_INFO_CLEAR_ERROR = "USER_INFO_CLEAR_ERROR";
 export const ERROR_COMMUNICATION = "ERROR_COMMUNICATION";
 export const ERROR_COMMUNICATION_CLEAR = "ERROR_COMMUNICATION_CLEAR";
 export const ERROR_AUTENTICATION_EXPIRED = "ERROR_AUTENTICATION_EXPIRED";
+export const ERROR_CLEAR_ALL = "ERROR_CLEAR_ALL";
 // fired on start of a request, a counter if many requests is live at the same time
 export const COMMUNICATION_CNT = "COMMUNICATION_CNT";
 

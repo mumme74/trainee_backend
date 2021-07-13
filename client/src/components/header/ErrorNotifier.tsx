@@ -5,6 +5,8 @@ import css from "./ErrorNotifier.module.css";
 import { RootState } from "../../redux/store";
 import type { IError } from "../../redux/reducers/errors";
 import DropdownMenu from "../menus/DropdownMenu";
+import { clearAllErrors } from "../../redux/actions/errors";
+import { store } from "../../redux/store";
 
 type StatePropsT = {
   //unauthenticated: boolean;
@@ -23,6 +25,10 @@ const ErrorNotifier: React.FC<StatePropsT & JsxPropsT> = (props) => {
   const errorCircle = useRef<HTMLDivElement>(null);
 
   const [showMenu, setShowMenu] = useState<boolean>(false);
+
+  function clearErrorHandler() {
+    clearAllErrors()(store.dispatch);
+  }
 
   function stopClick(event: any) {
     let trgt = event.target as Element | null;
@@ -68,7 +74,9 @@ const ErrorNotifier: React.FC<StatePropsT & JsxPropsT> = (props) => {
           </ul>
           <footer>
             <span></span>
-            <button className="btn-small">Clear</button>
+            <button className="btn-small" onClick={clearErrorHandler}>
+              Clear
+            </button>
           </footer>
         </React.Fragment>
       </DropdownMenu>

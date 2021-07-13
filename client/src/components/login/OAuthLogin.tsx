@@ -28,7 +28,7 @@ function OAuthLogin(props: StatePropsT & ActionPropsT) {
     <div className="container border-bottom mb-5">
       <div className="row">
         <div className="col-sm-2" />
-        <h3 className="col-sm">Sign in using OAuth2</h3>
+        <h3 className="col-sm">Login using OAuth2</h3>
       </div>
       <div className="row p-2">
         <div className="col-sm-2">

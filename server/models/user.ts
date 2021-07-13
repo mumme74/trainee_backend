@@ -1,5 +1,12 @@
 import {Schema, model, connect  } from "mongoose";
 import bcrypt from "bcrypt";
+import { string } from "joi";
+
+/**
+ * @brief these are the 4 different roles a user can have
+ */
+export enum rolesAvailable {'student', 'teacher', 'admin', 'super'};
+
 
 // database models
 export interface IUserCollection {
@@ -15,10 +22,12 @@ export interface IUserCollection {
    id: string;
    hd?: string;
   }
+  roles: [typeof rolesAvailable];
   updatedAt: typeof Date;
   createdAt: typeof Date;
 }
   
+
 
 
 // create a schema
@@ -67,6 +76,13 @@ const userSchema = new Schema<IUserCollection>({
       type: String,
     }
   },
+
+  roles: {
+    type: [String],
+    enum: Object.keys(rolesAvailable).filter(i=>isNaN(+i)),
+    required: true,
+    default: rolesAvailable[0]
+  }
 }, {timestamps: true});
 
 // hash password before save
@@ -83,12 +99,16 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-userSchema.methods.isValidPassword = async function (newPassword) {
+export async function comparePasswordHash(pass1: string, pass2: string) : Promise<boolean> {
   try {
-    return await bcrypt.compare(newPassword, this.password);
+    return await bcrypt.compare(pass1, pass2);
   } catch (err) {
     throw new Error(err);
   }
+}
+
+userSchema.methods.isValidPassword = async function (newPassword) {
+  return comparePasswordHash(newPassword, this.password);
 };
 
 // create a model

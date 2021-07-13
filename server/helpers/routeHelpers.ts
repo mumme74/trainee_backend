@@ -53,4 +53,11 @@ export const schemas = {
         passwordSchema: Joi.object().keys({
             password: password
         }),
+        deleteMySelfSchema: Joi.object().keys({
+            userName: userName,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            password: Joi.string()
+        })
     }

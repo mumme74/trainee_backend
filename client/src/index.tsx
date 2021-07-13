@@ -14,6 +14,7 @@ import Unauthorized from "./components/Unauthorized";
 import Student from "./components/studentAccess";
 import About from "./components/About";
 import { initAxios } from "./axiosCommon";
+import DeleteMe from "./components/login/DeleteMe";
 
 const store = initStore();
 initAxios();
@@ -29,6 +30,7 @@ ReactDOM.render(
             <Route path="/login" component={Login} exact />
             <Route path="/unauthorized" component={Unauthorized} exact />
             <Route path="/student" component={authGuard(Student)} />
+            <Route path="/deleteme" component={authGuard(DeleteMe)} />
             <Route path="/about" component={About} exact />
             <Route path="/*" component={Home} />
           </Switch>

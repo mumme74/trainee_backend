@@ -2,7 +2,7 @@ import  JWT  from "jsonwebtoken";
 import { OAuth2Client }  from "google-auth-library";
 import { Request, Response, NextFunction} from 'express';
 
-import User, { IUserCollection } from "../models/user";
+import User, { comparePasswordHash, IUserCollection } from "../models/user";
 import mongoose from "mongoose";
 
 import type { IUserInfoResponse, AuthRequest, AuthResponse} from "../types";
@@ -138,6 +138,35 @@ const UsersController = {
     console.log("Accessing secret resource");
     return res.json({ secret: "Access granted to secret resource!" });
   },
+
+  // we must send our firstName, lastName and email and password just as it is stored in the database
+  deleteMyself: async(req: Request, res: Response, next: NextFunction) => {
+    try {
+      const authReq = req as AuthRequest;
+      console.log("Trying to delete user " + authReq.user.email);
+
+      if (comparePasswordHash(authReq.user.password +"", authReq.body.password)) {
+      
+        const result = await User.deleteOne({
+              "_id": new ObjectId(authReq.user.id), 
+              email: authReq.user.email,
+              userName: authReq.user.userName,
+              firstName: authReq.user.firstName,
+              lastName: authReq.user.lastName,
+            });
+        if (result.n === 1 && result.ok === 1 && result.deletedCount === 1) {
+          console.log("Deleting user " + authReq.user.email);
+          return res.status(200).json({success: true});
+        }
+      }
+      console.log("Failed to delete")
+      return res.status(404).json({success: false, error: {message: "User not found"}});
+
+    } catch(e) {
+      console.log("Failed to delete, error occured")
+      return res.status(500).json({success: false, error: e})
+    }
+  }
 };
 
 export default UsersController;

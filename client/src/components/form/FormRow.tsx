@@ -22,6 +22,7 @@ const FormRow: React.FC<Props> = (props: Props) => {
         placeholder={props.placeholder || props.caption}
         autoComplete={props.autocomplete || "on"}
         readOnly={props.readonly}
+        disabled={props.disabled}
       />
       {props.meta.error && props.meta.touched && (
         <div className="row">

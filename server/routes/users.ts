@@ -38,4 +38,6 @@ router.route("/savemyuserinfo").post(passportJWT,
 
 router.route("/secret").get(passportJWT, UsersController.secret);
 
+router.route("/deletemyself").post(passportJWT, validateBody(schemas.deleteMySelfSchema), UsersController.deleteMyself)
+
 module.exports = router;

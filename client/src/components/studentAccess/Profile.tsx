@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { connect } from "react-redux";
 import { compose } from "redux";
 import { Form, Field } from "react-final-form";
+import { Link } from "react-router-dom";
 
 import { RootState } from "../../redux/store";
 import { IUser } from "../../redux/actions/types";
@@ -115,7 +116,10 @@ const Profile: React.FC<StatePropsT & ActionPropsT> = (props) => {
         }}
       >
         {showPw ? "Hide Passwords" : "Show Passwords"}
-      </button>
+      </button>{" "}
+      <Link to="/deleteme" className="m-5 text-small text-secondary">
+        Remove me from the system
+      </Link>
       {showPw && (
         <Form
           onSubmit={changePassword}

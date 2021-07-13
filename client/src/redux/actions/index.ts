@@ -14,6 +14,7 @@ import {
 import { setSidemenuIsShown, toggleSidemenu } from "./sidemenu";
 import {
   setCommuncationError,
+  clearAllErrors,
   setAuthenticationExpired,
   clearAuthenticationExpired,
 } from "./errors";
@@ -61,6 +62,7 @@ export {
   toggleSidemenu,
   // errors
   setCommuncationError,
+  clearAllErrors,
   setAuthenticationExpired,
   clearAuthenticationExpired,
 };

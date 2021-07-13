@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Field } from "react-final-form";
 import { connect } from "react-redux";
 import { compose } from "redux";
@@ -26,6 +26,8 @@ interface IFormData extends ISignUpNewUserForm {
 }
 
 function SignUp(props: StatePropsT & ActionPropsT) {
+  const [locked, setLocked] = useState<boolean>(true);
+
   const onSubmit = async (formData: IFormData) => {
     try {
       console.log("submit");
@@ -60,12 +62,29 @@ function SignUp(props: StatePropsT & ActionPropsT) {
             <div className="row">
               <div className="col-sm-2"></div>
               <h3 className="col-sm">Sign up as new user</h3>
+              <p>
+                If you join through login information below you can't access
+                content from people in your domain.
+              </p>
+              <p>
+                Most likely you want to join through Google OAuth account on the
+                above button instead.
+              </p>
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setLocked(false);
+                }}
+              >
+                Unlock fields
+              </button>
             </div>
             <Field
               name="userName"
               type="text"
               caption="Username"
               validate={val.userName}
+              disabled={locked}
               component={FormRow}
             />
             <Field
@@ -73,6 +92,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
               type="text"
               caption="First name"
               validate={val.required}
+              disabled={locked}
               component={FormRow}
             />
             <Field
@@ -80,6 +100,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
               type="text"
               caption="Last name"
               validate={val.required}
+              disabled={locked}
               component={FormRow}
             />
             <Field
@@ -87,6 +108,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
               type="email"
               caption="Email"
               validate={val.emailValidator}
+              disabled={locked}
               component={FormRow}
             />
             <Field
@@ -94,6 +116,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
               type="password"
               caption="Password"
               validate={val.passwordValidator}
+              disabled={locked}
               component={FormRow}
             />
             <Field
@@ -101,6 +124,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
               type="password"
               caption="Confirm"
               placeholder="Confirm password"
+              disabled={locked}
               component={FormRow}
             />
             <div className="row">
@@ -108,7 +132,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
               <div className="col-sm p-2">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || locked}
                   className="btn btn-primary"
                 >
                   Sign Up
