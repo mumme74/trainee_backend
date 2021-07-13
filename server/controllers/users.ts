@@ -2,16 +2,16 @@ import  JWT  from "jsonwebtoken";
 import { OAuth2Client }  from "google-auth-library";
 import { Request, Response, NextFunction} from 'express';
 
-import User from "../models/user";
+import User, { IUserCollection } from "../models/user";
 import mongoose from "mongoose";
 
-import type {IUser, AuthRequest, AuthResponse} from "../types";
+import type { IUserInfoResponse, AuthRequest, AuthResponse} from "../types";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const ObjectId = mongoose.Types.ObjectId;
 
 
-const signToken = (user: IUser, expiresInMinutes: number = 60*8): string => {
+const signToken = (user: IUserCollection, expiresInMinutes: number = 60*8): string => {
   return JWT.sign(
     {
       iss: process.env.APP_NAME,
@@ -23,7 +23,7 @@ const signToken = (user: IUser, expiresInMinutes: number = 60*8): string => {
   );
 };
 
-const userInfoResponse = (user:IUser) => {
+const userInfoResponse = (user:IUserCollection): IUserInfoResponse => {
   return {
     id: user.id,
     method: user.method,
@@ -33,11 +33,13 @@ const userInfoResponse = (user:IUser) => {
     lastName: user.lastName,
     picture: user.picture,
     googleId: user?.google?.id,
-    hd: user?.google?.hd
+    hd: user?.google?.hd,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   }
 }
 
-const loginResponse = (token: string, user:IUser) => {
+const loginResponse = (token: string, user:IUserCollection) => {
   return {
     'access_token': token,
     user: userInfoResponse(user)

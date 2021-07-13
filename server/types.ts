@@ -2,23 +2,22 @@ import * as core from "express-serve-static-core";
 import express from "express";
 
 
+import type { IUserCollection } from "./models/user"
 
-// database models
-export interface IUser {
-    readonly id: string,
-    method: string,
-    userName: string,
-    firstName: string,
-    lastName: string,
-    email: string,
-    password?: string,
-    picture?:string,
-    google: {
-      id: string,
-      hd?: string,
-    }
-  }
-  
+
+export interface IUserInfoResponse {
+  id: IUserCollection["id"];
+  method: IUserCollection["method"];
+  userName: IUserCollection["userName"];
+  email: IUserCollection["email"];
+  firstName: IUserCollection["firstName"];
+  lastName: IUserCollection["lastName"];
+  picture: IUserCollection["picture"];
+  googleId?: IUserCollection["google"]["id"];
+  hd?: IUserCollection["google"]["id"];
+  createdAt: IUserCollection["createdAt"];
+  updatedAt: IUserCollection["updatedAt"];
+}
 
 // extended express types
 /*
@@ -40,7 +39,7 @@ export interface AuthRequest extends express.Request {
     value: {
       body?: any
     },
-    user: IUser,
+    user: IUserCollection,
     tokenExpiresIn?: number // seconds until it expires
   };
 

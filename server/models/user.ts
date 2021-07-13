@@ -1,12 +1,28 @@
 import {Schema, model, connect  } from "mongoose";
 import bcrypt from "bcrypt";
 
-import type {IUser } from "../types"
-
+// database models
+export interface IUserCollection {
+  readonly id: string;
+  method: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password?: string;
+  picture?:string;
+  google: {
+   id: string;
+   hd?: string;
+  }
+  updatedAt: typeof Date;
+  createdAt: typeof Date;
+}
+  
 
 
 // create a schema
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema<IUserCollection>({
   method: {
     type: String,
     enum: ["local", "google"],
@@ -51,7 +67,7 @@ const userSchema = new Schema<IUser>({
       type: String,
     }
   },
-});
+}, {timestamps: true});
 
 // hash password before save
 userSchema.pre("save", async function (next) {
