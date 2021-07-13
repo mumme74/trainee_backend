@@ -10,6 +10,12 @@ export const USER_INFO_CLEARED = "USER_INFO_CLEARED";
 export const USER_INFO_ERROR = "USER_INFO_ERROR";
 export const USER_INFO_CLEAR_ERROR = "USER_INFO_CLEAR_ERROR";
 
+// communication info
+export const ERROR_COMMUNICATION = "ERROR_COMMUNICATION";
+export const ERROR_AUTENTICATION_EXPIRED = "ERROR_AUTENTICATION_EXPIRED";
+// fired on start of a request, a counter if many requests is live at the same time
+export const COMMUNICATION_CNT = "COMMUNICATION_CNT";
+
 // currently stale, for user form
 export const UPDATE_FORM_STATE =
   "final-form-redux-example/finalForm/UPDATE_FORM_STATE";

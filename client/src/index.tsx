@@ -13,8 +13,10 @@ import { initStore } from "./redux/store";
 import Unauthorized from "./components/Unauthorized";
 import Student from "./components/studentAccess";
 import About from "./components/About";
+import { initAxios } from "./axiosCommon";
 
 const store = initStore();
+initAxios();
 
 ReactDOM.render(
   <React.StrictMode>

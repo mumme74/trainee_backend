@@ -12,6 +12,11 @@ import {
   refreshUserInfo,
 } from "./user";
 import { setSidemenuIsShown, toggleSidemenu } from "./sidemenu";
+import {
+  setCommuncationError,
+  setAuthenticationExpired,
+  clearAuthenticationExpired,
+} from "./errors";
 
 import { DASHBOARD_GET_DATA } from "./types";
 import { AppDispatch } from "../store";
@@ -54,4 +59,8 @@ export {
   // sidemenu
   setSidemenuIsShown,
   toggleSidemenu,
+  // errors
+  setCommuncationError,
+  setAuthenticationExpired,
+  clearAuthenticationExpired,
 };

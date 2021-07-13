@@ -13,7 +13,8 @@ type JsxProps = {
 const Avatar: React.FC<JsxProps> = (props) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuNode = useRef<HTMLDivElement>(null);
-  const avatarNode = useRef<HTMLImageElement>(null);
+  const avatarImgNode = useRef<HTMLImageElement>(null);
+  const avatarDivNode = useRef<HTMLDivElement>(null);
 
   function onClickHandler() {
     setShowMenu(!showMenu);
@@ -21,9 +22,11 @@ const Avatar: React.FC<JsxProps> = (props) => {
   }
 
   useLayoutEffect(() => {
-    if (showMenu && menuNode.current && avatarNode.current) {
+    const avatarNode = avatarImgNode.current || avatarDivNode.current;
+
+    if (showMenu && menuNode.current && avatarNode) {
       const menuStyle = window.getComputedStyle(menuNode.current as Element);
-      const imageStyle = window.getComputedStyle(avatarNode.current as Element);
+      const imageStyle = window.getComputedStyle(avatarNode as Element);
 
       const moveX =
         0 -
@@ -47,10 +50,14 @@ const Avatar: React.FC<JsxProps> = (props) => {
             src={props.picture}
             className={classes.avatar}
             title={avatarTitle}
-            ref={avatarNode}
+            ref={avatarImgNode}
           />
         ) : (
-          <div className={classes.avatar} title={avatarTitle}>
+          <div
+            className={classes.avatar}
+            title={avatarTitle}
+            ref={avatarDivNode}
+          >
             {initials}
           </div>
         )}

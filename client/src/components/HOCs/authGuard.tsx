@@ -1,36 +1,35 @@
 import React, { useEffect } from "react";
 import { connect } from "react-redux";
-import { RootState } from "../../redux/store";
 import { History } from "history";
 
-type PropsType = {
+import Unauthorized from "../Unauthorized";
+import { RootState } from "../../redux/store";
+import { isAuthenticated } from "../../helpers";
+
+type StatePropsT = {
   isAuthenticated: boolean;
-  jwtToken: string;
-  history: History;
 };
 
-type JsxProps = {
+type JsxPropsT = {
   logout: () => void;
+  history: History;
 };
 
 export default function authGuard(
   OriginalComponent: React.ComponentType<any | string>
 ) {
-  function MixedComponent(props: PropsType & JsxProps) {
-    useEffect(() => {
-      if (!props.isAuthenticated && !props.jwtToken) {
-        console.log("user is not authenticated");
-        props.history.push("/unauthorized");
-      }
-    }, [props.isAuthenticated, props.jwtToken, props.history]);
+  const MixedComponent: React.FC<StatePropsT & JsxPropsT> = (props) => {
+    if (!isAuthenticated() || !isAuthenticated) {
+      console.log("user is not authenticated");
+      return <Unauthorized />;
+    } else {
+      return <OriginalComponent />;
+    }
+  };
 
-    return <OriginalComponent />;
-  }
-
-  function mapStateToProps(state: RootState) {
+  function mapStateToProps(state: RootState): StatePropsT {
     return {
       isAuthenticated: state.auth.isAuthenticated,
-      jwtToken: state.auth.token,
     };
   }
 

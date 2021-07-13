@@ -4,6 +4,7 @@ import authReducer from "./auth";
 import userReducer from "./user";
 import sidemenuReducer from "./sidemenu";
 import { dashboardReducer } from "./dashboardReducer";
+import communicationReducer from "./communication";
 
 export default combineReducers({
   form: formReducer,
@@ -11,4 +12,5 @@ export default combineReducers({
   user: userReducer,
   dash: dashboardReducer,
   sidemenu: sidemenuReducer,
+  communication: communicationReducer,
 });
