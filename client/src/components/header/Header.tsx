@@ -7,6 +7,7 @@ import User from "./User";
 import { AppDispatch, RootState } from "../../redux/store";
 import { toggleSidemenu } from "../../redux/actions";
 import ProgressIndicator from "./ProgressIndicator";
+import ErrorNotifier from "./ErrorNotifier";
 
 type StatePropsT = {
   isShown: boolean;
@@ -43,9 +44,11 @@ const Header: React.FC<StatePropsT & ActionPropsT> = (props) => {
         </span>
       </ul>
       <Link className="navbar-brand ml-3" to="/">
-        <ProgressIndicator progress={props.activeReqCnt > 0 ? 0.5 : 0.0}>
-          <Logo />
-        </ProgressIndicator>
+        <ErrorNotifier>
+          <ProgressIndicator progress={props.activeReqCnt > 0 ? 0.5 : 0.0}>
+            <Logo />
+          </ProgressIndicator>
+        </ErrorNotifier>
       </Link>
       <div className="collapse navbar-collapse justify-content-between">
         <ul className="navbar-nav mr-auto">
@@ -55,7 +58,7 @@ const Header: React.FC<StatePropsT & ActionPropsT> = (props) => {
             </Link>
           </li>
         </ul>
-        <ul className="nav navbar-nav ml-auto">
+        <ul className="nav navbar-nav ml-auto mx-2">
           <User />
         </ul>
       </div>

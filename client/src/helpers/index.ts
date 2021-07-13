@@ -52,3 +52,23 @@ export function isTokenValid(jwt: string): boolean {
 
   return false;
 }
+
+/**
+ * @brief Merges muliple refs to the same Dom node on a React node
+ * @param refs multipla arguments ocf ref objects
+ * @returns a ref thunk to be used by React durening object creation
+ */
+export const mergeRefs = (...refs: any) => {
+  const filteredRefs = refs.filter(Boolean);
+  if (!filteredRefs.length) return null;
+  if (filteredRefs.length === 0) return filteredRefs[0];
+  return (inst: any) => {
+    for (const ref of filteredRefs) {
+      if (typeof ref === "function") {
+        ref(inst);
+      } else if (ref) {
+        ref.current = inst;
+      }
+    }
+  };
+};

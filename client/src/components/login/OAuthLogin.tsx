@@ -31,7 +31,9 @@ function OAuthLogin(props: StatePropsT & ActionPropsT) {
         <h3 className="col-sm">Sign in using OAuth2</h3>
       </div>
       <div className="row p-2">
-        <div className="col-sm-2">{props.error.message}</div>
+        <div className="col-sm-2">
+          <span className=" badge bg-danger">{props.error.message}</span>
+        </div>
         <GoogleLogin
           clientId={GOOGLE_CLIENT_ID}
           buttonText="Google"

@@ -1,6 +1,7 @@
 import React, { useState, useLayoutEffect, useRef } from "react";
 
 import classes from "./Avatar.module.css";
+import DropdownMenu from "../menus/DropdownMenu";
 
 type JsxProps = {
   firstName: string;

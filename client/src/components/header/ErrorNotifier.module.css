@@ -1,0 +1,28 @@
+.errorCircle {
+  float: left;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background-color: red;
+}
+
+.errorMenu ul {
+  list-style: none;
+  padding: 0 0.5rem;
+}
+
+.errorMenu li {
+  text-decoration: none;
+  list-style: none;
+}
+
+.errorMenu button {
+  background-color: inherit;
+  border: none;
+  float: right;
+}
+
+.errorMenu header,
+.errorMenu footer {
+  background-color: #b9b4d3;
+}

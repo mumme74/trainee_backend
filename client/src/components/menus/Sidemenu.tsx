@@ -35,7 +35,10 @@ const Sidemenu: React.FC<
     >
       <div className="sidemenuHeader">
         <span>{props.caption ? props.caption : "Menu"}</span>
-        <button className="btn-close btn shadow-none" onClick={close}></button>
+        <button
+          className="btn-close btn-small shadow-none"
+          onClick={close}
+        ></button>
       </div>
       <div className="menu-divider"></div>
       <div className="menu-item">item1</div>

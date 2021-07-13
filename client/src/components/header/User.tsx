@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { compose } from "redux";
@@ -6,6 +6,7 @@ import * as actions from "../../redux/actions";
 import { RootState } from "../../redux/store";
 
 import Avatar from "./Avatar";
+import DropdownMenu from "../menus/DropdownMenu";
 
 type StateProps = {
   isAuthenticated: boolean;
@@ -20,8 +21,14 @@ type JsxProps = {
 };
 
 function User(props: StateProps & JsxProps) {
+  const [showMenu, setShowMenu] = useState<boolean>(false);
+
+  function toogleMenu() {
+    setShowMenu(!showMenu);
+  }
+
   return (
-    <React.Fragment>
+    <div className="">
       {!props.isAuthenticated ? (
         <React.Fragment>
           <li className="nav-item">
@@ -36,29 +43,38 @@ function User(props: StateProps & JsxProps) {
           </li>
         </React.Fragment>
       ) : (
-        <Avatar
-          firstName={props.firstName}
-          lastName={props.lastName}
-          email={props.email}
-          picture={props.picture}
-        >
-          <Link className="dropdown-item" to="/student/dashboard">
-            Dashboard
-          </Link>
-          <Link className="dropdown-item" to="/student/profile">
-            Edit my profile
-          </Link>
-          <div className="dropdown-divider"></div>
-          <button className="dropdown-item btn" onClick={props.logout}>
-            Log out
-          </button>
-          <div className="dropdown-divider"></div>
-          <Link className="dropdown-item" to="/about">
-            About
-          </Link>
-        </Avatar>
+        <React.Fragment>
+          <Avatar
+            firstName={props.firstName}
+            lastName={props.lastName}
+            email={props.email}
+            picture={props.picture}
+            onClick={toogleMenu}
+          ></Avatar>
+          <DropdownMenu
+            show={showMenu}
+            onClose={() => {
+              setShowMenu(false);
+            }}
+          >
+            <Link className="dropdown-item" to="/student/dashboard">
+              Dashboard
+            </Link>
+            <Link className="dropdown-item" to="/student/profile">
+              Edit my profile
+            </Link>
+            <div className="dropdown-divider"></div>
+            <button className="dropdown-item btn" onClick={props.logout}>
+              Log out
+            </button>
+            <div className="dropdown-divider"></div>
+            <Link className="dropdown-item" to="/about">
+              About
+            </Link>
+          </DropdownMenu>
+        </React.Fragment>
       )}
-    </React.Fragment>
+    </div>
   );
 }
 

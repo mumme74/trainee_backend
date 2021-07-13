@@ -1,6 +1,6 @@
 import React from "react";
 import Header from "./header/Header";
-import Sidemenu from "./Sidemenu";
+import Sidemenu from "./menus/Sidemenu";
 
 import "./App.css";
 
