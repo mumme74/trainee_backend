@@ -9,8 +9,8 @@ import {
  * @returns boolean true if tokens exp field is still valid
  */
 export function isAuthenticated(): boolean {
-  const jwt = store.getState().auth.token;
-  return isTokenValid(jwt);
+  const auth = store.getState().auth;
+  return isTokenValid(auth.token) && auth.isAuthenticated;
 }
 
 /**
@@ -20,14 +20,7 @@ export function isAuthenticated(): boolean {
  */
 export function isTokenValid(jwt: string): boolean {
   try {
-    const parts = jwt.split(".");
-    if (parts.length !== 3) return false;
-
-    const payload = parts[1];
-    if (!payload) return false;
-
-    const decoded = window.atob(payload);
-    const json = JSON.parse(decoded);
+    const json = tokenPayload(jwt);
     if (!json.exp || !json.iat) return false;
 
     // ensure time is correct on client browser
@@ -51,6 +44,37 @@ export function isTokenValid(jwt: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * @brief quick and dirty function to retrieves the payload out of a jsonwebtoken
+ * @param jwt the token to read from
+ * @returns json object
+ */
+export function tokenPayload(jwt: string) {
+  try {
+    const parts = jwt.split(".");
+    if (parts.length !== 3) return false;
+
+    const payload = parts[1];
+    if (!payload) return false;
+
+    const decoded = window.atob(payload);
+    const json = JSON.parse(decoded);
+    return json;
+  } catch (err) {
+    return {};
+  }
+}
+
+/**
+ * @brief read the roles I have in my stored in my json webtoken
+ * @returns a string array of roles assigned to me.
+ */
+export function myUserRoles(): [string] {
+  const jwt = store.getState().auth.token;
+  const json = tokenPayload(jwt);
+  return json.roles || [];
 }
 
 /**

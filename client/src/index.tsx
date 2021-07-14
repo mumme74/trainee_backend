@@ -8,7 +8,7 @@ import Home from "./components/Home";
 import Dashboard from "./components/Dashboard";
 import SignUp from "./components/login/SignUp";
 import Login from "./components/login/Login";
-import authGuard from "./components/HOCs/authGuard";
+import { withAuthGuardStudent } from "./components/HOCs/authGuards";
 import { initStore } from "./redux/store";
 import Unauthorized from "./components/Unauthorized";
 import Student from "./components/studentAccess";
@@ -25,12 +25,15 @@ ReactDOM.render(
       <BrowserRouter>
         <App>
           <Switch>
-            <Route path="/dashboard" component={authGuard(Dashboard)} exact />
+            <Route path="/dashboard" component={Dashboard} exact />
             <Route path="/signup" component={SignUp} exact />
             <Route path="/login" component={Login} exact />
             <Route path="/unauthorized" component={Unauthorized} exact />
-            <Route path="/student" component={authGuard(Student)} />
-            <Route path="/deleteme" component={authGuard(DeleteMe)} />
+            <Route path="/student" component={withAuthGuardStudent(Student)} />
+            <Route
+              path="/deleteme"
+              component={withAuthGuardStudent(DeleteMe)}
+            />
             <Route path="/about" component={About} exact />
             <Route path="/*" component={Home} />
           </Switch>

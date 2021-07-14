@@ -7,6 +7,7 @@ import { RootState } from "../../redux/store";
 
 import Avatar from "./Avatar";
 import DropdownMenu from "../menus/DropdownMenu";
+import { myUserRoles } from "../../helpers";
 
 type StateProps = {
   isAuthenticated: boolean;
@@ -51,6 +52,8 @@ function User(props: StateProps & JsxProps) {
             onClose={() => {
               setShowMenu(false);
             }}
+            caption={myUserRoles().join(", ")}
+            closeOnClick={true}
           >
             <Link className="dropdown-item" to="/student/dashboard">
               Dashboard

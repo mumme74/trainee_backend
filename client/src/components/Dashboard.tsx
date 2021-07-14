@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 
 import * as actions from "../redux/actions";
 import { AppDispatch, RootState } from "../redux/store";
+import { withAuthGuardCommon } from "./HOCs/authGuards";
 
 type StatePropsT = {
   secret: string;
@@ -41,4 +42,7 @@ function mapStateToProps(state: RootState): StatePropsT {
   };
 }
 
-export default connect(mapStateToProps, actions)(Dashboard);
+export default connect(
+  mapStateToProps,
+  actions
+)(withAuthGuardCommon(Dashboard));
