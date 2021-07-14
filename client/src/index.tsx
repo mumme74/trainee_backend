@@ -12,6 +12,9 @@ import { withAuthGuardStudent } from "./components/HOCs/authGuards";
 import { initStore } from "./redux/store";
 import Unauthorized from "./components/Unauthorized";
 import Student from "./components/studentAccess";
+import Admin from "./components/adminAccess";
+import Teacher from "./components/teacherAccess";
+import SuperAdmin from "./components/superAdminAccess";
 import About from "./components/About";
 import { initAxios } from "./axiosCommon";
 import DeleteMe from "./components/login/DeleteMe";
@@ -29,11 +32,11 @@ ReactDOM.render(
             <Route path="/signup" component={SignUp} exact />
             <Route path="/login" component={Login} exact />
             <Route path="/unauthorized" component={Unauthorized} exact />
-            <Route path="/student" component={withAuthGuardStudent(Student)} />
-            <Route
-              path="/deleteme"
-              component={withAuthGuardStudent(DeleteMe)}
-            />
+            <Route path="/student" component={Student} />
+            <Route path="/teacher" component={Teacher} />
+            <Route path="/admin" component={Admin} />
+            <Route path="/superadmin" component={SuperAdmin} />
+            <Route path="/deleteme" component={DeleteMe} />
             <Route path="/about" component={About} exact />
             <Route path="/*" component={Home} />
           </Switch>

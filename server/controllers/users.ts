@@ -2,7 +2,7 @@ import  JWT  from "jsonwebtoken";
 import { OAuth2Client }  from "google-auth-library";
 import { Request, Response, NextFunction} from 'express';
 
-import User, { comparePasswordHash, IUserCollection } from "../models/user";
+import User, { comparePasswordHash, IUserCollection, rolesAvailable } from "../models/user";
 import mongoose from "mongoose";
 
 import type { IUserInfoResponse, AuthRequest, AuthResponse} from "../types";
@@ -18,6 +18,7 @@ const signToken = (user: IUserCollection, expiresInMinutes: number = 60*8): stri
       sub: user.id,
       iat: Math.floor(new Date().getTime() / 1000), // need to be seconds not milliseconds
       exp: Math.floor(new Date(new Date().setMinutes(expiresInMinutes)).getTime()/ 1000),
+      roles: user.roles
     },
     process.env.JWT_SECRET + ""
   );
@@ -166,6 +167,24 @@ const UsersController = {
       console.log("Failed to delete, error occured")
       return res.status(500).json({success: false, error: e})
     }
+  },
+
+  rolesAvailable: (req: Request, res: Response, next: NextFunction) => {
+    const roles = Object.keys(rolesAvailable).filter(
+              role=>{return typeof role === 'string'}
+          );
+    return res.status(200).json({roles: roles});
+  },
+
+  changeRoles: (req: Request, res: Response, next: NextFunction) => {
+    const authReq = req as AuthRequest;
+
+    if (!("super" in authReq.user.roles)) {
+      // oridnary admins can just manipulate user within their own domain
+      
+    }
+
+    res.status(400).json({error:{message:"unimplemented yet!"}})
   }
 };
 

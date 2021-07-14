@@ -3,13 +3,15 @@ import UsersController from "../controllers/users";
 import passport  from "passport";
 import "../passport";
 
-import { validateBody, schemas }  from "../helpers/routeHelpers";
+import { validateBody, schemas, hasRoles }  from "../helpers/routeHelpers";
+import { rolesAvailable } from "../models/user";
 
 
 const router = Router();
 const passportSignIn = passport.authenticate("local", { session: false });
 const passportJWT = passport.authenticate("jwt", { session: false });
 const passportGoogle = passport.authenticate("google-verify-token", { session: false});
+const isAdmin = hasRoles([rolesAvailable.admin]);
 
 
 router
@@ -38,6 +40,15 @@ router.route("/savemyuserinfo").post(passportJWT,
 
 router.route("/secret").get(passportJWT, UsersController.secret);
 
-router.route("/deletemyself").post(passportJWT, validateBody(schemas.deleteMySelfSchema), UsersController.deleteMyself)
+router.route("/deletemyself")
+  .post(passportJWT, 
+         validateBody(schemas.deleteMySelfSchema),
+        UsersController.deleteMyself);
+
+router.route("/availableroles")
+  .get(passportJWT, isAdmin, UsersController.rolesAvailable);
+
+router.route("/changeroles")
+  .post(passportJWT, isAdmin, UsersController.changeRoles);
 
 module.exports = router;

@@ -12,7 +12,7 @@ type JsxPropsT = {
   closeHandler: () => void;
 };
 
-const StudentMenu: React.FC<StatePropsT & JsxPropsT> = (props) => {
+const SuperAdminMenu: React.FC<StatePropsT & JsxPropsT> = (props) => {
   return (
     <div className="container" onClick={props.closeHandler}>
       <h4>Super Admin menu:</h4>
@@ -25,4 +25,4 @@ const StudentMenu: React.FC<StatePropsT & JsxPropsT> = (props) => {
   );
 };
 
-export default withAuthGuardSuperAdmin(StudentMenu);
+export default withAuthGuardSuperAdmin(SuperAdminMenu);

@@ -2,7 +2,7 @@ import React from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
 
-export default function () {
+export default function StudentDashboard() {
   return (
     <div className="container">
       <h1>Student Dashboard</h1>

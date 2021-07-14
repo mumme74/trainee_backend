@@ -9,7 +9,7 @@ type JsxPropsT = {
   closeHandler: () => void;
 };
 
-const StudentMenu: React.FC<StatePropsT & JsxPropsT> = (props) => {
+const TeacherMenu: React.FC<StatePropsT & JsxPropsT> = (props) => {
   return (
     <div className="container" onClick={props.closeHandler}>
       <h4>Teacher menu:</h4>
@@ -22,4 +22,4 @@ const StudentMenu: React.FC<StatePropsT & JsxPropsT> = (props) => {
   );
 };
 
-export default withAuthGuardTeacher(StudentMenu);
+export default withAuthGuardTeacher(TeacherMenu);
