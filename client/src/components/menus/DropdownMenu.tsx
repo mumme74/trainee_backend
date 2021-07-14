@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import css from "./DropdownMenu.module.css";
 import { mergeRefs } from "../../helpers";
+import { getElementLeft, getElementTop } from "../../helpers/domFunctions";
 
 type JsxPropsT = {
   className?: string;
@@ -15,6 +16,7 @@ type JsxPropsT = {
   caption?: string;
   onClose?: Function;
   children?: React.ReactNode;
+  closeOnClick?: boolean;
 };
 
 const DropdownMenu = forwardRef<HTMLDivElement, JsxPropsT>((props, ref) => {
@@ -25,7 +27,14 @@ const DropdownMenu = forwardRef<HTMLDivElement, JsxPropsT>((props, ref) => {
     setShowMenu(props.show);
   }, [props.show]);
 
-  function closeHandler() {
+  function closeHandler(evt: any) {
+    if (
+      !props.closeOnClick &&
+      !(evt.target as HTMLElement).classList.contains("btn-close")
+    ) {
+      return;
+    }
+
     setShowMenu(false);
     if (props.onClose) props.onClose();
   }
@@ -38,11 +47,11 @@ const DropdownMenu = forwardRef<HTMLDivElement, JsxPropsT>((props, ref) => {
       const parentNodeStyle = window.getComputedStyle(parentNode);
 
       const menuWidth = +menuStyle.width.replace("px", "");
-      const parentWidth = +parentNodeStyle.width.replace("px", "");
+      //const parentWidth = +parentNodeStyle.width.replace("px", "");
       const menuHeight = +menuStyle.height.replace("px", "");
-      const parentHeight = +parentNodeStyle.height.replace("px", "");
-      const offsetLeft = menuNode.offsetLeft;
-      const offsetTop = menuNode.offsetTop;
+      //const parentHeight = +parentNodeStyle.height.replace("px", "");
+      const offsetLeft = getElementLeft(menuNode);
+      const offsetTop = getElementTop(menuNode);
 
       let moveX = 0,
         moveY = 0;
@@ -71,7 +80,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, JsxPropsT>((props, ref) => {
         <span>{props.caption}</span>
         <button className="btn-close btn shadow-none" onClick={closeHandler} />
       </header>
-      {props.children}
+      <div onClick={closeHandler}>{props.children}</div>
     </div>
   );
 });
