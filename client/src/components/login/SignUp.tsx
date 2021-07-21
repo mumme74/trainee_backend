@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Form, Field } from "react-final-form";
+import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { compose } from "redux";
 import { History } from "history";
@@ -27,6 +28,7 @@ interface IFormData extends ISignUpNewUserForm {
 
 function SignUp(props: StatePropsT & ActionPropsT) {
   const [locked, setLocked] = useState<boolean>(true);
+  const { t } = useTranslation("core");
 
   const onSubmit = async (formData: IFormData) => {
     try {
@@ -53,7 +55,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
         onSubmit={onSubmit}
         validate={(values) => {
           return values.confirm !== values.password
-            ? { confirm: "Must match with password" }
+            ? { confirm: t("password_must_match") }
             : {};
         }}
       >
@@ -61,28 +63,22 @@ function SignUp(props: StatePropsT & ActionPropsT) {
           <form onSubmit={handleSubmit} className="container p-2">
             <div className="row">
               <div className="col-sm-2"></div>
-              <h3 className="col-sm">Sign up as new user</h3>
-              <p>
-                If you join through login information below you can't access
-                content from people in your domain.
-              </p>
-              <p>
-                Most likely you want to join through Google OAuth account on the
-                above button instead.
-              </p>
+              <h3 className="col-sm">{t("signup_header")}</h3>
+              <p>{t("signup_desc1")}</p>
+              <p>{t("signup_desc2")}</p>
               <button
                 className="btn btn-secondary"
                 onClick={() => {
                   setLocked(false);
                 }}
               >
-                Unlock fields
+                {t("signup_unlock_fields")}
               </button>
             </div>
             <Field
               name="userName"
               type="text"
-              caption="Username"
+              caption={t("username")}
               validate={val.userName}
               disabled={locked}
               component={FormRow}
@@ -90,7 +86,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
             <Field
               name="firstName"
               type="text"
-              caption="First name"
+              caption={t("firstname")}
               validate={val.required}
               disabled={locked}
               component={FormRow}
@@ -98,7 +94,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
             <Field
               name="lastName"
               type="text"
-              caption="Last name"
+              caption={t("lastname")}
               validate={val.required}
               disabled={locked}
               component={FormRow}
@@ -106,7 +102,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
             <Field
               name="email"
               type="email"
-              caption="Email"
+              caption={t("email")}
               validate={val.emailValidator}
               disabled={locked}
               component={FormRow}
@@ -114,7 +110,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
             <Field
               name="password"
               type="password"
-              caption="Password"
+              caption={t("password")}
               validate={val.passwordValidator}
               disabled={locked}
               component={FormRow}
@@ -122,8 +118,8 @@ function SignUp(props: StatePropsT & ActionPropsT) {
             <Field
               name="confirm"
               type="password"
-              caption="Confirm"
-              placeholder="Confirm password"
+              caption={t("confirm")}
+              placeholder={t("confirm_password")}
               disabled={locked}
               component={FormRow}
             />
@@ -135,7 +131,7 @@ function SignUp(props: StatePropsT & ActionPropsT) {
                   disabled={submitting || locked}
                   className="btn btn-primary"
                 >
-                  Sign Up
+                  {t("signup")}
                 </button>
                 {props.error.message && (
                   <div className="badge bg-danger m-2">

@@ -1,33 +1,23 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+
 import Logo from "./header/Logo";
 
 const About: React.FC<JSX.ElementAttributesProperty> = (props) => {
+  const { t } = useTranslation("core");
+
   return (
     <div className="container">
       <h2>
-        About this
-        <Logo className="m-1" /> app!
+        {t("about_header_pre") + " "}
+        <Logo className="m-1" />
+        {t("about_header_post") + " "}
       </h2>
-      <p>
-        This app was originaly developed by Fredrik Johansson, Växjö Kommun
-        Kungsmadskolan, Sweden as a possible answer about how to work with
-        digital education, from another perspective than just online text and
-        online courseware.
-      </p>
-      <p>
-        This tool works best close coupled with Google classroom. It is inteded
-        to add functionality, such as a reading test, glossary/word training via
-        plugins.
-      </p>
-      <h3>License</h3>
-      <p>
-        All the code for this app is released as open source and can be found on
-        github.com/mumme74/trainee
-      </p>
-      <p>
-        Licence for the sorce code of the backend (server) and the frontend
-        (browser) code is Licenced under MIT permissive Licence.
-      </p>
+      <p>{t("about_desc1")}</p>
+      <p>{t("about_desc2")}</p>
+      <h3>{t("about_lic_header")}</h3>
+      <p>{t("about_lic_desc1")}</p>
+      <p>{t("about_lic_desc2")}</p>
       <p className="h5">
         Copyright (c) 2021 Fredrik Johansson github.com/mumme74
       </p>

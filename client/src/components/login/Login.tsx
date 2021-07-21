@@ -4,6 +4,7 @@ import { Form, Field } from "react-final-form";
 import { connect } from "react-redux";
 import { compose } from "redux";
 import { History } from "history";
+import { useTranslation } from "react-i18next";
 
 import FormRow from "../form/FormRow";
 import val from "../form/validators";
@@ -25,6 +26,7 @@ type ActionPropsT = {
 
 const Login: React.FC<StatePropsT & ActionPropsT> = (props) => {
   const [showForm, setShowForm] = useState(false);
+  const { t } = useTranslation("core");
 
   const onSubmit = async (formData: ILoginData) => {
     try {
@@ -51,7 +53,7 @@ const Login: React.FC<StatePropsT & ActionPropsT> = (props) => {
           setShowForm(!showForm);
         }}
       >
-        {(showForm ? "Hide" : "Show") + " login form"}
+        {(showForm ? t("hide") : t("show")) + " " + t("login form")}
       </button>
       {showForm && (
         <Form
@@ -72,18 +74,18 @@ const Login: React.FC<StatePropsT & ActionPropsT> = (props) => {
             <form onSubmit={handleSubmit} className="container p-2">
               <div className="row">
                 <div className="col-sm-2"></div>
-                <h3 className="col-sm">Sign in</h3>
+                <h3 className="col-sm">{t("login")}</h3>
               </div>
               <Field
                 name="login"
                 type="text"
-                caption="Login"
+                caption={t("login")}
                 component={FormRow}
               />
               <Field
                 name="password"
                 type="password"
-                caption="Password"
+                caption={t("password")}
                 validate={val.passwordValidator}
                 component={FormRow}
               />
@@ -95,7 +97,7 @@ const Login: React.FC<StatePropsT & ActionPropsT> = (props) => {
                     disabled={submitting}
                     className="btn btn-primary"
                   >
-                    Sign In
+                    {t("login")}
                   </button>
                   {props.error.message && (
                     <div className="badge bg-danger m-2">
@@ -103,7 +105,7 @@ const Login: React.FC<StatePropsT & ActionPropsT> = (props) => {
                     </div>
                   )}
                   <Link className="mx-4" to="/signup">
-                    Sign up as new user
+                    {t("login_sign_up_as_new_user")}
                   </Link>
                 </div>
               </div>

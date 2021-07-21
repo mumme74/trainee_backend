@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
+import { useTranslation } from "react-i18next";
 
 import { AppDispatch, RootState } from "../../redux/store";
 import { setSidemenuIsShown } from "../../redux/actions";
@@ -30,6 +31,8 @@ const Sidemenu: React.FC<
 > = (props) => {
   const myRoles = myUserRoles();
   const [curRole, setCurRole] = useState(myRoles[0] || "");
+
+  const { t } = useTranslation("core");
 
   useEffect(() => {
     if (!myRoles.length) {
@@ -63,13 +66,13 @@ const Sidemenu: React.FC<
       default:
         return (
           <div className="container p-2">
-            <h4>Menu</h4>
+            <h4>{t("menu")}</h4>
             <ul className="list-group">
               <li className="list-group-item">
-                <Link to="/">Start</Link>
+                <Link to="/">{t("start")}</Link>
               </li>
               <li className="list-group-item">
-                <Link to="/about">About</Link>
+                <Link to="/about">{t("about")}</Link>
               </li>
             </ul>
           </div>
@@ -87,7 +90,7 @@ const Sidemenu: React.FC<
       }
     >
       <div className="sidemenuHeader">
-        <span>{props.caption ? props.caption : "Menu"}</span>
+        <span>{props.caption ? props.caption : t("menu")}</span>
         <button
           className="btn-close btn-small shadow-none"
           onClick={close}
@@ -102,7 +105,7 @@ const Sidemenu: React.FC<
               <DropdownButton
                 className="m-2"
                 onSelect={changeRole}
-                title={"Role: " + curRole}
+                title={t("role") + ": " + curRole}
               >
                 {myRoles.map((role) => (
                   <Dropdown.Item eventKey={role} key={role}>

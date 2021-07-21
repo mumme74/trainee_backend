@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 import * as actions from "../redux/actions";
 import { AppDispatch, RootState } from "../redux/store";
@@ -15,6 +16,8 @@ type ActionPropsT = {
 };
 
 const Dashboard: React.FC<StatePropsT & ActionPropsT> = (props) => {
+  const { t } = useTranslation("core");
+
   useEffect(() => {
     (async function (isAuth: boolean) {
       await props.getSecret("/users/secret");
@@ -23,14 +26,14 @@ const Dashboard: React.FC<StatePropsT & ActionPropsT> = (props) => {
 
   return (
     <div>
-      <h1>Dashboard</h1>
+      <h1>{t("dashroot_header")}</h1>
       {props.secret && (
         <React.Fragment>
-          <h3>Secrets...</h3>
+          <h3>{t("dashroot_secrets")}...</h3>
           <p>{props.secret}</p>
         </React.Fragment>
       )}
-      <Link to="/profile">Your profile page</Link>
+      <Link to="/profile">{t("dashroot_profile_page")}</Link>
     </div>
   );
 };

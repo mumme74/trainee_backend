@@ -1,5 +1,6 @@
 import React, { useState, useRef, useLayoutEffect } from "react";
 import { connect } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 import css from "./ErrorNotifier.module.css";
 import { RootState } from "../../redux/store";
@@ -23,6 +24,8 @@ interface IElement extends Element {
 const ErrorNotifier: React.FC<StatePropsT & JsxPropsT> = (props) => {
   const menuNodeRef = useRef<HTMLDivElement>(null);
   const errorCircle = useRef<HTMLDivElement>(null);
+
+  const { t } = useTranslation("core");
 
   const [showMenu, setShowMenu] = useState<boolean>(false);
 
@@ -53,11 +56,11 @@ const ErrorNotifier: React.FC<StatePropsT & JsxPropsT> = (props) => {
           onClick={() => {
             setShowMenu(!showMenu);
           }}
-          title={props.errors.length + " system errors"}
+          title={props.errors.length + " " + t("error_notifier_count_post")}
         />
       )}
       <DropdownMenu
-        caption={"System errors"}
+        caption={t("error_notifier_caption")}
         ref={menuNodeRef}
         show={showMenu}
         onClose={() => {
@@ -75,7 +78,7 @@ const ErrorNotifier: React.FC<StatePropsT & JsxPropsT> = (props) => {
           <footer>
             <span></span>
             <button className="btn-small" onClick={clearErrorHandler}>
-              Clear
+              {t("clear")}
             </button>
           </footer>
         </React.Fragment>

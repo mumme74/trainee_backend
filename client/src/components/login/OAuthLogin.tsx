@@ -1,5 +1,6 @@
 import React from "react";
 import GoogleLogin from "react-google-login";
+import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { compose } from "redux";
 
@@ -19,6 +20,8 @@ type ActionPropsT = {
 };
 
 function OAuthLogin(props: StatePropsT & ActionPropsT) {
+  const { t } = useTranslation("core");
+
   const responseGoogle = async (res: any) => {
     //console.log("response google", res);
     await props.oAuthGoogle(res);
@@ -28,7 +31,7 @@ function OAuthLogin(props: StatePropsT & ActionPropsT) {
     <div className="container border-bottom mb-5">
       <div className="row">
         <div className="col-sm-2" />
-        <h3 className="col-sm">Login using OAuth2</h3>
+        <h3 className="col-sm">{t("oauth2_header")}</h3>
       </div>
       <div className="row p-2">
         <div className="col-sm-2">

@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import Logo from "./Logo";
+import { useTranslation } from "react-i18next";
 
+import Logo from "./Logo";
 import User from "./User";
 import { AppDispatch, RootState } from "../../redux/store";
 import { toggleSidemenu } from "../../redux/actions";
@@ -32,6 +33,8 @@ function mapDispatchToProps(dispatch: AppDispatch): ActionPropsT {
 }
 
 const Header: React.FC<StatePropsT & ActionPropsT> = (props) => {
+  const { t } = useTranslation("core");
+
   return (
     <nav className="navbar navbar-expand-sm navbar-dark bg-primary pt-0 pb-0 pr-2">
       <ul className="navbar-nav ml-0 h3">
@@ -54,7 +57,7 @@ const Header: React.FC<StatePropsT & ActionPropsT> = (props) => {
         <ul className="navbar-nav mr-auto">
           <li className="nav-item">
             <Link className="nav-link" to="/dashboard">
-              Dashboard
+              {t("dashboard")}
             </Link>
           </li>
         </ul>

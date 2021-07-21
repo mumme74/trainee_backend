@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { compose } from "redux";
+import { useTranslation } from "react-i18next";
+
 import * as actions from "../../redux/actions";
 import { RootState } from "../../redux/store";
-
 import Avatar from "./Avatar";
 import DropdownMenu from "../menus/DropdownMenu";
 import { myUserRoles } from "../../helpers";
@@ -24,6 +25,8 @@ type JsxProps = {
 function User(props: StateProps & JsxProps) {
   const [showMenu, setShowMenu] = useState<boolean>(false);
 
+  const { t } = useTranslation("core");
+
   function toogleMenu() {
     setShowMenu(!showMenu);
   }
@@ -34,7 +37,7 @@ function User(props: StateProps & JsxProps) {
         <React.Fragment>
           <li className="nav-item">
             <Link className="nav-link" to="/login">
-              Login
+              {t("login")}
             </Link>
           </li>
         </React.Fragment>
@@ -56,18 +59,18 @@ function User(props: StateProps & JsxProps) {
             closeOnClick={true}
           >
             <Link className="dropdown-item" to="/student/dashboard">
-              Dashboard
+              {t("dashboard")}
             </Link>
             <Link className="dropdown-item" to="/student/profile">
-              Edit my profile
+              {t("header_edit_my_profile")}
             </Link>
             <div className="dropdown-divider"></div>
             <button className="dropdown-item btn" onClick={props.logout}>
-              Log out
+              {t("logout")}
             </button>
             <div className="dropdown-divider"></div>
             <Link className="dropdown-item" to="/about">
-              About
+              {t("about")}
             </Link>
           </DropdownMenu>
         </React.Fragment>
