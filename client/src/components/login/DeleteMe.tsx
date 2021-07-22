@@ -189,9 +189,9 @@ const DeleteMe: React.FC<StatePropsT & JsxPropsT & RouteComponentProps> = (
   } else {
     return (
       <div className="container">
-        <h2>{t("delete_me_satge3_header")}</h2>
+        <h2>{t("delete_me_stage3_header")}</h2>
         <p>{t("delete_me_stage3_desc1")}</p>
-        <p>{t("delete_me_stage_desc3")}</p>
+        <p>{t("delete_me_stage3_desc2")}</p>
         <div className="row-sm-4 bg-warning">{nav}</div>
         <button
           onClick={() => {

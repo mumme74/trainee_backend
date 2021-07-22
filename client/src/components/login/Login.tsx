@@ -53,7 +53,7 @@ const Login: React.FC<StatePropsT & ActionPropsT> = (props) => {
           setShowForm(!showForm);
         }}
       >
-        {(showForm ? t("hide") : t("show")) + " " + t("login form")}
+        {(showForm ? t("hide") : t("show")) + " " + t("login_form")}
       </button>
       {showForm && (
         <Form

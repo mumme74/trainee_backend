@@ -13,7 +13,8 @@
     "backend-start-dev": "NODE_ENV=development nodemon -e ts,js --watch server/ --exec \"npm run backend-build && node build/server/index.js --harmony\"",
     "backend-start": "NODE_ENV=production node build/server/index.js",
     "frontend-start-dev": "NODE_ENV=development npm run start --prefix client",
-    "frontend-build": "tsc --build tsconfig.client.json"
+    "frontend-build": "tsc --build tsconfig.client.json",
+    "frontend-translation": "NODE_ENV=development npm run translation-parse --prefix client"
   },
   "author": "",
   "license": "ISC",
