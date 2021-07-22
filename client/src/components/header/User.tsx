@@ -3,12 +3,17 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { compose } from "redux";
 import { useTranslation } from "react-i18next";
+import { Dropdown } from "react-bootstrap";
+import i18next from "i18next";
+
+import "flag-icon-css/css/flag-icon.min.css";
 
 import * as actions from "../../redux/actions";
 import { RootState } from "../../redux/store";
 import Avatar from "./Avatar";
 import DropdownMenu from "../menus/DropdownMenu";
 import { myUserRoles } from "../../helpers";
+import { availableLanguages } from "../../i18n/i18n";
 
 type StateProps = {
   isAuthenticated: boolean;
@@ -31,10 +36,42 @@ function User(props: StateProps & JsxProps) {
     setShowMenu(!showMenu);
   }
 
+  function changeLang(code: string | null) {
+    i18next.changeLanguage(code || i18next.language);
+  }
+
+  const currentLang =
+    availableLanguages.find(
+      ({ code }) => code === i18next.language.substr(0, code.length)
+    )?.country_code || "gb";
+
+  const langChooser = (
+    <li className="nav-item">
+      <Dropdown onSelect={changeLang}>
+        <Dropdown.Toggle id="dropdown-basic">
+          <span className={`flag-icon flag-icon-${currentLang}`}></span>
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          {availableLanguages.map(({ code, name, country_code }) => {
+            return (
+              <Dropdown.Item key={code} eventKey={code}>
+                <span
+                  className={`flag-icon flag-icon-${country_code} mx-2`}
+                ></span>
+                {name}
+              </Dropdown.Item>
+            );
+          })}
+        </Dropdown.Menu>
+      </Dropdown>
+    </li>
+  );
+
   return (
-    <div className="">
+    <ul className="nav navbar-nav ml-auto mx-2">
       {!props.isAuthenticated ? (
         <React.Fragment>
+          {langChooser}
           <li className="nav-item">
             <Link className="nav-link" to="/login">
               {t("login")}
@@ -72,10 +109,19 @@ function User(props: StateProps & JsxProps) {
             <Link className="dropdown-item" to="/about">
               {t("about")}
             </Link>
+            <div className="dropdown-divider"></div>
+            <div
+              className="text-center"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {langChooser}
+            </div>
           </DropdownMenu>
         </React.Fragment>
       )}
-    </div>
+    </ul>
   );
 }
 

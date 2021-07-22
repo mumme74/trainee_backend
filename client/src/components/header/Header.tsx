@@ -61,9 +61,7 @@ const Header: React.FC<StatePropsT & ActionPropsT> = (props) => {
             </Link>
           </li>
         </ul>
-        <ul className="nav navbar-nav ml-auto mx-2">
-          <User />
-        </ul>
+        <User />
       </div>
     </nav>
   );
