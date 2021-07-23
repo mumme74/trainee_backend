@@ -7,7 +7,7 @@ import User, {
   IUserCollection,
   rolesAvailable,
   rolesAvailableKeys,
-} from "../models/user";
+} from "../models/usersModel";
 import mongoose from "mongoose";
 
 import type { IUserInfoResponse, AuthRequest, AuthResponse } from "../types";

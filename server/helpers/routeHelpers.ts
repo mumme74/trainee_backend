@@ -1,7 +1,7 @@
 import Joi from "joi";
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { AuthRequest, AuthResponse } from "../types";
-import { rolesAvailable } from "../models/user";
+import { rolesAvailable } from "../models/usersModel";
 
 export const validateBody = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {

@@ -11,7 +11,7 @@ export interface IGraphQl_UserType {
   roles: string[];
   updatedAt: typeof Date;
   createdAt: typeof Date;
-  updater: () => Promise<IGraphQl_UserType | null>;
+  updater?: () => Promise<IGraphQl_UserType | undefined>;
 }
 
 export interface IGraphQl_UserCreateStudentInput {

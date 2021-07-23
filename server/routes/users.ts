@@ -4,7 +4,7 @@ import passport from "passport";
 import "../passport";
 
 import { validateBody, schemas, hasRoles } from "../helpers/routeHelpers";
-import { rolesAvailable } from "../models/user";
+import { rolesAvailable } from "../models/usersModel";
 
 const router = Router();
 const passportSignIn = passport.authenticate("local", { session: false });

@@ -5,17 +5,17 @@ import User, {
   IUserCollection,
   rolesAvailable,
   rolesAvailableKeys,
-} from "../../models/user";
+} from "../../models/usersModel";
 import {
   IGraphQl_UserCreateStudentInput,
   IGraphQl_UserType,
 } from "../schema/users";
 import { IGraphQl_MutationResponse } from "../schema/index";
 import { AuthRequest } from "../../types";
-import { composeErrorResponse, rolesFilter } from "./resolvers.common";
+import { composeErrorResponse, rolesFilter } from "./helpers";
 import { UserError } from "../../helpers/customErrors";
 
-const userLoader = new DataLoader(
+export const userLoader = new DataLoader(
   async (userIds: readonly string[]): Promise<IUserCollection[]> => {
     const result = await User.find({
       _id: { $in: userIds.map((id) => new mongoose.Types.ObjectId(id)) },
@@ -27,8 +27,8 @@ const userLoader = new DataLoader(
 
 export const lookupUser = async (
   userId: string,
-): Promise<IUserCollection | null> => {
-  if (!userId) return null;
+): Promise<IUserCollection | undefined> => {
+  if (!userId) return;
   try {
     const user = await userLoader.load(userId);
     if (!user) throw new UserError("User not found!");
@@ -57,7 +57,7 @@ export const transformUser = (user: IUserCollection): IGraphQl_UserType => {
     createdAt: user.createdAt,
     updater: async () => {
       const u = await lookupUser(user.updatedBy);
-      if (!u) return null;
+      if (!u) return undefined;
       return transformUser(u);
     },
   };

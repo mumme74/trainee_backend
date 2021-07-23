@@ -1,5 +1,5 @@
 import { regexp } from "sequelize/types/lib/operators";
-import { IUserCollection } from "../models/user";
+import { IUserCollection } from "../models/usersModel";
 
 export const passAsTeacher = (user: IUserCollection): boolean => {
   let matchCnt = 0,

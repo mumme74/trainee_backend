@@ -1,11 +1,19 @@
 import { buildSchema } from "graphql";
 import "./customTypes";
+
 import {
   usersSchemaTypes,
   usersSchemaInputs,
   usersSchemaMutations,
   usersSchemaQueries,
 } from "./users";
+
+import {
+  groupsSchemaTypes,
+  groupsSchemaInputs,
+  groupSchemaQueries,
+  groupSchemaMutations,
+} from "./groups";
 
 /// these must be in sync with GraphQl schema
 export interface IGraphQl_Response {
@@ -50,15 +58,19 @@ const schemaStr = `
     union MutationResponse =  OkResponse | ErrorResponse
 
     ${usersSchemaTypes}
+    ${groupsSchemaTypes}
 
     ${usersSchemaInputs}
+    ${groupsSchemaInputs}
 
     type RootQuery {
         ${usersSchemaQueries}
+        ${groupSchemaQueries}
     }
 
     type RootMutation {
         ${usersSchemaMutations}
+        ${groupSchemaMutations}
     }
 
     schema {

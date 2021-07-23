@@ -38,8 +38,8 @@ export interface IUserCollection {
   roles: [rolesAvailable];
   updatedBy: string;
   lastLogin: typeof Date;
-  updatedAt: typeof Date;
-  createdAt: typeof Date;
+  readonly updatedAt: typeof Date;
+  readonly createdAt: typeof Date;
 }
 
 // create a schema

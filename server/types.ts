@@ -1,7 +1,7 @@
 import * as core from "express-serve-static-core";
 import express from "express";
 
-import type { IUserCollection } from "./models/user";
+import type { IUserCollection } from "./models/usersModel";
 
 export interface IUserInfoResponse {
   id: IUserCollection["id"];

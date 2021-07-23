@@ -6,7 +6,7 @@ import { ExtractJwt } from "passport-jwt";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-verify-token";
 
-import User, { rolesAvailable } from "./models/user";
+import User, { rolesAvailable } from "./models/usersModel";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
 import { UserError } from "./helpers/customErrors";
