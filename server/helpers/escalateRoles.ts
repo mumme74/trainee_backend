@@ -18,12 +18,12 @@ export const passAsTeacher = (user: IUserCollection):boolean => {
         return false;
     }
 
-    if (user.google.id && user.google.hd) {
+    if (user.google.id && user.domain) {
         // match against env variable regex
         match(process.env.TEACHER_EMAIL_REGEX + "", user.email);
         match(process.env.TEACHER_FIRST_NAME_REGEX + "", user.firstName);
         match(process.env.TEACHER_LAST_NAME_REGEX + "", user.lastName);
-        match(process.env.TEACHER_HD_REGEX + "", user.google.hd)
+        match(process.env.TEACHER_HD_REGEX + "", user.domain)
     }
 
     return matchCnt > 0 && matchCnt === regexCnt;

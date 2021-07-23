@@ -6,9 +6,10 @@ import { ExtractJwt } from "passport-jwt";
 import {Strategy as LocalStrategy } from "passport-local";
 import {Strategy as GoogleStrategy } from "passport-google-verify-token";
 
-import User from "./models/user";
+import User, { rolesAvailable } from "./models/user";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
+import { UserError } from "./helpers/customErrors";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -66,6 +67,10 @@ passport.use(
           return done(null, false, "Password incorrect");
         }
 
+        // update last login
+        user.lastLogin = new Date();
+        await user.save();
+
         // otherwise return the user
         done(null, user, "User found");
       } catch (err) {
@@ -89,18 +94,18 @@ passport.use(
       try {
         const auds: [string] = Array.isArray(parsedToken.aud) ? parsedToken.aud : [parsedToken.aud];
         if (!auds.find((aud) => aud === process.env.GOOGLE_CLIENT_ID))
-          throw new Error("Wrong google OAuth clientId!");
+          throw new UserError("Wrong google OAuth clientId!");
 
         // we need to make exp from millisconds since epoch to minutes
         const expiresAt = Math.floor(parsedToken.exp / 60) - Math.floor(new Date().getTime() / 60000);
         if (expiresAt < 0)
-         throw new Error("Expiration date was already passed on google token");
+         throw new UserError("Expiration date was already passed on google token");
 
         (req as AuthRequest).tokenExpiresIn = expiresAt;
 
         // find, update or create a new one
         const email = parsedToken.email_verified ? parsedToken.email : null;
-        if (!email) throw new Error("Not a verified google email!");
+        if (!email) throw new UserError("Not a verified google email!");
         const user = await User.findOneAndUpdate(
           { "google.id": googleId },
           {
@@ -114,6 +119,7 @@ passport.use(
               id: parsedToken.sub,
               hd: parsedToken.hd,
             },
+            lastLogin: new Date()
           },
           { returnOriginal: false, new: true, upsert: true }
         );
@@ -124,14 +130,14 @@ passport.use(
         {
           // check if user is a teacher
           if (passAsTeacher(user)) {
-            user.roles.push("teacher");
+            user.roles.push(rolesAvailable.teacher);
             // a super admin?
             if (passAsSuperAdmin(user)) {
-              user.roles.push("super")
+              user.roles.push(rolesAvailable.super)
             }
             const res = await User.updateOne({"_id": user._id},{roles: user.roles});
             if (!res || res.n !== 1 || res.ok !== 1 || res.nModified !== 1) 
-            throw new Error("Could not save escalated roles when creating user")
+            throw new UserError("Could not save escalated roles when creating user")
           }
         }
 

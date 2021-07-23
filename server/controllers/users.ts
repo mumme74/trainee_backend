@@ -2,7 +2,7 @@ import  JWT  from "jsonwebtoken";
 import { OAuth2Client }  from "google-auth-library";
 import { Request, Response, NextFunction} from 'express';
 
-import User, { comparePasswordHash, IUserCollection, rolesAvailable } from "../models/user";
+import User, { comparePasswordHash, IUserCollection, rolesAvailable, rolesAvailableKeys } from "../models/user";
 import mongoose from "mongoose";
 
 import type { IUserInfoResponse, AuthRequest, AuthResponse} from "../types";
@@ -18,7 +18,7 @@ const signToken = (user: IUserCollection, expiresInMinutes: number = 60*8): stri
       sub: user.id,
       iat: Math.floor(new Date().getTime() / 1000), // need to be seconds not milliseconds
       exp: Math.floor(new Date(new Date().setMinutes(expiresInMinutes)).getTime()/ 1000),
-      roles: user.roles
+      roles: user.roles.map(role=>{return rolesAvailableKeys[role]})
     },
     process.env.JWT_SECRET + ""
   );
@@ -34,7 +34,9 @@ const userInfoResponse = (user:IUserCollection): IUserInfoResponse => {
     lastName: user.lastName,
     picture: user.picture,
     googleId: user?.google?.id,
-    hd: user?.google?.hd,
+    domain: user.domain,
+    updatedBy: user.updatedBy,
+    lastLogin: user.lastLogin,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   }
@@ -46,8 +48,6 @@ const loginResponse = (token: string, user:IUserCollection) => {
     user: userInfoResponse(user)
   }
 }
-
-
 
 // exports down here
 const UsersController = {
@@ -69,6 +69,8 @@ const UsersController = {
       userName,
       firstName,
       lastName,
+      domain:'',
+      roles:[rolesAvailable.student]
     });
     await newUser.save();
 
@@ -170,10 +172,7 @@ const UsersController = {
   },
 
   rolesAvailable: (req: Request, res: Response, next: NextFunction) => {
-    const roles = Object.keys(rolesAvailable).filter(
-              role=>{return typeof role === 'string'}
-          );
-    return res.status(200).json({roles: roles});
+    return res.status(200).json({roles: rolesAvailableKeys});
   },
 
   changeRoles: (req: Request, res: Response, next: NextFunction) => {

@@ -8,6 +8,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 
 import sanitize from './helpers/sanitize';
+import userApiRoute from './routes/users';
+import graphQlRoute from "./graphql";
 
 mongoose.Promise = global.Promise;
 
@@ -44,7 +46,8 @@ app.use(express.json());
 sanitize.postJsonParse(app);
 
 // Routes
-app.use("/users", require("./routes/users"));
+app.use("/users", userApiRoute);
+app.use("/graphql", graphQlRoute);
 
 // 404
 app.use((req, res) => {

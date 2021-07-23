@@ -24,7 +24,7 @@ function findStrings(branch: any): any {
             if (typeof branch[key] === 'string') {
                 branch[key] = xss(branch[key]);
             } else {
-                return findStrings(branch[key]); // find subtree or just a primitive type
+                branch[key] = findStrings(branch[key]); // find subtree or just a primitive type
             }
         }
     }
@@ -35,8 +35,8 @@ function findStrings(branch: any): any {
 
 export default {
     preJsonParse(app: Express): void {
-        // safeguard service
-        app.use(helmet());
+        // safeguard service, need to turn of content-security when dev, to make graphiql work
+        app.use(helmet({ contentSecurityPolicy: (process.env.NODE_ENV === 'development') ? false : undefined }));
         app.use(hpp());
         // Restrict all routes to only 100 requests per IP address every 1o minutes
         app.use(rateLimit({

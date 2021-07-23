@@ -1,11 +1,20 @@
 import {Schema, model, connect  } from "mongoose";
 import bcrypt from "bcrypt";
-import { string } from "joi";
+//import { string } from "joi";
+
+import { UserError } from "../helpers/customErrors";
 
 /**
  * @brief these are the 4 different roles a user can have
  */
-export enum rolesAvailable {'student', 'teacher', 'admin', 'super'};
+export enum rolesAvailable {
+  'student' = 0, 'teacher' = 1, 'admin' = 2, 'super' = 3
+};
+export const rolesAvailableKeys = Object.keys(rolesAvailable).map(
+  (key)=>{return isNaN(+key) ? key : undefined; }
+).filter(itm=>itm !== undefined) as string[];
+
+export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys)
 
 
 // database models
@@ -18,11 +27,13 @@ export interface IUserCollection {
   email: string;
   password?: string;
   picture?:string;
+  domain?:string;
   google: {
    id: string;
-   hd?: string;
   }
-  roles: [typeof rolesAvailable];
+  roles: [rolesAvailable];
+  updatedBy: string;
+  lastLogin: typeof Date;
   updatedAt: typeof Date;
   createdAt: typeof Date;
 }
@@ -67,26 +78,33 @@ const userSchema = new Schema<IUserCollection>({
     type: String,
     maxLength: 256
   },
+  domain: { // higher level domain ie. vaxjo.se
+    type: String,
+  },
 
   google: {
     id: {
       type: String,
     },
-    hd: { // higher level domain ie. vaxjo.se
-      type: String,
-    }
   },
 
   roles: {
-    type: [String],
-    enum: Object.keys(rolesAvailable).filter(i=>isNaN(+i)),
+    type: [Number],
+    enum: rolesAvailable,
     required: true,
-    default: rolesAvailable[0]
+    default: rolesAvailable.student
+  },
+
+  updatedBy: {
+    type: Schema.Types.ObjectId
   }
 }, {timestamps: true});
 
 // hash password before save
 userSchema.pre("save", async function (next) {
+  // only hash the password if it has been modified (or is new)
+  if (!this.isModified('password')) return next();
+
   try {
     // generate a salt
     const salt = await bcrypt.genSalt(10);
@@ -103,7 +121,7 @@ export async function comparePasswordHash(pass1: string, pass2: string) : Promis
   try {
     return await bcrypt.compare(pass1, pass2);
   } catch (err) {
-    throw new Error(err);
+    throw new UserError(err);
   }
 }
 

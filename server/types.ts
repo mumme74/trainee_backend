@@ -14,7 +14,9 @@ export interface IUserInfoResponse {
   lastName: IUserCollection["lastName"];
   picture: IUserCollection["picture"];
   googleId?: IUserCollection["google"]["id"];
-  hd?: IUserCollection["google"]["id"];
+  domain: IUserCollection["domain"];
+  updatedBy: IUserCollection["updatedBy"];
+  lastLogin: IUserCollection["lastLogin"];
   createdAt: IUserCollection["createdAt"];
   updatedAt: IUserCollection["updatedAt"];
 }
