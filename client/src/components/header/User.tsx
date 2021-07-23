@@ -42,7 +42,7 @@ function User(props: StateProps & JsxProps) {
 
   const currentLang =
     availableLanguages.find(
-      ({ code }) => code === i18next.language.substr(0, code.length)
+      ({ code }) => code === i18next.language.substr(0, code.length),
     )?.country_code || "gb";
 
   const langChooser = (

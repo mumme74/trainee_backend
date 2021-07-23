@@ -1,28 +1,27 @@
-
 /// must be in sync with graphQl types
 export interface IGraphQl_UserType {
-    id: string;
-    googleId: string;
-    fullName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    picture: string;
-    domain: string;
-    roles: string[];
-    updatedAt: typeof Date;
-    createdAt: typeof Date;
-    updater: ()=>Promise<IGraphQl_UserType|null>;
+  id: string;
+  googleId: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  picture: string;
+  domain: string;
+  roles: string[];
+  updatedAt: typeof Date;
+  createdAt: typeof Date;
+  updater: () => Promise<IGraphQl_UserType | null>;
 }
 
 export interface IGraphQl_UserCreateStudentInput {
-    googleId: string;
-    userName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    domain: string;
-    picture: string;
+  googleId: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  domain: string;
+  picture: string;
 }
 
 export const usersSchemaTypes = `
@@ -42,7 +41,6 @@ type UserType {
 }
 `;
 
-
 export const usersSchemaInputs = `
 # Used by teacher to create a student
 input UserCreateStudentInput {
@@ -54,7 +52,7 @@ input UserCreateStudentInput {
     domain: String
     picture: String
 }
-`
+`;
 
 export const usersSchemaQueries = `
     users(ids: [ID!]!): [UserType!]!

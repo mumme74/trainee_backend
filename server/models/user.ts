@@ -1,4 +1,4 @@
-import {Schema, model, connect  } from "mongoose";
+import { Schema, model, connect } from "mongoose";
 import bcrypt from "bcrypt";
 //import { string } from "joi";
 
@@ -8,14 +8,18 @@ import { UserError } from "../helpers/customErrors";
  * @brief these are the 4 different roles a user can have
  */
 export enum rolesAvailable {
-  'student' = 0, 'teacher' = 1, 'admin' = 2, 'super' = 3
-};
-export const rolesAvailableKeys = Object.keys(rolesAvailable).map(
-  (key)=>{return isNaN(+key) ? key : undefined; }
-).filter(itm=>itm !== undefined) as string[];
+  "student" = 0,
+  "teacher" = 1,
+  "admin" = 2,
+  "super" = 3,
+}
+export const rolesAvailableKeys = Object.keys(rolesAvailable)
+  .map((key) => {
+    return isNaN(+key) ? key : undefined;
+  })
+  .filter((itm) => itm !== undefined) as string[];
 
-export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys)
-
+export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys);
 
 // database models
 export interface IUserCollection {
@@ -26,84 +30,85 @@ export interface IUserCollection {
   lastName: string;
   email: string;
   password?: string;
-  picture?:string;
-  domain?:string;
+  picture?: string;
+  domain?: string;
   google: {
-   id: string;
-  }
+    id: string;
+  };
   roles: [rolesAvailable];
   updatedBy: string;
   lastLogin: typeof Date;
   updatedAt: typeof Date;
   createdAt: typeof Date;
 }
-  
-
-
 
 // create a schema
-const userSchema = new Schema<IUserCollection>({
-  method: {
-    type: String,
-    enum: ["local", "google"],
-    required: true,
-  },
-  userName: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  firstName: {
-    type: String,
-    required: true,
-    minLength: 2,
-    maxLength: 30,
-  },
-  lastName: {
-    type: String,
-    required: true,
-    minLength: 2,
-    maxLength: 50,
-  },
-  email: {
-    type: String,
-    lowerCase: true,
-    unique: true,
-    match: /[a-zA-Z][^@\.]+@[a-zA-Z][^@\.]+\.[a-zA-Z]{2,}/
-  },
-  password: {
-    type: String,
-  },
-  picture: {
-    type: String,
-    maxLength: 256
-  },
-  domain: { // higher level domain ie. vaxjo.se
-    type: String,
-  },
-
-  google: {
-    id: {
+const userSchema = new Schema<IUserCollection>(
+  {
+    method: {
+      type: String,
+      enum: ["local", "google"],
+      required: true,
+    },
+    userName: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    firstName: {
+      type: String,
+      required: true,
+      minLength: 2,
+      maxLength: 30,
+    },
+    lastName: {
+      type: String,
+      required: true,
+      minLength: 2,
+      maxLength: 50,
+    },
+    email: {
+      type: String,
+      lowerCase: true,
+      unique: true,
+      match: /[a-zA-Z][^@\.]+@[a-zA-Z][^@\.]+\.[a-zA-Z]{2,}/,
+    },
+    password: {
       type: String,
     },
-  },
+    picture: {
+      type: String,
+      maxLength: 256,
+    },
+    domain: {
+      // higher level domain ie. vaxjo.se
+      type: String,
+    },
 
-  roles: {
-    type: [Number],
-    enum: rolesAvailable,
-    required: true,
-    default: rolesAvailable.student
-  },
+    google: {
+      id: {
+        type: String,
+      },
+    },
 
-  updatedBy: {
-    type: Schema.Types.ObjectId
-  }
-}, {timestamps: true});
+    roles: {
+      type: [Number],
+      enum: rolesAvailable,
+      required: true,
+      default: rolesAvailable.student,
+    },
+
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+    },
+  },
+  { timestamps: true },
+);
 
 // hash password before save
 userSchema.pre("save", async function (next) {
   // only hash the password if it has been modified (or is new)
-  if (!this.isModified('password')) return next();
+  if (!this.isModified("password")) return next();
 
   try {
     // generate a salt
@@ -117,7 +122,10 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-export async function comparePasswordHash(pass1: string, pass2: string) : Promise<boolean> {
+export async function comparePasswordHash(
+  pass1: string,
+  pass2: string,
+): Promise<boolean> {
   try {
     return await bcrypt.compare(pass1, pass2);
   } catch (err) {

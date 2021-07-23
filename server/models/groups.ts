@@ -1,16 +1,16 @@
-import {Schema, model } from "mongoose"
-import User from './user'
-
+import { Schema, model } from "mongoose";
+import User from "./user";
 
 export interface IGroups {
-    userIds: [{
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    }]
-    name: {
-        type: String,
-        required: true,
-        unique: true,
-    }
-  }
-  
+  userIds: [
+    {
+      type: Schema.Types.ObjectId;
+      ref: "User";
+    },
+  ];
+  name: {
+    type: string;
+    required: true;
+    unique: true;
+  };
+}

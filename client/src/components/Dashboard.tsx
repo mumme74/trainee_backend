@@ -47,5 +47,5 @@ function mapStateToProps(state: RootState): StatePropsT {
 
 export default connect(
   mapStateToProps,
-  actions
+  actions,
 )(withAuthGuardCommon(Dashboard));

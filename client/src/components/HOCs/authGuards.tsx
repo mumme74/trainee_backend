@@ -5,7 +5,7 @@ import { isAuthenticated, myUserRoles } from "../../helpers";
 
 export function withAuthGuardCommon(
   OriginalComponent: React.ComponentType<any | string>,
-  roles?: [string]
+  roles?: [string],
 ) {
   const MixedComponent = (props: any) => {
     // if we have roles we must check against them, else we only check that isAhtenticated
@@ -24,25 +24,25 @@ export function withAuthGuardCommon(
 }
 
 export function withAuthGuardStudent(
-  OriginalComponent: React.ComponentType<any | string>
+  OriginalComponent: React.ComponentType<any | string>,
 ) {
   return withAuthGuardCommon(OriginalComponent, ["student"]);
 }
 
 export function withAuthGuardTeacher(
-  OriginalComponent: React.ComponentType<any | string>
+  OriginalComponent: React.ComponentType<any | string>,
 ) {
   return withAuthGuardCommon(OriginalComponent, ["teacher"]);
 }
 
 export function withAuthGuardAdmin(
-  OriginalComponent: React.ComponentType<any | string>
+  OriginalComponent: React.ComponentType<any | string>,
 ) {
   return withAuthGuardCommon(OriginalComponent, ["admin"]);
 }
 
 export function withAuthGuardSuperAdmin(
-  OriginalComponent: React.ComponentType<any | string>
+  OriginalComponent: React.ComponentType<any | string>,
 ) {
   return withAuthGuardCommon(OriginalComponent, ["super"]);
 }

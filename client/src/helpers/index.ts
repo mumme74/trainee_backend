@@ -28,7 +28,7 @@ export function isTokenValid(jwt: string): boolean {
     if (json.iat > currTime + 10 * 60) {
       // +- 10 min
       setCommuncationError(new Error("Clock out of sync with server"))(
-        store.dispatch
+        store.dispatch,
       );
       return false;
     }

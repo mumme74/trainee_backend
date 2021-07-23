@@ -8,7 +8,7 @@ const DEFAULT_STATE = {
 
 export default function communicationReducer(
   state = DEFAULT_STATE,
-  action: AnyAction
+  action: AnyAction,
 ) {
   switch (action.type) {
     case COMMUNICATION_CNT:

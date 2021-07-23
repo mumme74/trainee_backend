@@ -1,9 +1,7 @@
 import * as core from "express-serve-static-core";
 import express from "express";
 
-
-import type { IUserCollection } from "./models/user"
-
+import type { IUserCollection } from "./models/user";
 
 export interface IUserInfoResponse {
   id: IUserCollection["id"];
@@ -36,13 +34,12 @@ export interface AuthRequest<ReqBody = any, ReqQuery = Query, URLParams extends 
     tokenExpiresIn?: number // seconds until it expires
 };*/
 
-
 export interface AuthRequest extends express.Request {
-    value: {
-      body?: any
-    },
-    user: IUserCollection,
-    tokenExpiresIn?: number // seconds until it expires
+  value: {
+    body?: any;
   };
+  user: IUserCollection;
+  tokenExpiresIn?: number; // seconds until it expires
+}
 
-export interface AuthResponse extends express.Response {};
+export type AuthResponse = express.Response;

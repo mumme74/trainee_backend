@@ -1,10 +1,10 @@
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 dotenv.config();
 import passport from "passport";
-import {Strategy as JwtStrategy } from "passport-jwt";
+import { Strategy as JwtStrategy } from "passport-jwt";
 import { ExtractJwt } from "passport-jwt";
-import {Strategy as LocalStrategy } from "passport-local";
-import {Strategy as GoogleStrategy } from "passport-google-verify-token";
+import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-verify-token";
 
 import User, { rolesAvailable } from "./models/user";
 import { AuthRequest } from "./types";
@@ -35,8 +35,8 @@ passport.use(
       } catch (err) {
         done(err, false, err.message);
       }
-    }
-  )
+    },
+  ),
 );
 
 // local stategy
@@ -76,8 +76,8 @@ passport.use(
       } catch (err) {
         done(err, false, err.message);
       }
-    }
-  )
+    },
+  ),
 );
 
 // google stategy
@@ -87,19 +87,30 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       passReqToCallback: true,
     },
-    async (req: Express.Request, parsedToken: any , googleId: string, done: Function) => {
+    async (
+      req: Express.Request,
+      parsedToken: any,
+      googleId: string,
+      done: Function,
+    ) => {
       //console.log(parsedToken);
       //console.log(googleId);
 
       try {
-        const auds: [string] = Array.isArray(parsedToken.aud) ? parsedToken.aud : [parsedToken.aud];
+        const auds: [string] = Array.isArray(parsedToken.aud)
+          ? parsedToken.aud
+          : [parsedToken.aud];
         if (!auds.find((aud) => aud === process.env.GOOGLE_CLIENT_ID))
           throw new UserError("Wrong google OAuth clientId!");
 
         // we need to make exp from millisconds since epoch to minutes
-        const expiresAt = Math.floor(parsedToken.exp / 60) - Math.floor(new Date().getTime() / 60000);
+        const expiresAt =
+          Math.floor(parsedToken.exp / 60) -
+          Math.floor(new Date().getTime() / 60000);
         if (expiresAt < 0)
-         throw new UserError("Expiration date was already passed on google token");
+          throw new UserError(
+            "Expiration date was already passed on google token",
+          );
 
         (req as AuthRequest).tokenExpiresIn = expiresAt;
 
@@ -119,25 +130,31 @@ passport.use(
               id: parsedToken.sub,
               hd: parsedToken.hd,
             },
-            lastLogin: new Date()
+            lastLogin: new Date(),
           },
-          { returnOriginal: false, new: true, upsert: true }
+          { returnOriginal: false, new: true, upsert: true },
         );
 
         // a new record would probably ha the same time in creat and update timestamps
-        if (Math.floor(user.createdAt.getTime()/1000) ===
-            Math.floor(user.updatedAt.getTime()/1000)) 
-        {
+        if (
+          Math.floor(user.createdAt.getTime() / 1000) ===
+          Math.floor(user.updatedAt.getTime() / 1000)
+        ) {
           // check if user is a teacher
           if (passAsTeacher(user)) {
             user.roles.push(rolesAvailable.teacher);
             // a super admin?
             if (passAsSuperAdmin(user)) {
-              user.roles.push(rolesAvailable.super)
+              user.roles.push(rolesAvailable.super);
             }
-            const res = await User.updateOne({"_id": user._id},{roles: user.roles});
-            if (!res || res.n !== 1 || res.ok !== 1 || res.nModified !== 1) 
-            throw new UserError("Could not save escalated roles when creating user")
+            const res = await User.updateOne(
+              { _id: user._id },
+              { roles: user.roles },
+            );
+            if (!res || res.n !== 1 || res.ok !== 1 || res.nModified !== 1)
+              throw new UserError(
+                "Could not save escalated roles when creating user",
+              );
           }
         }
 
@@ -146,6 +163,6 @@ passport.use(
         console.log(err.message);
         return done(err, false, err.message);
       }
-    }
-  )
+    },
+  ),
 );

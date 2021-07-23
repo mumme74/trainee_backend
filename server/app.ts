@@ -1,5 +1,5 @@
 const nodeEnv = process.env.NODE_ENV || "development";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 dotenv.config({ path: `.env.${nodeEnv}` }); // must be done bofore any other imports
 
 import express, { Request, Response } from "express";
@@ -7,8 +7,8 @@ import morgan from "morgan";
 import mongoose from "mongoose";
 import cors from "cors";
 
-import sanitize from './helpers/sanitize';
-import userApiRoute from './routes/users';
+import sanitize from "./helpers/sanitize";
+import userApiRoute from "./routes/users";
 import graphQlRoute from "./graphql";
 
 mongoose.Promise = global.Promise;
@@ -62,7 +62,9 @@ app.use((err: Error, req: Request, res: Response) => {
     error: {
       message: "500: Internal Server Error",
       status: 500,
-      error: showErrors ? {message: err.message, stack: err.stack?.split('\n')}: undefined,
+      error: showErrors
+        ? { message: err.message, stack: err.stack?.split("\n") }
+        : undefined,
     },
   };
   res.status(500).json(errObj);

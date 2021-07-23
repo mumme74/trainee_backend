@@ -7,7 +7,7 @@ const DEFAULT_STATE = {
 
 export default function sidemenuReducer(
   state = DEFAULT_STATE,
-  action: AnyAction
+  action: AnyAction,
 ) {
   switch (action.type) {
     case SIDEMENU_SET_IS_SHOWN:

@@ -5,7 +5,7 @@ const validators = {
 
   passwordValidator: (value: string) => {
     return /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/gm.test(
-      value
+      value,
     )
       ? ""
       : "10 chars, atleast: 1 UPPER, 1 lower, 1 special and 1 number";

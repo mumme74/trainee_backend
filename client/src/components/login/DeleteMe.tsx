@@ -23,7 +23,7 @@ type StatePropsT = {};
 type JsxPropsT = {};
 
 const DeleteMe: React.FC<StatePropsT & JsxPropsT & RouteComponentProps> = (
-  props
+  props,
 ) => {
   const { t } = useTranslation("core");
   const Stages = [

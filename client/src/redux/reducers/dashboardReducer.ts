@@ -7,7 +7,7 @@ const DEFAULT_STATE: IDashboard = {
 
 export function dashboardReducer(
   state: IDashboard = DEFAULT_STATE,
-  action: AnyAction
+  action: AnyAction,
 ) {
   switch (action.type) {
     case DASHBOARD_GET_DATA:

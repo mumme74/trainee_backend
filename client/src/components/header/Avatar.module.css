@@ -1,6 +1,6 @@
 .avatar {
   width: 2rem;
-  height:2rem;
+  height: 2rem;
   border-radius: 50%;
   cursor: pointer;
 }
@@ -11,7 +11,7 @@ img.avatar {
 
 div.avatar {
   background-color: #999;
-  border:1px solid #666;
+  border: 1px solid #666;
   color: #666;
   font-weight: bold;
   text-align: center;

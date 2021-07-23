@@ -8,7 +8,7 @@ type ActionPropsT = {};
 type JsxPropsT = {};
 
 const AdminUsers: React.FC<StatePropsT & ActionPropsT & JsxPropsT> = (
-  props
+  props,
 ) => {
   return (
     <div className="container">

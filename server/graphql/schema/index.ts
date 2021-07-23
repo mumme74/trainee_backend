@@ -1,31 +1,33 @@
 import { buildSchema } from "graphql";
 import "./customTypes";
 import {
-    usersSchemaTypes, 
-    usersSchemaInputs,
-    usersSchemaMutations, 
-    usersSchemaQueries } from './users'
+  usersSchemaTypes,
+  usersSchemaInputs,
+  usersSchemaMutations,
+  usersSchemaQueries,
+} from "./users";
 
 /// these must be in sync with GraphQl schema
 export interface IGraphQl_Response {
-    success: boolean;
-    __typename: string;
+  success: boolean;
+  __typename: string;
 }
 
 export interface IGraphQl_ErrorResponse extends IGraphQl_Response {
-    success: false;
-    message: string;
-    stack?: string[];
-};
-
-export interface IGraphQl_OkResponse extends IGraphQl_Response {
-    success: true;
-    nrAffected: number;
-    ids?: string[];
+  success: false;
+  message: string;
+  stack?: string[];
 }
 
-export type IGraphQl_MutationResponse = 
-    IGraphQl_OkResponse | IGraphQl_ErrorResponse;
+export interface IGraphQl_OkResponse extends IGraphQl_Response {
+  success: true;
+  nrAffected: number;
+  ids?: string[];
+}
+
+export type IGraphQl_MutationResponse =
+  | IGraphQl_OkResponse
+  | IGraphQl_ErrorResponse;
 
 // our API schema types
 const schemaStr = `
@@ -63,7 +65,7 @@ const schemaStr = `
         query: RootQuery
         mutation: RootMutation
     }
-  `;
+`;
 //console.log(schemaStr)
 
 const graphQlSchema = buildSchema(schemaStr);

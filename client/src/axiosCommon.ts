@@ -39,6 +39,6 @@ export function initAxios() {
       endCommunication()(store.dispatch);
 
       return Promise.reject(error);
-    }
+    },
   );
 }

@@ -42,7 +42,7 @@ function errorHandler(dispatch: AppDispatch, err: ErrT) {
     if (response.data) {
       console.warn(
         "error response from server",
-        response.data?.error || response.data || response
+        response.data?.error || response.data || response,
       );
 
       message = Array.isArray(response.data?.details)
@@ -70,7 +70,7 @@ function errorHandler(dispatch: AppDispatch, err: ErrT) {
 function loginHandler(
   dispatch: AppDispatch,
   responseData: ResponseDataT,
-  actionType: string
+  actionType: string,
 ) {
   const token = responseData.access_token;
   if (!token) return errorHandler(dispatch, new Error("Recieved empty token"));
