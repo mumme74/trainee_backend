@@ -22,7 +22,7 @@ export const rolesAvailableKeys = Object.keys(rolesAvailable)
 export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys);
 
 // database models
-export interface IUserCollection {
+export interface IUserDocument {
   readonly id: string;
   method: string;
   userName: string;
@@ -32,19 +32,19 @@ export interface IUserCollection {
   password?: string;
   picture?: string;
   domain?: string;
-  google: {
+  google?: {
     id: string;
   };
   roles: [rolesAvailable];
   updatedBy: string;
-  banned: false;
+  banned?: false;
   lastLogin: typeof Date;
   readonly updatedAt: typeof Date;
   readonly createdAt: typeof Date;
 }
 
 // create a schema
-const userSchema = new Schema<IUserCollection>(
+const userSchema = new Schema<IUserDocument>(
   {
     method: {
       type: String,

@@ -5,7 +5,7 @@ import { composeErrorResponse, rolesFilter, isAdmin } from "./helpers";
 import type { IFilterOptions } from "./helpers";
 
 import { transformUser, lookupUser, userLoader } from "./resolvers.common";
-import Group, { IGroupsCollection } from "../../models/groupsModel";
+import Group, { IGroupDocument } from "../../models/groupsModel";
 import { UserError } from "../../helpers/customErrors";
 import {
   IGraphQl_GroupType,
@@ -13,11 +13,11 @@ import {
 } from "../schema/groups";
 import type { IGraphQl_MutationResponse } from "../schema";
 import { AuthRequest } from "../../types";
-import { IUserCollection, rolesAvailable } from "../../models/usersModel";
+import { IUserDocument, rolesAvailable } from "../../models/usersModel";
 import type { IGraphQl_UserType } from "../schema/users";
 
 export const groupLoader = new DataLoader(
-  async (groupIds: readonly string[]): Promise<IGroupsCollection[]> => {
+  async (groupIds: readonly string[]): Promise<IGroupDocument[]> => {
     const result = await Group.find({
       _id: { $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)) },
     });
@@ -28,7 +28,7 @@ export const groupLoader = new DataLoader(
 
 export const lookupGroup = async (
   groupId: string,
-): Promise<IGroupsCollection | undefined> => {
+): Promise<IGroupDocument | undefined> => {
   if (!groupId) return;
   try {
     const group = await groupLoader.load(groupId);
@@ -39,12 +39,10 @@ export const lookupGroup = async (
   }
 };
 
-export const transformGroup = (
-  group: IGroupsCollection,
-): IGraphQl_GroupType => {
+export const transformGroup = (group: IGroupDocument): IGraphQl_GroupType => {
   async function getUsers(userIds: string[]): Promise<IGraphQl_UserType[]> {
     try {
-      const users = (await userLoader.loadMany(userIds)) as IUserCollection[];
+      const users = (await userLoader.loadMany(userIds)) as IUserDocument[];
       if (!users) return [];
       return users.map((u) => {
         return transformUser(u);
@@ -86,7 +84,7 @@ const groupsFor = async (
     const groups = (await Group.find({
       [idField]: new mongoose.Types.ObjectId(userId),
       name,
-    })) as IGroupsCollection[];
+    })) as IGroupDocument[];
 
     if (!groups) return [];
 
@@ -204,7 +202,7 @@ export default {
   //groups(ids: [ID!]!): [GroupType]!
   groups: async ({ ids }: { ids: string[] }): Promise<IGraphQl_GroupType[]> => {
     try {
-      const groups = (await groupLoader.loadMany(ids)) as IGroupsCollection[];
+      const groups = (await groupLoader.loadMany(ids)) as IGroupDocument[];
       if (!groups) throw new UserError("Group not found!");
       return groups.map((grp) => {
         return transformGroup(grp);

@@ -3,7 +3,7 @@ import User from "./usersModel";
 
 // sort of a school class, however student might be in many
 // different grups event though they are in  the same class
-export interface IGroupsCollection {
+export interface IGroupDocument {
   readonly id: string;
   teacherIds: string[];
   studentIds: string[];
@@ -16,7 +16,7 @@ export interface IGroupsCollection {
 
 // sort of a school class, however student might be in many
 // different grups event though they are in  the same class
-const groupSchema = new Schema<IGroupsCollection>(
+const groupSchema = new Schema<IGroupDocument>(
   {
     teacherIds: {
       type: [Schema.Types.ObjectId],

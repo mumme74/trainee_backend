@@ -1,22 +1,23 @@
 import * as core from "express-serve-static-core";
 import express from "express";
 
-import type { IUserCollection } from "./models/usersModel";
+import type { IUserDocument } from "./models/usersModel";
 
 export interface IUserInfoResponse {
-  id: IUserCollection["id"];
-  method: IUserCollection["method"];
-  userName: IUserCollection["userName"];
-  email: IUserCollection["email"];
-  firstName: IUserCollection["firstName"];
-  lastName: IUserCollection["lastName"];
-  picture: IUserCollection["picture"];
-  googleId?: IUserCollection["google"]["id"];
-  domain: IUserCollection["domain"];
-  updatedBy: IUserCollection["updatedBy"];
-  lastLogin: IUserCollection["lastLogin"];
-  createdAt: IUserCollection["createdAt"];
-  updatedAt: IUserCollection["updatedAt"];
+  id: IUserDocument["id"];
+  method: IUserDocument["method"];
+  userName: IUserDocument["userName"];
+  email: IUserDocument["email"];
+  firstName: IUserDocument["firstName"];
+  lastName: IUserDocument["lastName"];
+  picture: IUserDocument["picture"];
+  googleId?: string; //IUserDocument["google"]["id"];
+  domain: IUserDocument["domain"];
+  updatedBy: IUserDocument["updatedBy"];
+  lastLogin: IUserDocument["lastLogin"];
+  banned?: IUserDocument["banned"];
+  createdAt: IUserDocument["createdAt"];
+  updatedAt: IUserDocument["updatedAt"];
 }
 
 // extended express types
@@ -38,7 +39,7 @@ export interface AuthRequest extends express.Request {
   value: {
     body?: any;
   };
-  user: IUserCollection;
+  user: IUserDocument;
   tokenExpiresIn?: number; // seconds until it expires
 }
 

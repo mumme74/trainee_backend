@@ -2,7 +2,7 @@ import DataLoader from "dataloader";
 import mongoose from "mongoose";
 
 import User, {
-  IUserCollection,
+  IUserDocument,
   rolesAvailable,
   rolesAvailableKeys,
 } from "../../models/usersModel";
@@ -16,7 +16,7 @@ import { composeErrorResponse, rolesFilter } from "./helpers";
 import { UserError } from "../../helpers/customErrors";
 
 export const userLoader = new DataLoader(
-  async (userIds: readonly string[]): Promise<IUserCollection[]> => {
+  async (userIds: readonly string[]): Promise<IUserDocument[]> => {
     const result = await User.find({
       _id: { $in: userIds.map((id) => new mongoose.Types.ObjectId(id)) },
     });
@@ -27,7 +27,7 @@ export const userLoader = new DataLoader(
 
 export const lookupUser = async (
   userId: string,
-): Promise<IUserCollection | undefined> => {
+): Promise<IUserDocument | undefined> => {
   if (!userId) return;
   try {
     const user = await userLoader.load(userId);
@@ -38,7 +38,7 @@ export const lookupUser = async (
   }
 };
 
-export const transformUser = (user: IUserCollection): IGraphQl_UserType => {
+export const transformUser = (user: IUserDocument): IGraphQl_UserType => {
   const roles = user.roles.map((role) => {
     return rolesAvailable[role];
   }) as string[];
@@ -52,7 +52,7 @@ export const transformUser = (user: IUserCollection): IGraphQl_UserType => {
     picture: user.picture || "",
     domain: user.domain || "",
     roles: roles,
-    googleId: user.google.id || "",
+    googleId: user.google?.id || "",
     updatedAt: user.updatedAt,
     createdAt: user.createdAt,
     updater: async () => {
@@ -78,12 +78,12 @@ export default {
       req: AuthRequest,
     ): Promise<IGraphQl_UserType[]> => {
       try {
-        const users = (await userLoader.loadMany(ids)) as IUserCollection[];
+        const users = (await userLoader.loadMany(ids)) as IUserDocument[];
         //const objIds = ids.map((id)=>{return new mongoose.Types.ObjectId(id)});
         //const users = await User.find({"_id":{$in: objIds}});
         if (!users) return [];
 
-        const res = users.map((user: IUserCollection) => {
+        const res = users.map((user: IUserDocument) => {
           return transformUser(user);
         });
 

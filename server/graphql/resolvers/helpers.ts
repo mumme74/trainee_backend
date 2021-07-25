@@ -1,7 +1,7 @@
 import { MongoError } from "mongodb";
 
 import type { IGraphQl_ErrorResponse } from "../schema";
-import { IUserCollection, rolesAvailable } from "../../models/usersModel";
+import { IUserDocument, rolesAvailable } from "../../models/usersModel";
 import type { AuthRequest } from "../../types";
 import { UserError } from "../../helpers/customErrors";
 
@@ -31,7 +31,7 @@ export const composeErrorResponse = (err: Error): IGraphQl_ErrorResponse => {
   };
 };
 
-export const isAdmin = (user: IUserCollection) => {
+export const isAdmin = (user: IUserDocument) => {
   return (
     user.roles.indexOf(rolesAvailable.super) > -1 ||
     user.roles.indexOf(rolesAvailable.admin) > -1

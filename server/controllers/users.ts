@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express";
 
 import User, {
   comparePasswordHash,
-  IUserCollection,
+  IUserDocument,
   rolesAvailable,
   rolesAvailableKeys,
 } from "../models/usersModel";
@@ -16,7 +16,7 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const ObjectId = mongoose.Types.ObjectId;
 
 const signToken = (
-  user: IUserCollection,
+  user: IUserDocument,
   expiresInMinutes: number = 60 * 8,
 ): string => {
   return JWT.sign(
@@ -35,7 +35,7 @@ const signToken = (
   );
 };
 
-const userInfoResponse = (user: IUserCollection): IUserInfoResponse => {
+const userInfoResponse = (user: IUserDocument): IUserInfoResponse => {
   return {
     id: user.id,
     method: user.method,
@@ -53,7 +53,7 @@ const userInfoResponse = (user: IUserCollection): IUserInfoResponse => {
   };
 };
 
-const loginResponse = (token: string, user: IUserCollection) => {
+const loginResponse = (token: string, user: IUserDocument) => {
   return {
     access_token: token,
     user: userInfoResponse(user),
