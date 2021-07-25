@@ -7,8 +7,8 @@ export interface IGraphQl_GroupType {
   students: () => Promise<IGraphQl_UserType[]>;
   name: string;
   description?: string;
-  updatedAt: typeof Date;
-  createdAt: typeof Date;
+  updatedAt: Date;
+  createdAt: Date;
   updater?: () => Promise<IGraphQl_UserType | undefined>;
 }
 

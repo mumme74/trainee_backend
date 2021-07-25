@@ -131,9 +131,9 @@ passport.use(
             userName: email.substr(0, email.indexOf("@")),
             email: email,
             picture: parsedToken.picture,
+            domain: parsedToken.hd,
             google: {
               id: parsedToken.sub,
-              hd: parsedToken.hd,
             },
             lastLogin: new Date(),
           },

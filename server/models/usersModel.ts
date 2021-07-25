@@ -1,4 +1,4 @@
-import { Schema, model, connect } from "mongoose";
+import { Schema, model, Document } from "mongoose";
 import bcrypt from "bcrypt";
 //import { string } from "joi";
 
@@ -19,11 +19,11 @@ export const rolesAvailableKeys = Object.keys(rolesAvailable)
   })
   .filter((itm) => itm !== undefined) as string[];
 
-export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys);
+//export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys);
 
 // database models
-export interface IUserDocument {
-  readonly id: string;
+export interface IUserDocument extends Document {
+  //readonly id: string;
   method: string;
   userName: string;
   firstName: string;
@@ -38,9 +38,11 @@ export interface IUserDocument {
   roles: [rolesAvailable];
   updatedBy: string;
   banned?: false;
-  lastLogin: typeof Date;
-  readonly updatedAt: typeof Date;
-  readonly createdAt: typeof Date;
+  lastLogin: Date;
+  readonly updatedAt: Date;
+  readonly createdAt: Date;
+
+  isValidPassword: (password: string) => Promise<boolean>;
 }
 
 // create a schema
@@ -114,7 +116,7 @@ const userSchema = new Schema<IUserDocument>(
 // hash password before save
 userSchema.pre("save", async function (next) {
   // only hash the password if it has been modified (or is new)
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
 
   try {
     // generate a salt
@@ -140,11 +142,13 @@ export async function comparePasswordHash(
 }
 
 userSchema.methods.isValidPassword = async function (newPassword) {
-  return comparePasswordHash(newPassword, this.password);
+  if (this.password)
+    return await comparePasswordHash(newPassword, this.password);
+  return !newPassword;
 };
 
 // create a model
-const User = model("user", userSchema);
+const User = model<IUserDocument>("user", userSchema);
 
 // export the model
 export default User;

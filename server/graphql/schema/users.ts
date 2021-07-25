@@ -9,8 +9,9 @@ export interface IGraphQl_UserType {
   picture: string;
   domain: string;
   roles: string[];
-  updatedAt: typeof Date;
-  createdAt: typeof Date;
+  lastLogin: Date;
+  updatedAt: Date;
+  createdAt: Date;
   updater?: () => Promise<IGraphQl_UserType | undefined>;
 }
 

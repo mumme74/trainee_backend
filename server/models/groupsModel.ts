@@ -9,8 +9,8 @@ export interface IGroupDocument {
   studentIds: string[];
   name: string;
   description?: string;
-  createdAt: typeof Date;
-  updatedAt: typeof Date;
+  createdAt: Date;
+  updatedAt: Date;
   updatedBy: string; // who last edited this document
 }
 

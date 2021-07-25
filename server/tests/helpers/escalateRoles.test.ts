@@ -1,64 +1,62 @@
 import { passAsSuperAdmin, passAsTeacher } from "../../helpers/escalateRoles";
 import type { IUserDocument } from "../../models/usersModel";
-import { rolesAvailable } from "../../models/usersModel";
+import User, { rolesAvailable } from "../../models/usersModel";
 
-function mockUser(): IUserDocument {
-  return {
-    id: "1234567890abc",
-    firstName: "mock",
-    lastName: "mock",
-    email: "mock@testschool.org",
-    domain: "testschool.org",
-    userName: "userName",
-    roles: [rolesAvailable.student],
-    method: "local",
-    updatedBy: "123456789abc",
-    updatedAt: Date,
-    createdAt: Date,
-    lastLogin: Date,
-  };
-}
+const defaultUser = {
+  id: "1234567890abc",
+  firstName: "mock",
+  lastName: "mock",
+  email: "mock@testschool.org",
+  domain: "testschool.org",
+  userName: "userName",
+  roles: [rolesAvailable.student],
+  method: "local",
+  updatedBy: "123456789abc",
+  updatedAt: new Date(),
+  createdAt: new Date(),
+  lastLogin: new Date(),
+};
 
-const student: IUserDocument = {
-  ...mockUser(),
+const student: IUserDocument = new User({
+  ...defaultUser,
   firstName: "Student",
   lastName: "Studentson",
   email: "student1@testschool.org",
   userName: "001stustu",
-};
+});
 
-const external: IUserDocument = {
-  ...mockUser(),
+const external: IUserDocument = new User({
+  ...defaultUser,
   firstName: "123TEGY External",
   lastName: "Externalson 123TEGY",
   email: "External@external.com",
   userName: "001stustu",
   domain: "external.com",
-};
+});
 
-const teacherNoEscalate: IUserDocument = {
-  ...mockUser(),
+const teacherNoEscalate: IUserDocument = new User({
+  ...defaultUser,
   firstName: "Teacher",
   lastName: "Teacherson",
   email: "teacher123@testschool.org",
   userName: "noEscalateTeacher",
-};
+});
 
-const teacherEscalate: IUserDocument = {
-  ...mockUser(),
+const teacherEscalate: IUserDocument = new User({
+  ...defaultUser,
   firstName: "123KAGY Teacher",
   lastName: "Teacherson 123KAGY",
   email: "teacher123@teacher.testschool.org",
   userName: "escalateTeacher",
-};
+});
 
-const teacherEscalateSuper: IUserDocument = {
-  ...mockUser(),
+const teacherEscalateSuper: IUserDocument = new User({
+  ...defaultUser,
   firstName: "TeacherSuper",
   lastName: "Teacherson 123KUGY",
   email: "teacher123super@teacher.testschool.org",
   userName: "escalateTeacherSuper",
-};
+});
 
 let oldProcessEnv: any;
 beforeAll(() => {

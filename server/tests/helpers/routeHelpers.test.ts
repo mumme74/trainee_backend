@@ -3,7 +3,7 @@ import { validateBody, schemas, hasRoles } from "../../helpers/routeHelpers";
 import { getMockReq, getMockRes } from "@jest-mock/express";
 import { ValidationError } from "joi";
 import { AuthRequest } from "../../types";
-import { rolesAvailable } from "../../models/usersModel";
+import User, { rolesAvailable } from "../../models/usersModel";
 import type { IUserDocument } from "../../models/usersModel";
 
 const { res, next, clearMockRes } = getMockRes();
@@ -377,23 +377,24 @@ describe("deleteMySelf schema", () => {
 // ----------------------------------------------------------------
 
 describe("hasRoles function", () => {
-  const userObj: IUserDocument = {
-    id: "123456789abc",
-    firstName: "Test",
-    lastName: "Testson",
-    userName: "testUser",
-    email: "email@user.com",
-    method: "local",
-    updatedBy: "123456789abc",
-    updatedAt: Date,
-    createdAt: Date,
-    lastLogin: Date,
-    roles: [rolesAvailable.student],
-  };
+  let req: AuthRequest;
+  beforeEach(() => {
+    req = getMockReq() as AuthRequest;
+    req.user = new User({
+      firstName: "Test",
+      lastName: "Testson",
+      userName: "testUser",
+      email: "email@user.com",
+      method: "local",
+      updatedBy: "123456789abc",
+      updatedAt: Date,
+      createdAt: Date,
+      lastLogin: Date,
+      roles: [rolesAvailable.student],
+    });
+  });
 
   test("fail no match", () => {
-    const req = getMockReq() as AuthRequest;
-    req.user = { ...userObj };
     hasRoles([rolesAvailable.teacher])(req, res, next);
 
     expect(res.status).toBeCalledWith(403);
@@ -405,9 +406,8 @@ describe("hasRoles function", () => {
     expect(next).not.toBeCalled();
   });
 
-  test("succeed math 1", () => {
-    const req = getMockReq() as AuthRequest;
-    req.user = { ...userObj, roles: [rolesAvailable.teacher] };
+  test("succeed match 1", () => {
+    req.user.roles.push(rolesAvailable.teacher);
     hasRoles([rolesAvailable.teacher])(req, res, next);
 
     expect(res.status).not.toBeCalled();
@@ -415,12 +415,10 @@ describe("hasRoles function", () => {
   });
 
   test("succeed match 2", () => {
-    const req = getMockReq();
-    req.user = {
-      ...userObj,
-      roles: [rolesAvailable.teacher, rolesAvailable.admin],
-    };
-    hasRoles([rolesAvailable.teacher])(req, res, next);
+    req.user.roles.push(rolesAvailable.teacher);
+    req.user.roles.push(rolesAvailable.admin);
+
+    hasRoles([rolesAvailable.teacher, rolesAvailable.admin])(req, res, next);
 
     expect(res.status).not.toBeCalled();
     expect(next).toBeCalled();

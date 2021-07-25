@@ -73,7 +73,7 @@ export const schemas = {
  * @param requiredRoles all these roles must be met to go through
  * @returns the response
  */
-export const hasRoles = (requiredRoles: [rolesAvailable]) => {
+export const hasRoles = (requiredRoles: rolesAvailable[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
     const pass = requiredRoles.every(

@@ -55,6 +55,7 @@ export const transformUser = (user: IUserDocument): IGraphQl_UserType => {
     googleId: user.google?.id || "",
     updatedAt: user.updatedAt,
     createdAt: user.createdAt,
+    lastLogin: user.lastLogin,
     updater: async () => {
       const u = await lookupUser(user.updatedBy);
       if (!u) return undefined;
@@ -169,7 +170,7 @@ export default {
           { _id: new mongoose.Types.ObjectId(id) },
           {
             roles: newRoles,
-            updatedBy: new mongoose.Types.ObjectId(req.user.id),
+            updatedBy: req.user.id,
           },
         );
         if (!res.n) throw new UserError("Failed to match user");
@@ -262,12 +263,12 @@ export default {
           domain: domainFilter?.domain,
         });
 
-        if (!res || res.n < 1)
+        if (!res || +(res?.deletedCount || 0) < 1)
           throw new UserError("User not found, could not delete.");
 
         return {
           success: true,
-          nrAffected: res.n,
+          nrAffected: res?.n || 0,
           ids: [id],
           __typename: "OkResponse",
         };
