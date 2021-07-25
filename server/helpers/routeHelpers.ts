@@ -30,7 +30,7 @@ const password = Joi.string()
 const firstName = Joi.string().min(2).max(30).required();
 const lastName = Joi.string().min(2).max(50).required();
 const userName = Joi.string()
-  .pattern(/[^@]{3,}/)
+  .pattern(/^[^@]{3,}$/)
   .max(30)
   .required();
 const email = Joi.string().email().required();
@@ -54,7 +54,7 @@ export const schemas = {
     firstName: firstName,
     lastName: lastName,
     email: email,
-    picture: Joi.string().uri(),
+    picture: Joi.string().uri().allow(""),
   }),
   passwordSchema: Joi.object().keys({
     password: password,
@@ -64,7 +64,7 @@ export const schemas = {
     firstName: firstName,
     lastName: lastName,
     email: email,
-    password: Joi.string(),
+    password: Joi.string().allow(""),
   }),
 };
 
@@ -74,14 +74,11 @@ export const schemas = {
  * @returns the response
  */
 export const hasRoles = (requiredRoles: [rolesAvailable]) => {
-  // need to filter out number indicators
-  const reqRoles = Object.keys(requiredRoles).filter(
-    (role) => typeof role === "string",
-  );
-
   return (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
-    const pass = reqRoles.every((role) => role in authReq.user.roles);
+    const pass = requiredRoles.every(
+      (role) => authReq.user.roles.indexOf(+role) > -1,
+    );
     if (!pass) {
       return res
         .status(403)

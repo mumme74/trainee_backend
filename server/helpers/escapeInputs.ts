@@ -7,9 +7,12 @@ const htmlEscChars: HtmlEscChars = {
   "'": "&#39;",
   '"': "&quot;",
 };
-const htmlEscKeys = Object.keys(htmlEscChars);
-const htmlEscRegex = new RegExp(htmlEscKeys.join(), "g");
+// need to specialcase & because it can be a start of a already escaped entity
+const htmlEscKeys = Object.keys(htmlEscChars).map((key) =>
+  key === "&" ? "&(?![#\\w]\\w{1,5};)" : key,
+);
+const htmlEscRegex = new RegExp(`(${htmlEscKeys.join("|")})`, "g");
 
 export const escapeHTML = (str: string) => {
-  return str.replace(htmlEscRegex, (tag: string) => htmlEscChars[tag]);
+  return str.replace(htmlEscRegex, (tag: string) => htmlEscChars[tag[0]]);
 };

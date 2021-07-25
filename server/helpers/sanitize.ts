@@ -15,12 +15,9 @@ import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 import xss from "xss";
 
-function secureString(str: string): string {
-  return xss(str);
-}
-
 // xss sanitize all input strings against xss attacks
-function findStrings(branch: any): any {
+// exported so it can be tested
+export function findStrings(branch: any): any {
   if (branch instanceof Object || branch instanceof Array) {
     for (const key in branch) {
       if (typeof branch[key] === "string") {
