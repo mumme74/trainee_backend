@@ -37,6 +37,7 @@ export interface IUserCollection {
   };
   roles: [rolesAvailable];
   updatedBy: string;
+  banned: false;
   lastLogin: typeof Date;
   readonly updatedAt: typeof Date;
   readonly createdAt: typeof Date;
@@ -100,6 +101,11 @@ const userSchema = new Schema<IUserCollection>(
 
     updatedBy: {
       type: Schema.Types.ObjectId,
+    },
+
+    banned: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true },

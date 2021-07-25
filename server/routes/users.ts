@@ -1,17 +1,12 @@
 import Router from "express-promise-router";
 import UsersController from "../controllers/users";
-import passport from "passport";
-import "../passport";
+import { passportGoogle, passportSignIn, passportJWT } from "../passport";
 
 import { validateBody, schemas, hasRoles } from "../helpers/routeHelpers";
 import { rolesAvailable } from "../models/usersModel";
 
 const router = Router();
-const passportSignIn = passport.authenticate("local", { session: false });
-const passportJWT = passport.authenticate("jwt", { session: false });
-const passportGoogle = passport.authenticate("google-verify-token", {
-  session: false,
-});
+
 const isAdmin = hasRoles([rolesAvailable.admin]);
 
 router

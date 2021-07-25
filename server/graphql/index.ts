@@ -2,15 +2,13 @@ import accepts from "accepts";
 import Router from "express-promise-router";
 import { graphqlHTTP, getGraphQLParams } from "express-graphql";
 import { Request, Response, NextFunction } from "express";
-import passport from "passport";
+import { passportJWT } from "../passport";
 
 import graphQlSchema from "./schema";
 import { graphQlResolvers } from "./resolvers";
 import renderGraphiQLAuthToken from "./graphiqlWithToken";
 
 const router = Router();
-
-const passportJWT = passport.authenticate("jwt", { session: false });
 
 // all logic starts here
 const useGraphiql = process.env.NODE_ENV === "development";

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import passport from "passport";
+import { Request, Response, NextFunction } from "express";
 import { Strategy as JwtStrategy } from "passport-jwt";
 import { ExtractJwt } from "passport-jwt";
 import { Strategy as LocalStrategy } from "passport-local";
@@ -28,6 +29,8 @@ passport.use(
         // if user doesn't exist, handle it
         if (!user) {
           return done(null, false, "User does not exist");
+        } else if (user.banned) {
+          return done(null, false, "User is banned");
         }
 
         // Otherwise, return the user
@@ -57,6 +60,8 @@ passport.use(
         // if not, handle it
         if (!user) {
           return done(null, false, "User does not exist");
+        } else if (user.banned) {
+          return done(null, false, "User is banned");
         }
 
         // check is the password is correct
@@ -135,7 +140,11 @@ passport.use(
           { returnOriginal: false, new: true, upsert: true },
         );
 
-        // a new record would probably ha the same time in creat and update timestamps
+        if (user.banned) {
+          return done(null, false, "User is banned");
+        }
+
+        // a new record would probably have the same time in create and update timestamps
         if (
           Math.floor(user.createdAt.getTime() / 1000) ===
           Math.floor(user.updatedAt.getTime() / 1000)
@@ -166,3 +175,33 @@ passport.use(
     },
   ),
 );
+
+export const passportSignIn = passport.authenticate("local", {
+  session: false,
+});
+
+export const passportGoogle = passport.authenticate("google-verify-token", {
+  session: false,
+});
+
+export const passportJWT = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  return passport.authenticate(
+    "jwt",
+    {
+      session: false,
+      failureFlash: JSON.stringify({ error: { message: "Invalid token" } }),
+    },
+    (err: any, user: any, info: any) => {
+      if (err || !user) {
+        return res.status(401).json({
+          error: { message: info || err?.message || "Unauthenticated" },
+        });
+      }
+      return next();
+    },
+  )(req, res, next);
+};
