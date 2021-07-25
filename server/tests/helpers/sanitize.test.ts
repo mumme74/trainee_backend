@@ -38,9 +38,6 @@ describe("test xss findStrings", () => {
     };
 
     const res = findStrings(JSON.parse(data));
-
-    console.log(data, JSON.stringify(res));
-
     expect(res).toEqual(correctRes);
   });
 });
