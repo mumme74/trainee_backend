@@ -4,7 +4,6 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 import { ValidationError } from "joi";
 import { AuthRequest } from "../../types";
 import User, { rolesAvailable } from "../../models/usersModel";
-import type { IUserDocument } from "../../models/usersModel";
 
 const { res, next, clearMockRes } = getMockRes();
 
