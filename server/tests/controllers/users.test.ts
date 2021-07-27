@@ -1,40 +1,21 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import mongoose from "mongoose";
 import { getMockReq, getMockRes } from "@jest-mock/express";
 
 import type { IUserDocument } from "../../models/usersModel";
-import User, {
-  rolesAvailable,
-  comparePasswordHash,
-} from "../../models/usersModel";
+import User, { rolesAvailable } from "../../models/usersModel";
 
 import UsersController from "../../controllers/users";
 
-let mongod: MongoMemoryServer;
-const { res, next, clearMockRes } = getMockRes();
-
-const appname = process.env.APP_NAME;
-process.env.APP_NAME = "testing app";
+import { initMemoryDb, closeMemoryDb } from "../testingDatabase";
 
 beforeAll(async () => {
-  // This will create an new instance of "MongoMemoryServer" and automatically start it
-  mongod = await MongoMemoryServer.create();
-
-  const uri = mongod.getUri();
-
-  //connect to DB
-  await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-  });
+  await initMemoryDb();
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  process.env.APP_NAME = appname;
-  return await mongod.stop();
+  await closeMemoryDb();
 });
+
+const { res, next, clearMockRes } = getMockRes();
 
 const userPrimaryObj = {
   firstName: "Test",
