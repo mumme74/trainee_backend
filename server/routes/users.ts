@@ -57,8 +57,4 @@ router
   .route("/availableroles")
   .get(passportJWT, isAdmin, UsersController.rolesAvailable);
 
-router
-  .route("/changeroles")
-  .post(passportJWT, isAdmin, UsersController.changeRoles);
-
 export default router;

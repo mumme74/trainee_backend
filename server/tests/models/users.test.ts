@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 
 import type { IUserDocument } from "../../models/usersModel";
 import User, {
-  rolesAvailableKeys,
   rolesAvailable,
   comparePasswordHash,
 } from "../../models/usersModel";
@@ -98,18 +97,18 @@ describe("compare passwords", () => {
   });
 
   test("fail compare check", async () => {
-    const res = await comparePasswordHash(
-      secretSecondPassWd,
-      passwordClearTextHashed,
-    );
-    expect(res).toEqual(false);
+    await expect(
+      comparePasswordHash(secretSecondPassWd, passwordClearTextHashed),
+    ).resolves.toEqual(false);
   });
 
   test("succeed compare check", async () => {
-    const res = await comparePasswordHash(
-      passwordClearText,
-      passwordClearTextHashed,
-    );
-    expect(res).toEqual(true);
+    await expect(
+      comparePasswordHash(passwordClearText, passwordClearTextHashed),
+    ).resolves.toEqual(true);
+  });
+
+  test("succeed compare empty passwords", async () => {
+    await expect(comparePasswordHash("", "")).resolves.toEqual(true);
   });
 });

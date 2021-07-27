@@ -15,6 +15,17 @@ import type { IUserInfoResponse, AuthRequest, AuthResponse } from "../types";
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const ObjectId = mongoose.Types.ObjectId;
 
+const errorResponse = (errObj: any) => {
+  return {
+    success: false,
+    error: errObj,
+  };
+};
+
+const userNotFoundReturn = (moreErrInfo?: any) => {
+  return errorResponse({ message: "User not found!", moreErrInfo });
+};
+
 const signToken = (
   user: IUserDocument,
   expiresInMinutes: number = 60 * 8,
@@ -25,7 +36,8 @@ const signToken = (
       sub: user.id,
       iat: Math.floor(new Date().getTime() / 1000), // need to be seconds not milliseconds
       exp: Math.floor(
-        new Date(new Date().setMinutes(expiresInMinutes)).getTime() / 1000,
+        new Date(new Date().getTime() + expiresInMinutes * 60000).getTime() /
+          1000,
       ),
       roles: user.roles.map((role) => {
         return rolesAvailableKeys[role];
@@ -55,6 +67,7 @@ const userInfoResponse = (user: IUserDocument): IUserInfoResponse => {
 
 const loginResponse = (token: string, user: IUserDocument) => {
   return {
+    success: true,
     access_token: token,
     user: userInfoResponse(user),
   };
@@ -68,9 +81,20 @@ const UsersController = {
       authReq.value.body;
 
     //check if there is a user with same email
-    const foundUser = await User.findOne({ email: email });
+    const foundUser = await User.findOne({
+      $or: [{ email: email }, { userName: userName }],
+    });
     if (foundUser) {
-      return res.status(403).json({ error: "email already in use" });
+      const resp = {
+        success: false,
+        error: {
+          message:
+            foundUser.email === email
+              ? "email already in use"
+              : "userName already in use",
+        },
+      };
+      return res.status(403).json(resp);
     }
 
     // create a new user
@@ -93,6 +117,7 @@ const UsersController = {
     return res.status(200).json(loginResponse(token, newUser));
   },
 
+  // if we get here we are authenticated by previous middleware
   login: async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
     // generate token
@@ -124,53 +149,52 @@ const UsersController = {
         lastName: authReq.body.lastName,
         email: authReq.body.email,
         picture: authReq.body.picture,
+        updatedBy: authReq.user.id,
       },
       { returnOriginal: false, new: true },
     );
     if (!user) {
-      return res.status(404).json({ error: { message: "User not found" } });
+      return res.status(404).json(userNotFoundReturn());
     }
     return res.status(200).json(userInfoResponse(user));
   },
 
   changeMyPassword: async (req: Request, res: Response) => {
     const authReq = req as AuthRequest;
-    const user = await User.findOneAndUpdate(
-      { _id: new ObjectId(authReq.user.id) },
-      {
-        password: authReq.body.password,
-      },
-      { returnOriginal: false, new: true },
-    );
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, error: { message: "User not found" } });
-    }
+    // we can't use findAndUpdate here as that doesn't hash the password
+    const user = await User.findById(authReq.user.id);
+    if (!user) return res.status(404).json(userNotFoundReturn());
+
+    user.password = authReq.body.password;
+    user.updatedBy = authReq.user.id;
+    await user.save();
     return res.status(200).json({ success: true });
   },
 
-  secret: async (req: Request, res: Response, next: NextFunction) => {
+  secret: async (req: Request, res: Response) => {
     const authReq = req as AuthRequest;
-    console.log("Accessing secret resource");
+    //console.log("Accessing secret resource");
     return res.json({ secret: "Access granted to secret resource!" });
   },
 
   // we must send our firstName, lastName and email and password just as it is stored in the database
-  deleteMyself: async (req: Request, res: Response, next: NextFunction) => {
+  deleteMyself: async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       console.log("Trying to delete user " + authReq.user.email);
 
-      if (
-        comparePasswordHash(authReq.user.password + "", authReq.body.password)
-      ) {
+      const passWdMatch = await comparePasswordHash(
+        authReq.user.password + "",
+        authReq.body.password,
+      );
+
+      if (passWdMatch) {
         const result = await User.deleteOne({
           _id: new ObjectId(authReq.user.id),
-          email: authReq.user.email,
-          userName: authReq.user.userName,
-          firstName: authReq.user.firstName,
-          lastName: authReq.user.lastName,
+          email: authReq.body.email,
+          userName: authReq.body.userName,
+          firstName: authReq.body.firstName,
+          lastName: authReq.body.lastName,
         });
         if (result.n === 1 && result.ok === 1 && result.deletedCount === 1) {
           console.log("Deleting user " + authReq.user.email);
@@ -179,26 +203,16 @@ const UsersController = {
       }
       console.log("Failed to delete");
       return res
-        .status(404)
-        .json({ success: false, error: { message: "User not found" } });
+        .status(400)
+        .json(errorResponse({ message: "Missmatched info!" }));
     } catch (e) {
       console.log("Failed to delete, error occured");
-      return res.status(500).json({ success: false, error: e });
+      return res.status(500).json(errorResponse(e));
     }
   },
 
   rolesAvailable: (req: Request, res: Response, next: NextFunction) => {
     return res.status(200).json({ roles: rolesAvailableKeys });
-  },
-
-  changeRoles: (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
-
-    if (!("super" in authReq.user.roles)) {
-      // oridnary admins can just manipulate user within their own domain
-    }
-
-    res.status(400).json({ error: { message: "unimplemented yet!" } });
   },
 };
 

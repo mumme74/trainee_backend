@@ -29,8 +29,8 @@ export interface IUserDocument extends Document {
   firstName: string;
   lastName: string;
   email: string;
-  password?: string;
-  picture?: string;
+  password: string;
+  picture: string;
   domain?: string;
   google?: {
     id: string;
@@ -78,10 +78,12 @@ const userSchema = new Schema<IUserDocument>(
     },
     password: {
       type: String,
+      default: "",
     },
     picture: {
       type: String,
       maxLength: 256,
+      default: "",
     },
     domain: {
       // higher level domain ie. vaxjo.se
@@ -135,13 +137,14 @@ export async function comparePasswordHash(
   pass2: string,
 ): Promise<boolean> {
   try {
+    if (pass1 === "" && pass2 === "") return true;
     return await bcrypt.compare(pass1, pass2);
   } catch (err) {
     throw new UserError(err);
   }
 }
 
-userSchema.methods.isValidPassword = async function (newPassword) {
+userSchema.methods.isValidPassword = async function (newPassword: string) {
   if (this.password)
     return await comparePasswordHash(newPassword, this.password);
   return !newPassword;
