@@ -1,60 +1,65 @@
 import Router from "express-promise-router";
-import UsersController from "../controllers/users";
+import type { Express } from "express";
+import UsersController, { IUsersController } from "../controllers/users";
 import { passportGoogle, passportSignIn, passportJWT } from "../passport";
 
 import { validateBody, schemas, hasRoles } from "../helpers/routeHelpers";
 import { rolesAvailable } from "../models/usersModel";
 
-const router = Router();
+function userRoutes(
+  app: Express,
+  controller: IUsersController = UsersController,
+) {
+  const router = Router();
+  app.use("/users/", router);
 
-const isAdmin = hasRoles([rolesAvailable.admin]);
+  router
+    .route("/signup")
+    .post(validateBody(schemas.newUserSchema), controller.signup);
 
-router
-  .route("/signup")
-  .post(validateBody(schemas.newUserSchema), UsersController.signup);
+  router
+    .route("/login")
+    .post(validateBody(schemas.loginSchema), passportSignIn, controller.login);
 
-router
-  .route("/login")
-  .post(
-    validateBody(schemas.loginSchema),
-    passportSignIn,
-    UsersController.login,
-  );
+  router.route("/oauth/google").post(passportGoogle, controller.googleOAuthOk);
 
-router
-  .route("/oauth/google")
-  .post(passportGoogle, UsersController.googleOAuthOk);
+  router.route("/myinfo").get(passportJWT, controller.myInfo);
 
-router.route("/myinfo").get(passportJWT, UsersController.myInfo);
+  router
+    .route("/savemyuserinfo")
+    .post(
+      passportJWT,
+      validateBody(schemas.saveMyUserInfoSchema),
+      controller.saveMyUserInfo,
+    );
 
-router
-  .route("/savemyuserinfo")
-  .post(
-    passportJWT,
-    validateBody(schemas.saveMyUserInfoSchema),
-    UsersController.saveMyUserInfo,
-  );
+  router
+    .route("/changemypassword")
+    .post(
+      passportJWT,
+      validateBody(schemas.passwordSchema),
+      controller.changeMyPassword,
+    );
 
-router
-  .route("/changemypassword")
-  .post(
-    passportJWT,
-    validateBody(schemas.passwordSchema),
-    UsersController.changeMyPassword,
-  );
+  router.route("/secret").get(passportJWT, controller.secret);
 
-router.route("/secret").get(passportJWT, UsersController.secret);
+  router
+    .route("/deletemyself")
+    .post(
+      passportJWT,
+      validateBody(schemas.deleteMySelfSchema),
+      controller.deleteMyself,
+    );
 
-router
-  .route("/deletemyself")
-  .post(
-    passportJWT,
-    validateBody(schemas.deleteMySelfSchema),
-    UsersController.deleteMyself,
-  );
+  router
+    .route("/availableroles")
+    .get(
+      passportJWT,
+      hasRoles([rolesAvailable.admin, rolesAvailable.super]),
+      controller.rolesAvailable,
+    );
 
-router
-  .route("/availableroles")
-  .get(passportJWT, isAdmin, UsersController.rolesAvailable);
+  return router;
+}
 
-export default router;
+export default userRoutes;

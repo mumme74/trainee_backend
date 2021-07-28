@@ -11,85 +11,71 @@ beforeEach(() => {
   clearMockRes();
 });
 
+// helpers
+function matchError(errMsg: string) {
+  const response = (res.json as jest.Mock).mock.calls[0][0];
+  expect(response.success).toEqual(false);
+  expect(response.error.message.substr(0, errMsg.length)).toEqual(errMsg);
+}
+
+function validate(schema: any, payload: any) {
+  const req = getMockReq({
+    body: payload,
+  });
+  validateBody(schema)(req, res, next);
+  return req;
+}
+
 // ---------------------------------------------------------
 
 function testPassword(baseObj: { password: string }, schema: any) {
   test("fail when password empty", () => {
-    const req = getMockReq({ body: { ...baseObj, password: "" } });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...baseObj, password: "" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"password" is not allowed to be empty');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password all lowercase", () => {
-    const req = getMockReq({
-      body: {
-        ...baseObj,
-        password: "secretpass1$",
-      },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...baseObj, password: "secretpass1" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"password" with value');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password all CAPS", () => {
-    const req = getMockReq({
-      body: { ...baseObj, password: "SECRETPASS1$" },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...baseObj, password: "SECRETPASS1" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"password" with value');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password no special char", () => {
-    const req = getMockReq({
-      body: { ...baseObj, password: "SecretPass1" },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...baseObj, password: "SecretPass1" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"password" with value');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password no number", () => {
-    const req = getMockReq({
-      body: { ...baseObj, password: "SecretPass$" },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...baseObj, password: "SecretPass$" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"password" with value');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password to short", () => {
-    const req = getMockReq({
-      body: { ...baseObj, password: "Secre1$" },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...baseObj, password: "Secre1$" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"password" with value');
     expect(next).not.toBeCalled();
   });
 
   test("succeed", () => {
-    const payload = {
-      body: { ...baseObj, password: "SecretPass1$" },
-    };
-    const req = getMockReq(payload);
-    validateBody(schema)(req, res, next);
-
+    const payload = { ...baseObj, password: "SecretPass1$" };
+    const req = validate(schema, payload);
     expect(res.status).not.toBeCalled();
-    expect((req as AuthRequest).value?.body).toEqual(payload.body);
+    expect((req as AuthRequest).value?.body).toEqual(payload);
     expect(next).toBeCalled();
   });
 }
@@ -101,54 +87,36 @@ function testNameFields(
   schema: any,
 ) {
   test("fail empty firstname", () => {
-    const req = getMockReq({
-      body: { ...userObj, firstName: "" },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...userObj, firstName: "" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"firstName" is not allowed to be empty');
     expect(next).not.toBeCalled();
   });
 
   test("fail too long firstname", () => {
-    const req = getMockReq({
-      body: {
-        ...userObj,
-        firstName:
-          "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
-      },
+    validate(schema, {
+      ...userObj,
+      firstName: "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
     });
-    validateBody(schema)(req, res, next);
-
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"firstName" length must be less than or equal to');
     expect(next).not.toBeCalled();
   });
 
   test("fail empty lastname", () => {
-    const req = getMockReq({
-      body: { ...userObj, lastName: "" },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...userObj, lastName: "" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"lastName" is not allowed to be empty');
     expect(next).not.toBeCalled();
   });
 
   test("fail too long lastname", () => {
-    const req = getMockReq({
-      body: {
-        ...userObj,
-        lastName:
-          "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
-      },
+    validate(schema, {
+      ...userObj,
+      lastName: "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
     });
-    validateBody(schema)(req, res, next);
-
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"lastName" length must be less than or equal to');
     expect(next).not.toBeCalled();
   });
 }
@@ -157,46 +125,26 @@ function testNameFields(
 
 function testUsernameField(userObj: { userName: string }, schema: any) {
   test("fail empty userName", () => {
-    const req = getMockReq({
-      body: {
-        ...userObj,
-        userName:
-          "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
-      },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...userObj, userName: "" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"userName" is not allowed to be empty');
     expect(next).not.toBeCalled();
   });
 
   test("fail to long username", () => {
-    const req = getMockReq({
-      body: {
-        ...userObj,
-        userName:
-          "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
-      },
+    validate(schema, {
+      ...userObj,
+      userName: "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
     });
-    validateBody(schema)(req, res, next);
-
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"userName" length must be less than or equal to');
     expect(next).not.toBeCalled();
   });
 
   test("fail username with '@'", () => {
-    const req = getMockReq({
-      body: {
-        ...userObj,
-        userName: "invalid@test.com",
-      },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...userObj, userName: "invalid@test.com" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"userName" with value');
     expect(next).not.toBeCalled();
   });
 }
@@ -205,30 +153,16 @@ function testUsernameField(userObj: { userName: string }, schema: any) {
 
 function testEmailField(userObj: { email: string }, schema: any) {
   test("fail empty email", () => {
-    const req = getMockReq({
-      body: {
-        ...userObj,
-        email: "",
-      },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...userObj, email: "" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"email" is not allowed to be empty');
     expect(next).not.toBeCalled();
   });
 
   test("fail invalid email", () => {
-    const req = getMockReq({
-      body: {
-        ...userObj,
-        email: "invalid£mail.com",
-      },
-    });
-    validateBody(schema)(req, res, next);
-
+    validate(schema, { ...userObj, email: "invalid£mail.com" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"email" must be a valid email');
     expect(next).not.toBeCalled();
   });
 }
@@ -237,22 +171,19 @@ function testEmailField(userObj: { email: string }, schema: any) {
 
 describe("loginSchema", () => {
   const loginObj = { login: "user@login.com", password: "secretPass1$" };
+  const schema = schemas.loginSchema;
 
   test("fail when login empty", () => {
-    const req = getMockReq({ body: { ...loginObj, login: "" } });
-    validateBody(schemas.loginSchema)(req, res, next);
-
+    validate(schema, { ...loginObj, login: "" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"login" does not match any of the allowed types');
     expect(next).not.toBeCalled();
   });
 
   test("fail when login to short", () => {
-    const req = getMockReq({ body: { ...loginObj, login: "em" } });
-    validateBody(schemas.loginSchema)(req, res, next);
-
+    validate(schema, { ...loginObj, login: "em" });
     expect(res.status).toBeCalledWith(400);
-    expect(res.json).toBeCalledWith(expect.any(ValidationError));
+    matchError('"login" does not match any of the allowed types');
     expect(next).not.toBeCalled();
   });
 
@@ -290,34 +221,27 @@ describe("saveMyUserInfoSchema", () => {
     email: "user@testson.com",
     picture: "https://somserver.url.com/and/the/picture.png",
   };
+  const schema = schemas.saveMyUserInfoSchema;
 
-  testNameFields(saveObj, schemas.saveMyUserInfoSchema);
+  testNameFields(saveObj, schema);
 
-  testEmailField(saveObj, schemas.saveMyUserInfoSchema);
+  testEmailField(saveObj, schema);
 
   test("picture empty succeed", () => {
-    const payload = {
-      body: { ...saveObj, picture: "" },
-    };
-    const req = getMockReq(payload);
-    validateBody(schemas.saveMyUserInfoSchema)(req, res, next);
-
+    const payload = { ...saveObj, picture: "" };
+    const req = validate(schema, payload);
     expect(res.status).not.toBeCalled();
-    expect((req as AuthRequest).value?.body).toEqual(payload.body);
+    expect((req as AuthRequest).value?.body).toEqual(payload);
     expect(next).toBeCalled();
   });
 
   // --------------------------------------------------------------
 
   test("picture not empty succeed", () => {
-    const payload = {
-      body: { ...saveObj },
-    };
-    const req = getMockReq(payload);
-    validateBody(schemas.saveMyUserInfoSchema)(req, res, next);
-
+    const payload = { ...saveObj };
+    const req = validate(schema, payload);
     expect(res.status).not.toBeCalled();
-    expect((req as AuthRequest).value?.body).toEqual(payload.body);
+    expect((req as AuthRequest).value?.body).toEqual(payload);
     expect(next).toBeCalled();
   });
 });
@@ -338,37 +262,30 @@ describe("deleteMySelf schema", () => {
     email: "user@tester.com",
     password: "SecretPass1$",
   };
+  const schema = schemas.deleteMySelfSchema;
 
-  testNameFields(userObj, schemas.deleteMySelfSchema);
+  testNameFields(userObj, schema);
 
-  testUsernameField(userObj, schemas.deleteMySelfSchema);
+  testUsernameField(userObj, schema);
 
-  testEmailField(userObj, schemas.deleteMySelfSchema);
+  testEmailField(userObj, schema);
 
   // must be able to send in empty password here if that is what i stored in DB
 
   //testPassword(userObj, schemas.deleteMySelfSchema);
   test("password empty succeed", () => {
-    const payload = {
-      body: { ...userObj, password: "" },
-    };
-    const req = getMockReq(payload);
-    validateBody(schemas.deleteMySelfSchema)(req, res, next);
-
+    const payload = { ...userObj, password: "" };
+    const req = validate(schema, payload);
     expect(res.status).not.toBeCalled();
-    expect((req as AuthRequest).value?.body).toEqual(payload.body);
+    expect((req as AuthRequest).value?.body).toEqual(payload);
     expect(next).toBeCalled();
   });
 
   test("password set succeed", () => {
-    const payload = {
-      body: { ...userObj },
-    };
-    const req = getMockReq(payload);
-    validateBody(schemas.deleteMySelfSchema)(req, res, next);
-
+    const payload = { ...userObj };
+    const req = validate(schema, payload);
     expect(res.status).not.toBeCalled();
-    expect((req as AuthRequest).value?.body).toEqual(payload.body);
+    expect((req as AuthRequest).value?.body).toEqual(payload);
     expect(next).toBeCalled();
   });
 });

@@ -7,7 +7,10 @@ export const validateBody = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.validate(req.body);
     if (result.error) {
-      return res.status(400).json(result.error);
+      return res.status(400).json({
+        success: false,
+        error: { message: result.error.message },
+      });
     }
 
     // req.value.body instead fo req.body

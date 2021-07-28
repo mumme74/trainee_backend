@@ -1,10 +1,9 @@
 import { getMockReq, getMockRes } from "@jest-mock/express";
 
+import "../testProcess.env";
 import type { IUserDocument } from "../../models/usersModel";
 import User, { rolesAvailable } from "../../models/usersModel";
-
 import UsersController from "../../controllers/users";
-
 import { initMemoryDb, closeMemoryDb } from "../testingDatabase";
 
 beforeAll(async () => {
@@ -218,7 +217,7 @@ describe("googleOAuthOK", () => {
 describe("myInfo", () => {
   test("test my info", () => {
     const req = getMockReq({ user });
-    UsersController.myInfo(req, res);
+    UsersController.myInfo(req, res, next);
     expect(res.status).toBeCalledWith(200);
     const response = (res.json as jest.Mock).mock.calls[0][0];
     expect(response).toMatchObject({
@@ -244,7 +243,7 @@ describe("myInfo", () => {
 describe("saveMyUserInfo", () => {
   test("fail when save non existing user", async () => {
     const req = getMockReq({ user });
-    await UsersController.saveMyUserInfo(req, res);
+    await UsersController.saveMyUserInfo(req, res, next);
     expect(res.status).toBeCalledWith(404);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -263,7 +262,7 @@ describe("saveMyUserInfo", () => {
       picture: "https://serverpath.com",
     };
     const req = getMockReq({ user, body: updatedInfo });
-    await UsersController.saveMyUserInfo(req, res);
+    await UsersController.saveMyUserInfo(req, res, next);
     expect(res.status).toBeCalledWith(200);
     const response = (res.json as jest.Mock).mock.calls[0][0];
     expect(response).toMatchObject({
@@ -294,7 +293,7 @@ describe("changeMyPassword", () => {
       user,
       body: { _id: user.id, password: newPassword },
     });
-    await UsersController.changeMyPassword(req, res);
+    await UsersController.changeMyPassword(req, res, next);
     expect(res.status).toBeCalledWith(404);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -310,7 +309,7 @@ describe("changeMyPassword", () => {
       user,
       body: { _id: user.id, password: newPassword },
     });
-    await UsersController.changeMyPassword(req, res);
+    await UsersController.changeMyPassword(req, res, next);
     expect(res.status).toBeCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true }),
@@ -339,7 +338,7 @@ describe("deleteMyself", () => {
       user,
       body: { ...userObj },
     });
-    await UsersController.deleteMyself(req, res);
+    await UsersController.deleteMyself(req, res, next);
     expect(res.status).toBeCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -375,7 +374,7 @@ describe("deleteMyself", () => {
       user,
       body: { ...userObj },
     });
-    await UsersController.deleteMyself(req, res);
+    await UsersController.deleteMyself(req, res, next);
     expect(res.status).toBeCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true }),

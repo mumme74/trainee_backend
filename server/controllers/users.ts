@@ -1,6 +1,6 @@
 import JWT from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, RequestHandler } from "express";
 
 import User, {
   comparePasswordHash,
@@ -11,6 +11,19 @@ import User, {
 import mongoose from "mongoose";
 
 import type { IUserInfoResponse, AuthRequest, AuthResponse } from "../types";
+
+interface IUsersController {
+  signup: RequestHandler;
+  login: RequestHandler;
+  googleOAuthOk: RequestHandler;
+  myInfo: RequestHandler;
+  saveMyUserInfo: RequestHandler;
+  changeMyPassword: RequestHandler;
+  deleteMyself: RequestHandler;
+  rolesAvailable: RequestHandler;
+  secret: RequestHandler;
+}
+export type { IUsersController };
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const ObjectId = mongoose.Types.ObjectId;
@@ -74,7 +87,7 @@ const loginResponse = (token: string, user: IUserDocument) => {
 };
 
 // exports down here
-const UsersController = {
+const UsersController: IUsersController = {
   signup: async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
     const { email, password, userName, firstName, lastName } =
@@ -135,12 +148,12 @@ const UsersController = {
     return res.status(200).json(loginResponse(token, authReq.user));
   },
 
-  myInfo: (req: Request, res: Response) => {
+  myInfo: (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
     return res.status(200).json(userInfoResponse(authReq.user));
   },
 
-  saveMyUserInfo: async (req: Request, res: Response) => {
+  saveMyUserInfo: async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
     const user = await User.findOneAndUpdate(
       { _id: new ObjectId(authReq.user.id) },
@@ -159,7 +172,7 @@ const UsersController = {
     return res.status(200).json(userInfoResponse(user));
   },
 
-  changeMyPassword: async (req: Request, res: Response) => {
+  changeMyPassword: async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
     // we can't use findAndUpdate here as that doesn't hash the password
     const user = await User.findById(authReq.user.id);
@@ -171,14 +184,14 @@ const UsersController = {
     return res.status(200).json({ success: true });
   },
 
-  secret: async (req: Request, res: Response) => {
+  secret: async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
     //console.log("Accessing secret resource");
     return res.json({ secret: "Access granted to secret resource!" });
   },
 
   // we must send our firstName, lastName and email and password just as it is stored in the database
-  deleteMyself: async (req: Request, res: Response) => {
+  deleteMyself: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authReq = req as AuthRequest;
       console.log("Trying to delete user " + authReq.user.email);

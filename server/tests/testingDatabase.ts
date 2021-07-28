@@ -1,10 +1,9 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 
-let mongod: MongoMemoryServer;
+import "./testProcess.env";
 
-const appname = process.env.APP_NAME;
-process.env.APP_NAME = "testing app";
+let mongod: MongoMemoryServer;
 
 let connections = 0;
 
@@ -27,7 +26,6 @@ export async function initMemoryDb() {
 export async function closeMemoryDb() {
   if (--connections === 0) {
     await mongoose.disconnect();
-    process.env.APP_NAME = appname;
     return await mongod.stop();
   }
 }
