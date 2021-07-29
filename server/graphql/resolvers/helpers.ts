@@ -1,34 +1,22 @@
 import { MongoError } from "mongodb";
 
 import type { IGraphQl_ErrorResponse } from "../schema";
-import { IUserDocument, rolesAvailable } from "../../models/usersModel";
 import type { AuthRequest } from "../../types";
-import { UserError } from "../../helpers/customErrors";
-import type { IFilterOptions } from "../../helpers/routeHelpers";
-import { meetRoles } from "../../helpers/routeHelpers";
+import { UserError } from "../../helpers/errorHelpers";
+import type { IFilterOptions } from "../../helpers/userHelpers";
+import { meetRoles } from "../../helpers/userHelpers";
+import { errorResponse } from "../../helpers/errorHelpers";
 
 /// This file must NOT import anything from resolvers folder
 
-export const composeErrorResponse = (err: Error): IGraphQl_ErrorResponse => {
-  const stack =
-    process.env.NODE_ENV === "development" &&
-    err.stack &&
-    !(err instanceof UserError || err instanceof MongoError)
-      ? err.stack.split("\n")
-      : undefined;
+export const composeErrorResponse = (
+  err: Error | string,
+): IGraphQl_ErrorResponse => {
+  const res = errorResponse(err);
   return {
-    success: false,
-    message: err.message,
+    ...res,
     __typename: "ErrorResponse",
-    stack,
   };
-};
-
-export const isAdmin = (user: IUserDocument) => {
-  return (
-    user.roles.indexOf(rolesAvailable.super) > -1 ||
-    user.roles.indexOf(rolesAvailable.admin) > -1
-  );
 };
 
 export const rolesFilter = (opt: IFilterOptions, cb: Function) => {

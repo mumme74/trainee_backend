@@ -1,11 +1,6 @@
-import {
-  validateBody,
-  schemas,
-  hasRoles,
-  meetRoles,
-} from "../../helpers/routeHelpers";
-
 import { getMockReq, getMockRes } from "@jest-mock/express";
+
+import { validateBody, schemas, hasRoles } from "../../helpers/routeHelpers";
 import { AuthRequest } from "../../types";
 import User, { rolesAvailable } from "../../models/usersModel";
 import { matchErrorMockCall, matchError } from "../testHelpers";
@@ -305,125 +300,6 @@ describe("deleteMySelf schema", () => {
     expect(res.status).not.toBeCalled();
     expect((req as AuthRequest).value?.body).toEqual(payload);
     expect(next).toBeCalled();
-  });
-});
-
-// ----------------------------------------------------------------
-
-describe("meetRoles function", () => {
-  let req: AuthRequest;
-  beforeEach(() => {
-    req = getMockReq() as AuthRequest;
-    req.user = new User({
-      firstName: "Test",
-      lastName: "Testson",
-      userName: "testUser",
-      email: "email@user.com",
-      method: "local",
-      updatedBy: "123456789abc",
-      updatedAt: Date,
-      createdAt: Date,
-      lastLogin: Date,
-      roles: [rolesAvailable.student],
-    });
-  });
-  /*
-  test("fail match anyOf", () => {
-    const res = meetRoles({ anyOf: rolesAvailable.teacher }, req);
-    expect(res).toEqual("Insufficient priviledges");
-  });
-
-  test("succeed match anyOf", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ anyOf: rolesAvailable.teacher }, req);
-    expect(res).toEqual("");
-  });
-
-  test("fail match anyOf with array", () => {
-    const res = meetRoles({ anyOf: [rolesAvailable.teacher] }, req);
-    expect(res).toEqual("Insufficient priviledges");
-  });
-
-  test("succeed match anyOf with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ anyOf: [rolesAvailable.teacher] }, req);
-    expect(res).toEqual("");
-  });
-  
-  test("succeed match anyOf with 2 alternatives with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles(
-      { anyOf: [rolesAvailable.admin, rolesAvailable.teacher] },
-      req,
-    );
-    expect(res).toEqual("");
-  });
-  */
-
-  test("fail match allOf", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ allOf: rolesAvailable.admin }, req);
-    expect(res).toEqual("You do not have all required priviledges");
-  });
-
-  test("succeed match allOf", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    req.user.roles.push(rolesAvailable.admin);
-
-    const res = meetRoles({ allOf: rolesAvailable.teacher }, req);
-    expect(res).toEqual("");
-  });
-
-  test("fail match allOf with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles(
-      { allOf: [rolesAvailable.admin, rolesAvailable.teacher] },
-      req,
-    );
-    expect(res).toEqual("You do not have all required priviledges");
-  });
-
-  test("succeed match allOf with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    req.user.roles.push(rolesAvailable.admin);
-
-    const res = meetRoles(
-      { allOf: [rolesAvailable.teacher, rolesAvailable.admin] },
-      req,
-    );
-    expect(res).toEqual("");
-  });
-
-  test("fail match exclude", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ exclude: rolesAvailable.teacher }, req);
-
-    expect(res).toEqual("You have a priviledge that you shall NOT have");
-  });
-
-  test("succeed match exclude", () => {
-    const res = meetRoles({ exclude: rolesAvailable.teacher }, req);
-
-    expect(res).toEqual("");
-  });
-
-  test("fail match exclude with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles(
-      { exclude: [rolesAvailable.admin, rolesAvailable.teacher] },
-      req,
-    );
-
-    expect(res).toEqual("You have a priviledge that you shall NOT have");
-  });
-
-  test("succeed match exclude with array", () => {
-    const res = meetRoles(
-      { exclude: [rolesAvailable.teacher, rolesAvailable.admin] },
-      req,
-    );
-
-    expect(res).toEqual("");
   });
 });
 

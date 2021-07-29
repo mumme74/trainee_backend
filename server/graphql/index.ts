@@ -11,6 +11,7 @@ import renderGraphiQLAuthToken from "./graphiqlWithToken";
 
 function graphqlRoute(app: Express) {
   const router = Router();
+  app.use("/graphql", router);
 
   // all logic starts here
   const useGraphiql = process.env.NODE_ENV === "development";

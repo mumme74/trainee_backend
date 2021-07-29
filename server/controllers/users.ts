@@ -11,7 +11,7 @@ import User, {
 import mongoose from "mongoose";
 
 import type { IUserInfoResponse, AuthRequest, AuthResponse } from "../types";
-import { errorResponse } from "../helpers/routeHelpers";
+import { errorResponse } from "../helpers/errorHelpers";
 
 interface IUsersController {
   signup: RequestHandler;

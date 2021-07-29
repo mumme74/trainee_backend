@@ -1,23 +1,9 @@
 import Joi from "joi";
-import { Request, Response, NextFunction, RequestHandler } from "express";
-import { AuthRequest, AuthResponse } from "../types";
-import { rolesAvailable } from "../models/usersModel";
-
-export interface IFilterOptions {
-  // when user has any of these
-  anyOf?: rolesAvailable | rolesAvailable[];
-  // when user has all of these
-  allOf?: rolesAvailable | rolesAvailable[];
-  // exclude when user has any of these
-  exclude?: rolesAvailable | rolesAvailable[];
-}
-
-export const errorResponse = (err: Error | string) => {
-  return {
-    success: false,
-    error: err instanceof Error ? err : { message: err },
-  };
-};
+import { Request, Response, NextFunction } from "express";
+import { AuthRequest } from "../types";
+import type { IFilterOptions } from "./userHelpers";
+import { meetRoles } from "./userHelpers";
+import { errorResponse } from "./errorHelpers";
 
 export const validateBody = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -105,46 +91,4 @@ export const hasRoles = (filterOpt: IFilterOptions) => {
     }
     return next();
   };
-};
-
-/**
- * @brief Run req.user through these filters
- * @param opt the filters that have to be meet to be allowed through
- * @param req the request with user attached to it
- * @returns empty string on succes, or errormessage otherwise
- */
-export const meetRoles = (opt: IFilterOptions, req: Request): string => {
-  const authReq = req as AuthRequest;
-
-  if (
-    opt.anyOf &&
-    (Array.isArray(opt.anyOf)
-      ? opt.anyOf.find((any) => authReq.user.roles.indexOf(any) > -1) ===
-        undefined
-      : authReq.user.roles.indexOf(opt.anyOf) === -1)
-  ) {
-    return "Insufficient priviledges";
-  }
-
-  if (
-    opt.exclude &&
-    (Array.isArray(opt.exclude)
-      ? opt.exclude.find((any) => authReq.user.roles.indexOf(any) > -1) !==
-        undefined
-      : authReq.user.roles.indexOf(opt.exclude) > -1)
-  ) {
-    return "You have a priviledge that you shall NOT have";
-  }
-
-  if (
-    opt.allOf &&
-    (Array.isArray(opt.allOf)
-      ? opt.allOf.filter((any) => authReq.user.roles.indexOf(any) > -1)
-          .length !== opt.allOf.length
-      : authReq.user.roles.indexOf(opt.allOf) === -1)
-  ) {
-    return "You do not have all required priviledges";
-  }
-
-  return "";
 };

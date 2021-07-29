@@ -1,12 +1,13 @@
 import DataLoader from "dataloader";
 import mongoose from "mongoose";
 
-import { composeErrorResponse, rolesFilter, isAdmin } from "./helpers";
-import type { IFilterOptions } from "./helpers";
+import { composeErrorResponse, rolesFilter } from "./helpers";
+import type { IFilterOptions } from "../../helpers/userHelpers";
+import { isAdmin } from "../../helpers/userHelpers";
 
 import { transformUser, lookupUser, userLoader } from "./resolvers.common";
 import Group, { IGroupDocument } from "../../models/groupsModel";
-import { UserError } from "../../helpers/customErrors";
+import { UserError } from "../../helpers/errorHelpers";
 import {
   IGraphQl_GroupType,
   IGraphQl_GroupCreateInput,

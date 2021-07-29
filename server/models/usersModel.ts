@@ -2,7 +2,7 @@ import { Schema, model, Document } from "mongoose";
 import bcrypt from "bcrypt";
 //import { string } from "joi";
 
-import { UserError } from "../helpers/customErrors";
+import { UserError } from "../helpers/errorHelpers";
 
 /**
  * @brief these are the 4 different roles a user can have
@@ -35,7 +35,7 @@ export interface IUserDocument extends Document {
   google?: {
     id: string;
   };
-  roles: [rolesAvailable];
+  roles: rolesAvailable[];
   updatedBy: string;
   banned?: boolean;
   lastLogin: Date;

@@ -10,8 +10,8 @@ import { Strategy as GoogleStrategy } from "passport-google-verify-token";
 import User, { rolesAvailable } from "./models/usersModel";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
-import { UserError } from "./helpers/customErrors";
-import { errorResponse } from "./helpers/routeHelpers";
+import { UserError } from "./helpers/errorHelpers";
+import { errorResponse } from "./helpers/errorHelpers";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 

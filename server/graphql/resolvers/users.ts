@@ -13,7 +13,7 @@ import {
 import { IGraphQl_MutationResponse } from "../schema/index";
 import { AuthRequest } from "../../types";
 import { composeErrorResponse, rolesFilter } from "./helpers";
-import { UserError } from "../../helpers/customErrors";
+import { UserError } from "../../helpers/errorHelpers";
 
 export const userLoader = new DataLoader(
   async (userIds: readonly string[]): Promise<IUserDocument[]> => {

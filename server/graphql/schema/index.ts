@@ -1,4 +1,5 @@
 import { buildSchema } from "graphql";
+import type { IErrorResponse } from "../../helpers/errorHelpers";
 import "./customTypes";
 
 import {
@@ -21,10 +22,10 @@ export interface IGraphQl_Response {
   __typename: string;
 }
 
-export interface IGraphQl_ErrorResponse extends IGraphQl_Response {
+export interface IGraphQl_ErrorResponse
+  extends IGraphQl_Response,
+    IErrorResponse {
   success: false;
-  message: string;
-  stack?: string[];
 }
 
 export interface IGraphQl_OkResponse extends IGraphQl_Response {
@@ -41,11 +42,16 @@ export type IGraphQl_MutationResponse =
 const schemaStr = `
     scalar Date
 
+    type Error {
+      message: String!
+      stack: [String]
+      type: String
+    }
+
     # standard response if anything goes wrong in server
     type ErrorResponse {
         success: Boolean! # false
-        message: String!
-        stack: [String]
+        error: Error
     }
 
     type OkResponse {
