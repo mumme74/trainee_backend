@@ -188,8 +188,8 @@ const UsersController: IUsersController = {
       console.log("Trying to delete user " + authReq.user.email);
 
       const passWdMatch = await comparePasswordHash(
+        authReq.body.password + "",
         authReq.user.password + "",
-        authReq.body.password,
       );
 
       if (passWdMatch) {

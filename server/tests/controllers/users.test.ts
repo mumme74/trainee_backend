@@ -5,6 +5,7 @@ import type { IUserDocument } from "../../models/usersModel";
 import User, { rolesAvailable } from "../../models/usersModel";
 import UsersController from "../../controllers/users";
 import { initMemoryDb, closeMemoryDb } from "../testingDatabase";
+import { userPrimaryObj, matchErrorMockCall } from "../testHelpers";
 
 beforeAll(async () => {
   await initMemoryDb();
@@ -15,18 +16,6 @@ afterAll(async () => {
 });
 
 const { res, next, clearMockRes } = getMockRes();
-
-const userPrimaryObj = {
-  firstName: "Test",
-  lastName: "Testson",
-  userName: "tester",
-  method: "google",
-  email: "user@testing.com",
-  google: { id: "123456789abc" },
-  domain: "testing.com",
-  roles: [rolesAvailable.student],
-  updatedBy: "123456789abc",
-};
 
 let user: IUserDocument;
 beforeEach(() => {
@@ -78,12 +67,12 @@ function checkToken(response: any, userId: string, expiresInMinutes: number) {
 // --------------------------------------------------------
 
 describe("signup", () => {
-  const password = "SecretPass1$";
+  const password = userPrimaryObj.password;
   const userObj = {
-    email: "user@testing.com",
-    userName: "tester",
-    firstName: "Test",
-    lastName: "Testsson",
+    email: userPrimaryObj.email,
+    userName: userPrimaryObj.userName,
+    firstName: userPrimaryObj.firstName,
+    lastName: userPrimaryObj.lastName,
   };
   test("fail email in use", async () => {
     await user.save();
@@ -115,12 +104,7 @@ describe("signup", () => {
     await UsersController.signup(req, res, next);
 
     expect(res.status).toBeCalledWith(403);
-    expect(res.json).toBeCalledWith(
-      expect.objectContaining({
-        success: false,
-        error: { message: "userName already in use" },
-      }),
-    );
+    matchErrorMockCall(res, "userName already in use");
   });
 
   test("save new user", async () => {
@@ -322,14 +306,14 @@ describe("changeMyPassword", () => {
 });
 
 describe("deleteMyself", () => {
-  const password = "SecretPass1$";
+  const password = userPrimaryObj.password;
 
   const userObj = {
     userName: userPrimaryObj.userName,
     email: userPrimaryObj.email,
     firstName: userPrimaryObj.firstName,
     lastName: userPrimaryObj.lastName,
-    password: "",
+    password,
   };
 
   async function testMissmatch(userObj: any) {

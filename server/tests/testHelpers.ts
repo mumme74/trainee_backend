@@ -9,6 +9,7 @@ import request from "supertest";
 import supertest from "supertest";
 import JWT from "jsonwebtoken";
 import { rolesAvailable } from "../models/usersModel";
+import type { IUserDocument } from "../models/usersModel";
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;
@@ -124,4 +125,41 @@ export function signToken({
     },
     process.env.JWT_SECRET + "",
   );
+}
+
+export const userPrimaryObj = {
+  firstName: "Test",
+  lastName: "Testson",
+  userName: "tester",
+  method: "google",
+  password: "SecretPass1$",
+  email: "user@testing.com",
+  google: { id: "123456789abc" },
+  domain: "testing.com",
+  picture: "https://somedomain.com/path/to/image.png",
+  roles: [rolesAvailable.student],
+  updatedBy: "123456789abc",
+};
+
+export function compareUser(
+  user: any,
+  userSaved: IUserDocument,
+  compareId = true,
+) {
+  if (compareId) {
+    expect(user.id.toString()).toEqual(userSaved.id.toString());
+  }
+  if (user.updatedBy && userSaved.updatedBy) {
+    expect(user.updatedBy.toString()).toEqual(userSaved.updatedBy.toString());
+  }
+  expect(user).toMatchObject({
+    method: userSaved.method,
+    userName: userSaved.userName,
+    email: userSaved.email,
+    firstName: userSaved.firstName,
+    lastName: userSaved.lastName,
+    domain: userSaved.domain,
+    createdAt: userSaved.createdAt,
+    updatedAt: userSaved.updatedAt,
+  });
 }

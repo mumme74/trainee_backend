@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import request from "supertest";
 import type { CallbackHandler } from "supertest";
 
-// must be imported before imported dependancies
+// must be imported before imported dependencies
 import "../testProcess.env";
 
 import type { IUsersController } from "../../controllers/users";
@@ -15,8 +15,9 @@ import {
   matchErrorSupertest,
   signToken,
   jsonApp,
+  userPrimaryObj,
+  compareUser,
 } from "../testHelpers";
-import { AnyAaaaRecord } from "dns";
 
 function respond(req: Request, res: Response, next: NextFunction) {
   return res.status(200).json(req.body);
@@ -46,20 +47,6 @@ afterAll(async () => {
   await closeMemoryDb();
 });
 
-const userPrimaryObj = {
-  firstName: "Test",
-  lastName: "Testson",
-  userName: "tester",
-  method: "google",
-  password: "SecretPass1$",
-  email: "user@testing.com",
-  google: { id: "123456789abc" },
-  domain: "testing.com",
-  picture: "https://somedomain.com/path/to/imgae.png",
-  roles: [rolesAvailable.student],
-  updatedBy: "123456789abc",
-};
-
 beforeEach(() => {
   for (const mockFn of Object.values(mockController)) {
     mockFn.mockClear();
@@ -67,20 +54,6 @@ beforeEach(() => {
 });
 
 // helper functions
-function compareUser(user: any, userSaved: IUserDocument) {
-  expect(user.id.toString()).toEqual(userSaved.id.toString());
-  expect(user.updatedBy.toString()).toEqual(userSaved.updatedBy.toString());
-  expect(user).toMatchObject({
-    method: userSaved.method,
-    userName: userSaved.userName,
-    email: userSaved.email,
-    firstName: userSaved.firstName,
-    lastName: userSaved.lastName,
-    domain: userSaved.domain,
-    createdAt: userSaved.createdAt,
-    updatedAt: userSaved.updatedAt,
-  });
-}
 
 // -----------------------------------------------------
 
