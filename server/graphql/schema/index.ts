@@ -38,6 +38,15 @@ export type IGraphQl_MutationResponse =
   | IGraphQl_OkResponse
   | IGraphQl_ErrorResponse;
 
+const testingErrorResponseQueries = `
+  # should only be active when we run tests
+  testError: Error
+  testErrorResponse: ErrorResponse
+  testOkResponse: OkResponse
+  testMutationResponseErr: MutationResponse
+  testMutationResponseOk: MutationResponse
+`;
+
 // our API schema types
 const schemaStr = `
     scalar Date
@@ -72,6 +81,7 @@ const schemaStr = `
     type RootQuery {
         ${usersSchemaQueries}
         ${groupSchemaQueries}
+        ${testingErrorResponseQueries}
     }
 
     type RootMutation {

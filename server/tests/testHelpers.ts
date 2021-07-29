@@ -62,16 +62,21 @@ export function matchError(
 export class JsonReq {
   private app: ExpressType;
   private basePath: string;
-  private headers: { key: string; vlu: string }[];
+  private headers: [string, string][];
   private token = "";
+  private contentTypeMatcher = /application\/json/;
   constructor(
     app: ExpressType,
     basePath: string,
-    headers?: { key: string; vlu: string }[],
+    headers: [string, string][] = [["Accept", "application/json"]],
+    contentTypeMatcher?: RegExp,
   ) {
     this.app = app;
     this.basePath = basePath;
     this.headers = headers || [];
+    if (contentTypeMatcher) {
+      this.contentTypeMatcher = contentTypeMatcher;
+    }
   }
 
   setToken(token: string) {
@@ -81,22 +86,24 @@ export class JsonReq {
   private setHeaders(req: request.Test) {
     req.set("Accept", "application/json");
     this.headers.forEach((header) => {
-      req.set(header.key, header.vlu);
+      req.set(header[0], header[1]);
     });
     if (this.token) req.set("Authorization", this.token);
     return req;
   }
 
   post(postObj: any, path?: string) {
-    const req = request(this.app)
-      .post(this.basePath + (path || ""))
-      .set("Accept", "application/json");
-    return this.setHeaders(req).send(postObj).expect("Content-Type", /json/);
+    const req = request(this.app).post(this.basePath + (path || ""));
+    return this.setHeaders(req)
+      .send(postObj)
+      .expect("Content-Type", this.contentTypeMatcher);
   }
 
   get(path?: string) {
     const req = request(this.app).get(this.basePath + (path || ""));
-    return this.setHeaders(req).send().expect("Content-Type", /json/);
+    return this.setHeaders(req)
+      .send()
+      .expect("Content-Type", this.contentTypeMatcher);
   }
 }
 
