@@ -37,7 +37,7 @@ export interface IUserDocument extends Document {
   };
   roles: [rolesAvailable];
   updatedBy: string;
-  banned?: false;
+  banned?: boolean;
   lastLogin: Date;
   readonly updatedAt: Date;
   readonly createdAt: Date;
