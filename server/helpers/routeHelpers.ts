@@ -3,14 +3,31 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import { AuthRequest, AuthResponse } from "../types";
 import { rolesAvailable } from "../models/usersModel";
 
+export interface IFilterOptions {
+  // when user has any of these
+  anyOf?: rolesAvailable | rolesAvailable[];
+  // when user has all of these
+  allOf?: rolesAvailable | rolesAvailable[];
+  // exclude when user has any of these
+  exclude?: rolesAvailable | rolesAvailable[];
+}
+
+export const errorResponse = (err: Error | string) => {
+  return {
+    success: false,
+    error: err instanceof Error ? err : { message: err },
+  };
+};
+
 export const validateBody = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json(errorResponse("Empty request body!"));
+    }
+
     const result = schema.validate(req.body);
     if (result.error) {
-      return res.status(400).json({
-        success: false,
-        error: { message: result.error.message },
-      });
+      return res.status(400).json(errorResponse(result.error.message));
     }
 
     // req.value.body instead fo req.body
@@ -42,7 +59,11 @@ export const schemas = {
   loginSchema: Joi.object().keys({
     login: [
       Joi.string().email().required(),
-      Joi.string().min(3).max(30).required(),
+      Joi.string()
+        .min(3)
+        .max(30)
+        .pattern(/^[^@]+$/)
+        .required(),
     ],
     password: password,
   }),
@@ -67,26 +88,63 @@ export const schemas = {
     firstName: firstName,
     lastName: lastName,
     email: email,
-    password: Joi.string().allow(""),
+    password: [Joi.string().max(0).allow(""), password],
   }),
 };
 
 /**
  * @brief middleware to stop request if user does not have every requiredRoles
- * @param requiredRoles all these roles must be met to go through
- * @returns the response
+ * @param filterOpt all these roles must be met to go through, see IFilterOpt
+ * @returns the response of next function
  */
-export const hasRoles = (requiredRoles: rolesAvailable[]) => {
+export const hasRoles = (filterOpt: IFilterOptions) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
-    const pass = requiredRoles.every(
-      (role) => authReq.user.roles.indexOf(+role) > -1,
-    );
-    if (!pass) {
-      return res
-        .status(403)
-        .json({ error: { message: "Insufficient authorization" } });
+    const blockedStr = meetRoles(filterOpt, req);
+    if (blockedStr) {
+      return res.status(403).json(errorResponse(blockedStr));
     }
     return next();
   };
+};
+
+/**
+ * @brief Run req.user through these filters
+ * @param opt the filters that have to be meet to be allowed through
+ * @param req the request with user attached to it
+ * @returns empty string on succes, or errormessage otherwise
+ */
+export const meetRoles = (opt: IFilterOptions, req: Request): string => {
+  const authReq = req as AuthRequest;
+
+  if (
+    opt.anyOf &&
+    (Array.isArray(opt.anyOf)
+      ? opt.anyOf.find((any) => authReq.user.roles.indexOf(any) > -1) ===
+        undefined
+      : authReq.user.roles.indexOf(opt.anyOf) === -1)
+  ) {
+    return "Insufficient priviledges";
+  }
+
+  if (
+    opt.exclude &&
+    (Array.isArray(opt.exclude)
+      ? opt.exclude.find((any) => authReq.user.roles.indexOf(any) > -1) !==
+        undefined
+      : authReq.user.roles.indexOf(opt.exclude) > -1)
+  ) {
+    return "You have a priviledge that you shall NOT have";
+  }
+
+  if (
+    opt.allOf &&
+    (Array.isArray(opt.allOf)
+      ? opt.allOf.filter((any) => authReq.user.roles.indexOf(any) > -1)
+          .length !== opt.allOf.length
+      : authReq.user.roles.indexOf(opt.allOf) === -1)
+  ) {
+    return "You do not have all required priviledges";
+  }
+
+  return "";
 };

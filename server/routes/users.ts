@@ -1,7 +1,7 @@
 import Router from "express-promise-router";
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import UsersController, { IUsersController } from "../controllers/users";
-import { passportGoogle, passportSignIn, passportJWT } from "../passport";
+import { passportGoogle, passportLogin, passportJWT } from "../passport";
 
 import { validateBody, schemas, hasRoles } from "../helpers/routeHelpers";
 import { rolesAvailable } from "../models/usersModel";
@@ -13,13 +13,18 @@ function userRoutes(
   const router = Router();
   app.use("/users/", router);
 
+  router.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    next();
+  });
+
   router
     .route("/signup")
     .post(validateBody(schemas.newUserSchema), controller.signup);
 
   router
     .route("/login")
-    .post(validateBody(schemas.loginSchema), passportSignIn, controller.login);
+    .post(validateBody(schemas.loginSchema), passportLogin, controller.login);
 
   router.route("/oauth/google").post(passportGoogle, controller.googleOAuthOk);
 
@@ -55,7 +60,7 @@ function userRoutes(
     .route("/availableroles")
     .get(
       passportJWT,
-      hasRoles([rolesAvailable.admin, rolesAvailable.super]),
+      hasRoles({ anyOf: [rolesAvailable.admin, rolesAvailable.super] }),
       controller.rolesAvailable,
     );
 
