@@ -22,28 +22,26 @@ export class UserError extends Error {
  * @returns a IErrorResponse
  */
 export const errorResponse = (err: Error | string): IErrorResponse => {
-  let stack, type, message;
+  const error: { message: string; type?: string; stack?: string[] } = {
+    message: "",
+  };
   if (typeof err !== "string") {
     if (
       process.env.NODE_ENV === "development" &&
       err.stack &&
       !(err instanceof UserError || err instanceof MongoError)
     ) {
-      stack = err.stack.split("\n");
-      type = err.toString();
+      error.stack = err.stack.split("\n");
+      error.type = err.toString();
     }
 
-    message = err.message;
+    error.message = err.message;
   } else {
-    message = err;
+    error.message = err;
   }
 
   return {
     success: false,
-    error: {
-      message,
-      type,
-      stack,
-    },
+    error,
   };
 };
