@@ -18,7 +18,7 @@ export function jsonApp() {
   app.use(Express.json());
   app.finalize = () => {
     app.use((req: Request, res: Response, next: NextFunction) => {
-      console.log(`404 not found ${req.path}`);
+      //console.log(`404 not found ${req.path}`);
       res.status(404).json({
         success: false,
         error: { message: `Not found ${req.path}` },

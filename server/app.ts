@@ -59,6 +59,7 @@ app.use((req, res) => {
 const showErrors = nodeEnv === "development";
 app.use((err: Error, req: Request, res: Response) => {
   const errObj = {
+    success: false,
     error: {
       message: "500: Internal Server Error",
       status: 500,
@@ -67,8 +68,8 @@ app.use((err: Error, req: Request, res: Response) => {
         : undefined,
     },
   };
-  res.status(500).json(errObj);
   console.log(err);
+  res.status(500).json(errObj);
 });
 
 export default app;

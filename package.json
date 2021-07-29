@@ -68,6 +68,7 @@
     "@babel/preset-typescript": "^7.14.5",
     "@jest-mock/express": "^1.4.2",
     "@types/jest": "^26.0.24",
+    "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
     "@typescript-eslint/parser": "^4.28.4",
     "babel-jest": "^27.0.6",
@@ -92,7 +93,8 @@
     "react-dom": "^16.14.0",
     "rewire": "^5.0.0",
     "sinon": "^11.1.1",
-    "sinon-chai": "^3.7.0"
+    "sinon-chai": "^3.7.0",
+    "supertest": "^6.1.4"
   },
   "nyc": {
     "exclude": [
