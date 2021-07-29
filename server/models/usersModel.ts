@@ -133,12 +133,12 @@ userSchema.pre("save", async function (next) {
 });
 
 export async function comparePasswordHash(
-  pass1: string,
-  pass2: string,
+  pass: string,
+  encryptedStr: string,
 ): Promise<boolean> {
   try {
-    if (pass1 === "" && pass2 === "") return true;
-    return await bcrypt.compare(pass1, pass2);
+    if (pass === "" && encryptedStr === "") return true;
+    return await bcrypt.compare(pass, encryptedStr);
   } catch (err) {
     throw new UserError(err);
   }
