@@ -11,6 +11,7 @@ import User, { rolesAvailable } from "./models/usersModel";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
 import { UserError } from "./helpers/customErrors";
+import { errorResponse } from "./helpers/routeHelpers";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -28,9 +29,9 @@ passport.use(
 
         // if user doesn't exist, handle it
         if (!user) {
-          return done(null, false, "User does not exist");
+          return done(401, false, "User does not exist");
         } else if (user.banned) {
-          return done(null, false, "User is banned");
+          return done(403, false, "User is banned");
         }
 
         // Otherwise, return the user
@@ -59,9 +60,9 @@ passport.use(
 
         // if not, handle it
         if (!user) {
-          return done(null, false, "User does not exist");
+          return done(401, false, "User does not exist");
         } else if (user.banned) {
-          return done(null, false, "User is banned");
+          return done(403, false, "User is banned");
         }
 
         // check is the password is correct
@@ -69,7 +70,7 @@ passport.use(
 
         // if not, handle it
         if (!isMatch) {
-          return done(null, false, "Password incorrect");
+          return done(403, false, "Password incorrect");
         }
 
         // update last login
@@ -141,7 +142,7 @@ passport.use(
         );
 
         if (user.banned) {
-          return done(null, false, "User is banned");
+          return done(403, false, "User is banned");
         }
 
         // a new record would probably have the same time in create and update timestamps
@@ -176,7 +177,7 @@ passport.use(
   ),
 );
 
-export const passportSignIn = passport.authenticate("local", {
+export const passportLogin = passport.authenticate("local", {
   session: false,
 });
 
@@ -193,14 +194,15 @@ export const passportJWT = (
     "jwt",
     {
       session: false,
-      failureFlash: JSON.stringify({ error: { message: "Invalid token" } }),
+      failureFlash: JSON.stringify(errorResponse("Invalid token")),
     },
     (err: any, user: any, info: any) => {
       if (err || !user) {
-        return res.status(401).json({
-          error: { message: info || err?.message || "Unauthenticated" },
-        });
+        return res
+          .status(!isNaN(err) && err ? err : 401)
+          .json(errorResponse(info?.message || "Unauthenticated"));
       }
+      if (!req.user && user) req.user = user;
       return next();
     },
   )(req, res, next);

@@ -11,6 +11,7 @@ import User, {
 import mongoose from "mongoose";
 
 import type { IUserInfoResponse, AuthRequest, AuthResponse } from "../types";
+import { errorResponse } from "../helpers/routeHelpers";
 
 interface IUsersController {
   signup: RequestHandler;
@@ -28,16 +29,7 @@ export type { IUsersController };
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const ObjectId = mongoose.Types.ObjectId;
 
-const errorResponse = (errObj: any) => {
-  return {
-    success: false,
-    error: errObj,
-  };
-};
-
-const userNotFoundReturn = (moreErrInfo?: any) => {
-  return errorResponse({ message: "User not found!", moreErrInfo });
-};
+const USER_NOT_FOUND = "User not found!";
 
 const signToken = (
   user: IUserDocument,
@@ -98,16 +90,15 @@ const UsersController: IUsersController = {
       $or: [{ email: email }, { userName: userName }],
     });
     if (foundUser) {
-      const resp = {
-        success: false,
-        error: {
-          message:
+      return res
+        .status(403)
+        .json(
+          errorResponse(
             foundUser.email === email
               ? "email already in use"
               : "userName already in use",
-        },
-      };
-      return res.status(403).json(resp);
+          ),
+        );
     }
 
     // create a new user
@@ -167,7 +158,7 @@ const UsersController: IUsersController = {
       { returnOriginal: false, new: true },
     );
     if (!user) {
-      return res.status(404).json(userNotFoundReturn());
+      return res.status(404).json(errorResponse(USER_NOT_FOUND));
     }
     return res.status(200).json(userInfoResponse(user));
   },
@@ -176,7 +167,7 @@ const UsersController: IUsersController = {
     const authReq = req as AuthRequest;
     // we can't use findAndUpdate here as that doesn't hash the password
     const user = await User.findById(authReq.user.id);
-    if (!user) return res.status(404).json(userNotFoundReturn());
+    if (!user) return res.status(404).json(errorResponse(USER_NOT_FOUND));
 
     user.password = authReq.body.password;
     user.updatedBy = authReq.user.id;
@@ -215,9 +206,7 @@ const UsersController: IUsersController = {
         }
       }
       console.log("Failed to delete");
-      return res
-        .status(400)
-        .json(errorResponse({ message: "Missmatched info!" }));
+      return res.status(400).json(errorResponse("Missmatched info!"));
     } catch (e) {
       console.log("Failed to delete, error occured");
       return res.status(500).json(errorResponse(e));
