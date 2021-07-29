@@ -43,12 +43,14 @@ describe("errorReponse", () => {
   test("with string", () => {
     const res = errorResponse("testStr");
     expect(res).toEqual(matchObj("testStr"));
+    expect(Object.keys(res.error).length).toEqual(1);
   });
 
   test("with Error, should have no stack or type", () => {
     const err = throwErr(new Error("test"));
     const res = errorResponse(err);
     expect(res).toEqual(matchObj("test"));
+    expect(Object.keys(res.error).length).toEqual(1);
   });
 
   test("with Error, dev mode, should have stack and type", () => {
@@ -62,15 +64,18 @@ describe("errorReponse", () => {
         type: "Error: test",
       }),
     );
+    expect(Object.keys(res.error).length).toEqual(3);
   });
-  test("with UserError, dev mode, should have no stack or type", () => {
+  test("with UserError, dev mode, should have no stack nor type", () => {
     const err = throwErr(new UserError("test"));
     const res = errorResponse(err);
     expect(res).toEqual(matchObj("test"));
+    expect(Object.keys(res.error).length).toEqual(1);
   });
-  test("with MongoError, dev mode, should have no stack or type", () => {
+  test("with MongoError, dev mode, should have no stack nor type", () => {
     const err = throwErr(new MongoError("test"));
     const res = errorResponse(err);
     expect(res).toEqual(matchObj("test"));
+    expect(Object.keys(res.error).length).toEqual(1);
   });
 });
