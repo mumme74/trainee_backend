@@ -23,7 +23,7 @@ export const meetRoles = (opt: IFilterOptions, req: Request): string => {
   const authReq = req as AuthRequest;
 
   if (
-    opt.anyOf &&
+    opt.anyOf !== undefined &&
     (Array.isArray(opt.anyOf)
       ? opt.anyOf.find((any) => authReq.user.roles.indexOf(any) > -1) ===
         undefined
@@ -33,7 +33,7 @@ export const meetRoles = (opt: IFilterOptions, req: Request): string => {
   }
 
   if (
-    opt.exclude &&
+    opt.exclude !== undefined &&
     (Array.isArray(opt.exclude)
       ? opt.exclude.find((any) => authReq.user.roles.indexOf(any) > -1) !==
         undefined
@@ -43,7 +43,7 @@ export const meetRoles = (opt: IFilterOptions, req: Request): string => {
   }
 
   if (
-    opt.allOf &&
+    opt.allOf !== undefined &&
     (Array.isArray(opt.allOf)
       ? opt.allOf.filter((any) => authReq.user.roles.indexOf(any) > -1)
           .length !== opt.allOf.length

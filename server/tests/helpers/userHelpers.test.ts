@@ -13,6 +13,10 @@ beforeEach(() => {
 // ----------------------------------------------------------------
 
 describe("meetRoles function", () => {
+  const ANY_OF_ERR_STRING = "Insufficient priviledges";
+  const ALL_OF_ERR_STRING = "You do not have all required priviledges";
+  const EXCLUDE_ERR_STRING = "You have a priviledge that you shall NOT have";
+
   let req: AuthRequest;
   beforeEach(() => {
     req = getMockReq() as AuthRequest;
@@ -32,7 +36,7 @@ describe("meetRoles function", () => {
 
   test("fail match anyOf", () => {
     const res = meetRoles({ anyOf: rolesAvailable.teacher }, req);
-    expect(res).toEqual("Insufficient priviledges");
+    expect(res).toEqual(ANY_OF_ERR_STRING);
   });
 
   test("succeed match anyOf", () => {
@@ -41,9 +45,14 @@ describe("meetRoles function", () => {
     expect(res).toEqual("");
   });
 
+  test("succeed match anyOf value=0", () => {
+    const res = meetRoles({ anyOf: 0 }, req);
+    expect(res).toEqual("");
+  });
+
   test("fail match anyOf with array", () => {
     const res = meetRoles({ anyOf: [rolesAvailable.teacher] }, req);
-    expect(res).toEqual("Insufficient priviledges");
+    expect(res).toEqual(ANY_OF_ERR_STRING);
   });
 
   test("succeed match anyOf with array", () => {
@@ -64,14 +73,18 @@ describe("meetRoles function", () => {
   test("fail match allOf", () => {
     req.user.roles.push(rolesAvailable.teacher);
     const res = meetRoles({ allOf: rolesAvailable.admin }, req);
-    expect(res).toEqual("You do not have all required priviledges");
+    expect(res).toEqual(ALL_OF_ERR_STRING);
   });
 
   test("succeed match allOf", () => {
     req.user.roles.push(rolesAvailable.teacher);
     req.user.roles.push(rolesAvailable.admin);
-
     const res = meetRoles({ allOf: rolesAvailable.teacher }, req);
+    expect(res).toEqual("");
+  });
+
+  test("succeed match allOf value=0", () => {
+    const res = meetRoles({ allOf: 0 }, req);
     expect(res).toEqual("");
   });
 
@@ -81,7 +94,7 @@ describe("meetRoles function", () => {
       { allOf: [rolesAvailable.admin, rolesAvailable.teacher] },
       req,
     );
-    expect(res).toEqual("You do not have all required priviledges");
+    expect(res).toEqual(ALL_OF_ERR_STRING);
   });
 
   test("succeed match allOf with array", () => {
@@ -98,14 +111,17 @@ describe("meetRoles function", () => {
   test("fail match exclude", () => {
     req.user.roles.push(rolesAvailable.teacher);
     const res = meetRoles({ exclude: rolesAvailable.teacher }, req);
-
-    expect(res).toEqual("You have a priviledge that you shall NOT have");
+    expect(res).toEqual(EXCLUDE_ERR_STRING);
   });
 
   test("succeed match exclude", () => {
     const res = meetRoles({ exclude: rolesAvailable.teacher }, req);
-
     expect(res).toEqual("");
+  });
+
+  test("fail match exclude value=0", () => {
+    const res = meetRoles({ exclude: 0 }, req);
+    expect(res).toEqual(EXCLUDE_ERR_STRING);
   });
 
   test("fail match exclude with array", () => {
@@ -114,8 +130,7 @@ describe("meetRoles function", () => {
       { exclude: [rolesAvailable.admin, rolesAvailable.teacher] },
       req,
     );
-
-    expect(res).toEqual("You have a priviledge that you shall NOT have");
+    expect(res).toEqual(EXCLUDE_ERR_STRING);
   });
 
   test("succeed match exclude with array", () => {
@@ -123,7 +138,6 @@ describe("meetRoles function", () => {
       { exclude: [rolesAvailable.teacher, rolesAvailable.admin] },
       req,
     );
-
     expect(res).toEqual("");
   });
 });
