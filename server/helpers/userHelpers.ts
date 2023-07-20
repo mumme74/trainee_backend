@@ -1,16 +1,16 @@
 import { Request } from "express";
 
-import { rolesAvailable } from "../models/usersModel";
+import { eRolesAvailable } from "../models/usersModel";
 import type { AuthRequest } from "../types";
 import type { IUserDocument } from "../models/usersModel";
 
 export interface IFilterOptions {
   // when user has any of these
-  anyOf?: rolesAvailable | rolesAvailable[];
+  anyOf?: eRolesAvailable | eRolesAvailable[];
   // when user has all of these
-  allOf?: rolesAvailable | rolesAvailable[];
+  allOf?: eRolesAvailable | eRolesAvailable[];
   // exclude when user has any of these
-  exclude?: rolesAvailable | rolesAvailable[];
+  exclude?: eRolesAvailable | eRolesAvailable[];
 }
 
 /**
@@ -62,7 +62,7 @@ export const meetRoles = (opt: IFilterOptions, req: Request): string => {
  */
 export const isAdmin = (user: IUserDocument): boolean => {
   return (
-    user.roles.indexOf(rolesAvailable.super) > -1 ||
-    user.roles.indexOf(rolesAvailable.admin) > -1
+    user.roles.indexOf(eRolesAvailable.super) > -1 ||
+    user.roles.indexOf(eRolesAvailable.admin) > -1
   );
 };

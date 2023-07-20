@@ -41,6 +41,8 @@ const testResolvers =
         },
       };
 
+// these are the normal code to include resolvers.
+
 // must match schema
 export const graphQlResolvers = {
   ...usersController,

@@ -2,7 +2,7 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 
 import "../testProcess.env";
 import type { IUserDocument } from "../../models/usersModel";
-import User, { rolesAvailable } from "../../models/usersModel";
+import User, { eRolesAvailable } from "../../models/usersModel";
 import UsersController from "../../controllers/users";
 import { initMemoryDb, closeMemoryDb } from "../testingDatabase";
 import { userPrimaryObj, matchErrorMockCall } from "../testHelpers";
@@ -37,7 +37,7 @@ async function checkUserInDB(matchUserObj: any, password?: string) {
     method: "local",
   });
   //must be done outside of toMatchObject
-  expect([...(newUser?.roles || [])]).toEqual([rolesAvailable.student]);
+  expect([...(newUser?.roles || [])]).toEqual([eRolesAvailable.student]);
   if (password)
     await expect(newUser?.isValidPassword(password)).resolves.toEqual(true);
 

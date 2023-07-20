@@ -5,12 +5,12 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import User, {
   comparePasswordHash,
   IUserDocument,
-  rolesAvailable,
+  eRolesAvailable,
   rolesAvailableKeys,
 } from "../models/usersModel";
 import mongoose from "mongoose";
 
-import type { IUserInfoResponse, AuthRequest, AuthResponse } from "../types";
+import type { IUserInfoResponse, AuthRequest } from "../types";
 import { errorResponse } from "../helpers/errorHelpers";
 
 interface IUsersController {
@@ -110,7 +110,7 @@ const UsersController: IUsersController = {
       firstName,
       lastName,
       domain: "",
-      roles: [rolesAvailable.student],
+      roles: [eRolesAvailable.student],
     });
     await newUser.save();
 
@@ -200,16 +200,16 @@ const UsersController: IUsersController = {
           firstName: authReq.body.firstName,
           lastName: authReq.body.lastName,
         });
-        if (result.n === 1 && result.ok === 1 && result.deletedCount === 1) {
+        if (result.deletedCount === 1 && result.acknowledged) {
           console.log("Deleting user " + authReq.user.email);
           return res.status(200).json({ success: true });
         }
       }
       console.log("Failed to delete");
       return res.status(400).json(errorResponse("Missmatched info!"));
-    } catch (e) {
+    } catch (err: any) {
       console.log("Failed to delete, error occured");
-      return res.status(500).json(errorResponse(e));
+      return res.status(500).json(errorResponse(err));
     }
   },
 

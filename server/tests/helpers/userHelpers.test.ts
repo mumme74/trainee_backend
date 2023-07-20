@@ -2,7 +2,7 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 
 import { meetRoles, isAdmin } from "../../helpers/userHelpers";
 import { AuthRequest } from "../../types";
-import User, { IUserDocument, rolesAvailable } from "../../models/usersModel";
+import User, { IUserDocument, eRolesAvailable } from "../../models/usersModel";
 
 const { res, next, clearMockRes } = getMockRes();
 
@@ -30,18 +30,18 @@ describe("meetRoles function", () => {
       updatedAt: Date,
       createdAt: Date,
       lastLogin: Date,
-      roles: [rolesAvailable.student],
+      roles: [eRolesAvailable.student],
     });
   });
 
   test("fail match anyOf", () => {
-    const res = meetRoles({ anyOf: rolesAvailable.teacher }, req);
+    const res = meetRoles({ anyOf: eRolesAvailable.teacher }, req);
     expect(res).toEqual(ANY_OF_ERR_STRING);
   });
 
   test("succeed match anyOf", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ anyOf: rolesAvailable.teacher }, req);
+    req.user.roles.push(eRolesAvailable.teacher);
+    const res = meetRoles({ anyOf: eRolesAvailable.teacher }, req);
     expect(res).toEqual("");
   });
 
@@ -51,35 +51,35 @@ describe("meetRoles function", () => {
   });
 
   test("fail match anyOf with array", () => {
-    const res = meetRoles({ anyOf: [rolesAvailable.teacher] }, req);
+    const res = meetRoles({ anyOf: [eRolesAvailable.teacher] }, req);
     expect(res).toEqual(ANY_OF_ERR_STRING);
   });
 
   test("succeed match anyOf with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ anyOf: [rolesAvailable.teacher] }, req);
+    req.user.roles.push(eRolesAvailable.teacher);
+    const res = meetRoles({ anyOf: [eRolesAvailable.teacher] }, req);
     expect(res).toEqual("");
   });
 
   test("succeed match anyOf with 2 alternatives with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
+    req.user.roles.push(eRolesAvailable.teacher);
     const res = meetRoles(
-      { anyOf: [rolesAvailable.admin, rolesAvailable.teacher] },
+      { anyOf: [eRolesAvailable.admin, eRolesAvailable.teacher] },
       req,
     );
     expect(res).toEqual("");
   });
 
   test("fail match allOf", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ allOf: rolesAvailable.admin }, req);
+    req.user.roles.push(eRolesAvailable.teacher);
+    const res = meetRoles({ allOf: eRolesAvailable.admin }, req);
     expect(res).toEqual(ALL_OF_ERR_STRING);
   });
 
   test("succeed match allOf", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    req.user.roles.push(rolesAvailable.admin);
-    const res = meetRoles({ allOf: rolesAvailable.teacher }, req);
+    req.user.roles.push(eRolesAvailable.teacher);
+    req.user.roles.push(eRolesAvailable.admin);
+    const res = meetRoles({ allOf: eRolesAvailable.teacher }, req);
     expect(res).toEqual("");
   });
 
@@ -89,33 +89,33 @@ describe("meetRoles function", () => {
   });
 
   test("fail match allOf with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
+    req.user.roles.push(eRolesAvailable.teacher);
     const res = meetRoles(
-      { allOf: [rolesAvailable.admin, rolesAvailable.teacher] },
+      { allOf: [eRolesAvailable.admin, eRolesAvailable.teacher] },
       req,
     );
     expect(res).toEqual(ALL_OF_ERR_STRING);
   });
 
   test("succeed match allOf with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    req.user.roles.push(rolesAvailable.admin);
+    req.user.roles.push(eRolesAvailable.teacher);
+    req.user.roles.push(eRolesAvailable.admin);
 
     const res = meetRoles(
-      { allOf: [rolesAvailable.teacher, rolesAvailable.admin] },
+      { allOf: [eRolesAvailable.teacher, eRolesAvailable.admin] },
       req,
     );
     expect(res).toEqual("");
   });
 
   test("fail match exclude", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    const res = meetRoles({ exclude: rolesAvailable.teacher }, req);
+    req.user.roles.push(eRolesAvailable.teacher);
+    const res = meetRoles({ exclude: eRolesAvailable.teacher }, req);
     expect(res).toEqual(EXCLUDE_ERR_STRING);
   });
 
   test("succeed match exclude", () => {
-    const res = meetRoles({ exclude: rolesAvailable.teacher }, req);
+    const res = meetRoles({ exclude: eRolesAvailable.teacher }, req);
     expect(res).toEqual("");
   });
 
@@ -125,9 +125,9 @@ describe("meetRoles function", () => {
   });
 
   test("fail match exclude with array", () => {
-    req.user.roles.push(rolesAvailable.teacher);
+    req.user.roles.push(eRolesAvailable.teacher);
     const res = meetRoles(
-      { exclude: [rolesAvailable.admin, rolesAvailable.teacher] },
+      { exclude: [eRolesAvailable.admin, eRolesAvailable.teacher] },
       req,
     );
     expect(res).toEqual(EXCLUDE_ERR_STRING);
@@ -135,7 +135,7 @@ describe("meetRoles function", () => {
 
   test("succeed match exclude with array", () => {
     const res = meetRoles(
-      { exclude: [rolesAvailable.teacher, rolesAvailable.admin] },
+      { exclude: [eRolesAvailable.teacher, eRolesAvailable.admin] },
       req,
     );
     expect(res).toEqual("");
@@ -155,7 +155,7 @@ describe("isAdmin function", () => {
       updatedAt: Date,
       createdAt: Date,
       lastLogin: Date,
-      roles: [rolesAvailable.student],
+      roles: [eRolesAvailable.student],
     });
   });
 
@@ -165,46 +165,46 @@ describe("isAdmin function", () => {
   });
 
   test("fail isAdmin [teacher]", () => {
-    user.roles = [rolesAvailable.teacher];
+    user.roles = [eRolesAvailable.teacher];
     const res = isAdmin(user);
     expect(res).toEqual(false);
   });
 
   test("fail isAdmin [student, teacher]", () => {
-    user.roles.push(rolesAvailable.teacher);
+    user.roles.push(eRolesAvailable.teacher);
     const res = isAdmin(user);
     expect(res).toEqual(false);
   });
 
   test("success isAdmin [admin]", () => {
-    user.roles = [rolesAvailable.admin];
+    user.roles = [eRolesAvailable.admin];
     const res = isAdmin(user);
     expect(res).toEqual(true);
   });
 
   test("success isAdmin [teacher, admin]", () => {
-    user.roles = [rolesAvailable.teacher, rolesAvailable.admin];
+    user.roles = [eRolesAvailable.teacher, eRolesAvailable.admin];
     const res = isAdmin(user);
     expect(res).toEqual(true);
   });
 
   test("success isAdmin [super]", () => {
-    user.roles = [rolesAvailable.super];
+    user.roles = [eRolesAvailable.super];
     const res = isAdmin(user);
     expect(res).toEqual(true);
   });
 
   test("success isAdmin [super, admin]", () => {
-    user.roles = [rolesAvailable.super, rolesAvailable.admin];
+    user.roles = [eRolesAvailable.super, eRolesAvailable.admin];
     const res = isAdmin(user);
     expect(res).toEqual(true);
   });
 
   test("success isAdmin [super, admin, teacher]", () => {
     user.roles = [
-      rolesAvailable.super,
-      rolesAvailable.admin,
-      rolesAvailable.teacher,
+      eRolesAvailable.super,
+      eRolesAvailable.admin,
+      eRolesAvailable.teacher,
     ];
     const res = isAdmin(user);
     expect(res).toEqual(true);

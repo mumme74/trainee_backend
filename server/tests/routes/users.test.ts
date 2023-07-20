@@ -7,7 +7,7 @@ import type { CallbackHandler } from "supertest";
 import "../testProcess.env";
 
 import type { IUsersController } from "../../controllers/users";
-import User, { IUserDocument, rolesAvailable } from "../../models/usersModel";
+import User, { IUserDocument, eRolesAvailable } from "../../models/usersModel";
 import userRoutes from "../../routes/users";
 import { initMemoryDb, closeMemoryDb } from "../testingDatabase";
 import {
@@ -153,7 +153,7 @@ describe("login", () => {
   });
 
   afterAll(async () => {
-    await user.remove();
+    await user.deleteOne();
   });
 
   test("fail login name empty", (done: CallbackHandler) => {
@@ -712,7 +712,7 @@ describe("avaliableroles", () => {
   });
 
   test("fail with role student", (done: any) => {
-    user.roles = [rolesAvailable.student];
+    user.roles = [eRolesAvailable.student];
     user
       .save()
       .then(() => {
@@ -730,7 +730,7 @@ describe("avaliableroles", () => {
   });
 
   test("fail with role teacher", (done: any) => {
-    user.roles.push(rolesAvailable.teacher);
+    user.roles.push(eRolesAvailable.teacher);
     user
       .save()
       .then(() => {
@@ -748,7 +748,7 @@ describe("avaliableroles", () => {
   });
 
   test("succeed with role admin", (done: any) => {
-    user.roles.push(rolesAvailable.admin);
+    user.roles.push(eRolesAvailable.admin);
     user
       .save()
       .then(() => {
@@ -768,7 +768,7 @@ describe("avaliableroles", () => {
   });
 
   test("succeed with role super admin", (done: any) => {
-    user.roles.push(rolesAvailable.super);
+    user.roles.push(eRolesAvailable.super);
     user
       .save()
       .then(() => {

@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 import bcrypt from "bcrypt";
 //import { string } from "joi";
 
@@ -7,19 +7,21 @@ import { UserError } from "../helpers/errorHelpers";
 /**
  * @brief these are the 4 different roles a user can have
  */
-export enum rolesAvailable {
+export enum eRolesAvailable {
   "student" = 0,
   "teacher" = 1,
   "admin" = 2,
   "super" = 3,
 }
-export const rolesAvailableKeys = Object.keys(rolesAvailable)
+export const rolesAvailableKeys = Object.keys(eRolesAvailable)
   .map((key) => {
     return isNaN(+key) ? key : undefined;
   })
   .filter((itm) => itm !== undefined) as string[];
 
 //export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys);
+
+export type IUserId = mongoose.mongo.ObjectId;
 
 // database models
 export interface IUserDocument extends Document {
@@ -35,8 +37,8 @@ export interface IUserDocument extends Document {
   google?: {
     id: string;
   };
-  roles: rolesAvailable[];
-  updatedBy: string;
+  roles: Array<eRolesAvailable>;
+  updatedBy: IUserId;
   banned?: boolean;
   lastLogin: Date;
   readonly updatedAt: Date;
@@ -98,9 +100,9 @@ const userSchema = new Schema<IUserDocument>(
 
     roles: {
       type: [Number],
-      enum: rolesAvailable,
+      enum: eRolesAvailable,
       required: true,
-      default: rolesAvailable.student,
+      default: [eRolesAvailable.student],
     },
 
     updatedBy: {
@@ -127,7 +129,7 @@ userSchema.pre("save", async function (next) {
     const passwordHash = await bcrypt.hash(this.password, salt);
     // replace original password
     this.password = passwordHash;
-  } catch (err) {
+  } catch (err: any) {
     next(err);
   }
 });
@@ -139,7 +141,7 @@ export async function comparePasswordHash(
   try {
     if (pass === "" && encryptedStr === "") return true;
     return await bcrypt.compare(pass, encryptedStr);
-  } catch (err) {
+  } catch (err: any) {
     throw new UserError(err);
   }
 }

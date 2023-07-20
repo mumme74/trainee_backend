@@ -8,7 +8,7 @@ import Express, { NextFunction, response } from "express";
 import request from "supertest";
 import supertest from "supertest";
 import JWT from "jsonwebtoken";
-import { rolesAvailable } from "../models/usersModel";
+import { eRolesAvailable } from "../models/usersModel";
 import type { IUserDocument } from "../models/usersModel";
 
 interface IJsonApp extends ExpressType {
@@ -116,7 +116,7 @@ export function signToken({
   userId: string;
   expiresInMinutes?: number;
   notBefore?: number;
-  roles?: rolesAvailable[];
+  roles?: eRolesAvailable[];
 }): string {
   return JWT.sign(
     {
@@ -144,7 +144,7 @@ export const userPrimaryObj = {
   google: { id: "123456789abc" },
   domain: "testing.com",
   picture: "https://somedomain.com/path/to/image.png",
-  roles: [rolesAvailable.student],
+  roles: [eRolesAvailable.student],
   updatedBy: "123456789abc",
 };
 

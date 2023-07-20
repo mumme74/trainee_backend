@@ -7,7 +7,7 @@ import { ExtractJwt } from "passport-jwt";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-verify-token";
 
-import User, { rolesAvailable } from "./models/usersModel";
+import User, { eRolesAvailable } from "./models/usersModel";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
 import { UserError } from "./helpers/errorHelpers";
@@ -36,7 +36,7 @@ passport.use(
 
         // Otherwise, return the user
         done(null, user, "User found");
-      } catch (err) {
+      } catch (err: any) {
         done(err, false, err.message);
       }
     },
@@ -79,7 +79,7 @@ passport.use(
 
         // otherwise return the user
         done(null, user, "User found");
-      } catch (err) {
+      } catch (err: any) {
         done(err, false, err.message);
       }
     },
@@ -152,16 +152,16 @@ passport.use(
         ) {
           // check if user is a teacher
           if (passAsTeacher(user)) {
-            user.roles.push(rolesAvailable.teacher);
+            user.roles.push(eRolesAvailable.teacher);
             // a super admin?
             if (passAsSuperAdmin(user)) {
-              user.roles.push(rolesAvailable.super);
+              user.roles.push(eRolesAvailable.super);
             }
             const res = await User.updateOne(
               { _id: user._id },
               { roles: user.roles },
             );
-            if (!res || res.n !== 1 || res.ok !== 1 || res.nModified !== 1)
+            if (!res || res.matchedCount !== 1 || !res.acknowledged || res.modifiedCount !== 1)
               throw new UserError(
                 "Could not save escalated roles when creating user",
               );
@@ -169,7 +169,7 @@ passport.use(
         }
 
         return done(null, user);
-      } catch (err) {
+      } catch (err: any) {
         console.log(err.message);
         return done(err, false, err.message);
       }

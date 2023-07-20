@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 
 import User, {
   IUserDocument,
-  rolesAvailable,
+  IUserId,
+  eRolesAvailable,
   rolesAvailableKeys,
 } from "../../models/usersModel";
 import {
@@ -14,33 +15,43 @@ import { IGraphQl_MutationResponse } from "../schema/index";
 import { AuthRequest } from "../../types";
 import { composeErrorResponse, rolesFilter } from "./helpers";
 import { UserError } from "../../helpers/errorHelpers";
+import { newObjectId } from "../../helpers/dbHelpers";
 
 export const userLoader = new DataLoader(
   async (userIds: readonly string[]): Promise<IUserDocument[]> => {
     const result = await User.find({
-      _id: { $in: userIds.map((id) => new mongoose.Types.ObjectId(id)) },
+      _id: {
+        $in: userIds.map((id) => {
+          return newObjectId(id);
+        }),
+      },
     });
-
     return result;
   },
 );
 
 export const lookupUser = async (
+  userId: IUserId,
+): Promise<IUserDocument | undefined> => {
+  return lookupUserByStr(userId.toString());
+};
+
+export const lookupUserByStr = async (
   userId: string,
 ): Promise<IUserDocument | undefined> => {
   if (!userId) return;
   try {
     const user = await userLoader.load(userId);
-    if (!user) throw new UserError("User not found!");
+    if (!user) throw new UserError(`User '${userId}' not found!`);
     return user;
-  } catch (err) {
+  } catch (err: any) {
     throw err;
   }
 };
 
 export const transformUser = (user: IUserDocument): IGraphQl_UserType => {
   const roles = user.roles.map((role) => {
-    return rolesAvailable[role];
+    return eRolesAvailable[role];
   }) as string[];
 
   return {
@@ -69,9 +80,9 @@ export default {
   users: rolesFilter(
     {
       anyOf: [
-        rolesAvailable.admin,
-        rolesAvailable.super,
-        rolesAvailable.teacher,
+        eRolesAvailable.admin,
+        eRolesAvailable.super,
+        eRolesAvailable.teacher,
       ],
     },
     async (
@@ -80,7 +91,7 @@ export default {
     ): Promise<IGraphQl_UserType[]> => {
       try {
         const users = (await userLoader.loadMany(ids)) as IUserDocument[];
-        //const objIds = ids.map((id)=>{return new mongoose.Types.ObjectId(id)});
+        //const objIds = ids.map((id)=>{return newObjectId(id)});
         //const users = await User.find({"_id":{$in: objIds}});
         if (!users) return [];
 
@@ -89,7 +100,7 @@ export default {
         });
 
         // if we are super user retun unfiltered
-        if (req.user.roles.indexOf(rolesAvailable.super) > -1) return res;
+        if (req.user.roles.indexOf(eRolesAvailable.super) > -1) return res;
 
         // else return only those belonging to my domain
         return res.filter((u) => u.domain === (req.user.domain || ""));
@@ -105,7 +116,7 @@ export default {
 
   // mutations
   userCreateStudent: rolesFilter(
-    { anyOf: [rolesAvailable.admin, rolesAvailable.super] },
+    { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { newUser }: { newUser: IGraphQl_UserCreateStudentInput },
       req: AuthRequest,
@@ -120,7 +131,7 @@ export default {
           domain: newUser.domain || "",
           picture: newUser.picture,
           updatedBy: req.user.id,
-          roles: [rolesAvailable.student],
+          roles: [eRolesAvailable.student],
           method: newUser.googleId ? "google" : "local",
         });
 
@@ -132,14 +143,14 @@ export default {
           ids: [user._id],
           __typename: "OkResponse",
         };
-      } catch (err) {
+      } catch (err: any) {
         return composeErrorResponse(err);
       }
     },
   ),
 
   userChangeRoles: rolesFilter(
-    { anyOf: [rolesAvailable.admin, rolesAvailable.super] },
+    { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id, roles }: { id: string; roles: string[] },
       req: AuthRequest,
@@ -158,8 +169,8 @@ export default {
         ];
 
         if (
-          newRoles.indexOf(rolesAvailable.super) > -1 &&
-          req.user.roles.indexOf(rolesAvailable.super) < 0
+          newRoles.indexOf(eRolesAvailable.super) > -1 &&
+          req.user.roles.indexOf(eRolesAvailable.super) < 0
         ) {
           throw new UserError(
             "Can't set super admin role when you are not super admin.\n Insufficient credentials.",
@@ -167,27 +178,27 @@ export default {
         }
 
         const res = await User.updateOne(
-          { _id: new mongoose.Types.ObjectId(id) },
+          { _id: newObjectId(id) },
           {
             roles: newRoles,
             updatedBy: req.user.id,
           },
         );
-        if (!res.n) throw new UserError("Failed to match user");
+        if (!res.matchedCount) throw new UserError("Failed to match user");
 
         return {
           success: true,
-          nrAffected: res.n,
+          nrAffected: res.matchedCount,
           __typename: "OkResponse",
         };
-      } catch (err) {
+      } catch (err: any) {
         return composeErrorResponse(err);
       }
     },
   ),
 
   userMoveToDomain: rolesFilter(
-    { anyOf: [rolesAvailable.admin, rolesAvailable.super] },
+    { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id, domain }: { id: string; domain?: string },
       req: AuthRequest,
@@ -195,7 +206,7 @@ export default {
       try {
         if (!domain) domain = req.user.domain || "";
 
-        if (req.user.roles.indexOf(rolesAvailable.super) < 0) {
+        if (req.user.roles.indexOf(eRolesAvailable.super) < 0) {
           // not super admin
           if (domain !== req.user.domain && domain !== "")
             throw new UserError(
@@ -204,34 +215,35 @@ export default {
         }
 
         const res = await User.updateOne(
-          { _id: mongoose.Types.ObjectId(id) },
+          { _id: newObjectId(id) },
           { domain: domain },
         );
 
-        if (!res || res.n < 1) throw new UserError("User not found!");
+        if (!res || res.matchedCount < 1)
+          throw new UserError("User not found!");
 
         return {
           success: true,
-          nrAffected: res.n,
+          nrAffected: res.matchedCount,
           ids: [id],
           __typename: "OkResponse",
         };
-      } catch (err) {
+      } catch (err: any) {
         return composeErrorResponse(err);
       }
     },
   ),
 
   userSetSuperUser: rolesFilter(
-    { anyOf: rolesAvailable.super },
+    { anyOf: eRolesAvailable.super },
     async ({ id }: { id: string }): Promise<IGraphQl_MutationResponse> => {
       try {
         const user = await User.findOne({
-          _id: new mongoose.Types.ObjectId(id),
+          _id: newObjectId(id),
         });
         if (!user) throw new UserError("User not found!");
 
-        user.roles.push(rolesAvailable.super);
+        user.roles.push(eRolesAvailable.super);
         await user.save();
 
         return {
@@ -240,14 +252,14 @@ export default {
           ids: [id],
           __typename: "OkResponse",
         };
-      } catch (err) {
+      } catch (err: any) {
         return composeErrorResponse(err);
       }
     },
   ),
 
   userDeleteUser: rolesFilter(
-    { anyOf: [rolesAvailable.admin, rolesAvailable.super] },
+    { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id }: { id: string },
       req: AuthRequest,
@@ -255,11 +267,11 @@ export default {
       try {
         // filter out so we can't delete a user outside of our domain
         const domainFilter =
-          req.user.roles.indexOf(rolesAvailable.super) < 0
+          req.user.roles.indexOf(eRolesAvailable.super) < 0
             ? { domain: { $eq: req.user.domain || "" } }
             : undefined;
         const res = await User.deleteOne({
-          _id: new mongoose.Types.ObjectId(id),
+          _id: newObjectId(id),
           domain: domainFilter?.domain,
         });
 
@@ -268,11 +280,11 @@ export default {
 
         return {
           success: true,
-          nrAffected: res?.n || 0,
+          nrAffected: res?.deletedCount || 0,
           ids: [id],
           __typename: "OkResponse",
         };
-      } catch (err) {
+      } catch (err: any) {
         return composeErrorResponse(err);
       }
     },

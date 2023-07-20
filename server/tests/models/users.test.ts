@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 
 import type { IUserDocument } from "../../models/usersModel";
 import User, {
-  rolesAvailable,
+  eRolesAvailable,
   comparePasswordHash,
 } from "../../models/usersModel";
 
@@ -16,10 +16,7 @@ beforeAll(async () => {
   const uri = mongod.getUri();
 
   //connect to DB
-  await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  await mongoose.connect(uri, { });
 });
 
 afterAll(async () => {
@@ -39,7 +36,7 @@ beforeEach(() => {
     password: passwordClearText,
     google: { id: "123456789abc" },
     domain: "testing.com",
-    roles: [rolesAvailable.student],
+    roles: [eRolesAvailable.student],
     updatedBy: "123456789abc",
   });
 });

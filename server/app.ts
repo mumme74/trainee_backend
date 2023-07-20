@@ -23,10 +23,7 @@ const mongoDb = process.env.MONGO_DB;
 const connectionString = `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${mongoDb}`;
 
 // connect to DB
-mongoose.connect(connectionString, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(connectionString, { });
 
 // crate the global app
 const app = express();

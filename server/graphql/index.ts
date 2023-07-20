@@ -1,13 +1,34 @@
 import accepts from "accepts";
 import Router from "express-promise-router";
 import type { Express } from "express";
-import { graphqlHTTP, getGraphQLParams } from "express-graphql";
+import { createHandler } from 'graphql-http/lib/use/express';
 import { Request, Response, NextFunction } from "express";
 import { passportJWT } from "../passport";
 
 import graphQlSchema from "./schema";
 import { graphQlResolvers } from "./resolvers";
 import renderGraphiQLAuthToken from "./graphiqlWithToken";
+
+import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
+
+/**
+ * Construct a GraphQL schema and define the necessary resolvers.
+ *
+ * type Query {
+ *   hello: String
+ * }
+ */
+const schema = new GraphQLSchema({
+  query: new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+      hello: {
+        type: GraphQLString,
+        resolve: () => 'world',
+      },
+    },
+  }),
+});
 
 function graphqlRoute(app: Express) {
   const router = Router();
@@ -16,7 +37,7 @@ function graphqlRoute(app: Express) {
   // all logic starts here
   const useGraphiql = process.env.NODE_ENV === "development";
 
-  if (useGraphiql) {
+  /*if (useGraphiql) {
     //Overiding the default express-graphql middleware
     router.use("/", async (req, res, next) => {
       const params = await getGraphQLParams(req);
@@ -25,7 +46,7 @@ function graphqlRoute(app: Express) {
         res.send(renderGraphiQLAuthToken(params));
       } else next();
     });
-  }
+  }*/
 
   router.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader("Access-Control-Allow-Origin", process.env.CORS_HOST + "");
@@ -44,11 +65,13 @@ function graphqlRoute(app: Express) {
   router.use(
     "/",
     passportJWT,
+    createHandler({ schema: graphQlSchema, rootValue: graphQlResolvers })
+    /*
     graphqlHTTP({
       schema: graphQlSchema,
       rootValue: graphQlResolvers,
       graphiql: false, //useGraphiql,
-    }),
+    }),*/
   );
 }
 

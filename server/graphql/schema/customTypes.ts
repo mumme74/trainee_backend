@@ -1,12 +1,12 @@
-import { GraphQLScalarType, GraphQLUnionType, Kind } from "graphql";
+import { GraphQLScalarType, Kind } from "graphql";
 
 export const dateScalar = new GraphQLScalarType({
   name: "Date",
   description: "Date custom scalar type",
-  serialize(value) {
+  serialize(value: any) {
     return value.toISOString(); // Convert outgoing Date to integer for JSON
   },
-  parseValue(value) {
+  parseValue(value: any) {
     return new Date(value); // Convert incoming integer to Date
   },
   parseLiteral(ast) {

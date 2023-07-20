@@ -15,11 +15,7 @@ export async function initMemoryDb() {
     const uri = mongod.getUri();
 
     //connect to DB
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useFindAndModify: false,
-    });
+    await mongoose.connect(uri, { });
   }
 }
 

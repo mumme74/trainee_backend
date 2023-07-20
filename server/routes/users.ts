@@ -4,7 +4,7 @@ import UsersController, { IUsersController } from "../controllers/users";
 import { passportGoogle, passportLogin, passportJWT } from "../passport";
 
 import { validateBody, schemas, hasRoles } from "../helpers/routeHelpers";
-import { rolesAvailable } from "../models/usersModel";
+import { eRolesAvailable } from "../models/usersModel";
 
 function userRoutes(
   app: Express,
@@ -60,7 +60,7 @@ function userRoutes(
     .route("/availableroles")
     .get(
       passportJWT,
-      hasRoles({ anyOf: [rolesAvailable.admin, rolesAvailable.super] }),
+      hasRoles({ anyOf: [eRolesAvailable.admin, eRolesAvailable.super] }),
       controller.rolesAvailable,
     );
 

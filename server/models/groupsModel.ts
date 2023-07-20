@@ -1,17 +1,17 @@
 import { Schema, model } from "mongoose";
-import User from "./usersModel";
+import User, { IUserId } from "./usersModel";
 
 // sort of a school class, however student might be in many
 // different grups event though they are in  the same class
 export interface IGroupDocument {
   readonly id: string;
-  teacherIds: string[];
-  studentIds: string[];
+  teacherIds: IUserId[];
+  studentIds: IUserId[];
   name: string;
   description?: string;
   createdAt: Date;
   updatedAt: Date;
-  updatedBy: string; // who last edited this document
+  updatedBy: IUserId; // who last edited this document
 }
 
 // sort of a school class, however student might be in many

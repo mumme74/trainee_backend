@@ -1,9 +1,10 @@
 import DataLoader from "dataloader";
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 
 import { composeErrorResponse, rolesFilter } from "./helpers";
 import type { IFilterOptions } from "../../helpers/userHelpers";
 import { isAdmin } from "../../helpers/userHelpers";
+import { newObjectId } from "../../helpers/dbHelpers";
 
 import { transformUser, lookupUser, userLoader } from "./resolvers.common";
 import Group, { IGroupDocument } from "../../models/groupsModel";
@@ -14,13 +15,13 @@ import {
 } from "../schema/groups";
 import type { IGraphQl_MutationResponse } from "../schema";
 import { AuthRequest } from "../../types";
-import { IUserDocument, rolesAvailable } from "../../models/usersModel";
+import { IUserDocument, IUserId, eRolesAvailable } from "../../models/usersModel";
 import type { IGraphQl_UserType } from "../schema/users";
 
 export const groupLoader = new DataLoader(
   async (groupIds: readonly string[]): Promise<IGroupDocument[]> => {
     const result = await Group.find({
-      _id: { $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)) },
+      _id: { $in: groupIds.map((id) => newObjectId(id)) },
     });
 
     return result;
@@ -41,9 +42,10 @@ export const lookupGroup = async (
 };
 
 export const transformGroup = (group: IGroupDocument): IGraphQl_GroupType => {
-  async function getUsers(userIds: string[]): Promise<IGraphQl_UserType[]> {
+  async function getUsers(userIds: IUserId[]): Promise<IGraphQl_UserType[]> {
     try {
-      const users = (await userLoader.loadMany(userIds)) as IUserDocument[];
+      const ids = userIds.map(u=>u.toString());
+      const users = (await userLoader.loadMany(ids)) as IUserDocument[];
       if (!users) return [];
       return users.map((u) => {
         return transformUser(u);
@@ -76,14 +78,14 @@ export const transformGroup = (group: IGroupDocument): IGraphQl_GroupType => {
 // helper functions
 
 const groupsFor = async (
-  userId: string,
+  userId: IUserId,
   idField: string,
   nameFilter?: string,
 ): Promise<IGraphQl_GroupType[]> => {
   try {
     const name = nameFilter ? new RegExp(`${nameFilter}`) : undefined;
     const groups = (await Group.find({
-      [idField]: new mongoose.Types.ObjectId(userId),
+      [idField]: userId,
       name,
     })) as IGroupDocument[];
 
@@ -113,27 +115,27 @@ const updateStr = async (
     }
 
     const res = await Group.updateOne(
-      { _id: new mongoose.Types.ObjectId(id) },
+      { _id: id },
       {
         [fieldName]: newStr,
-        updatedBy: new mongoose.Types.ObjectId(req.user.id),
+        updatedBy: newObjectId(req.user.id),
       },
     );
 
-    if (!res || res.n !== 1) throw new UserError("Could not update!");
+    if (!res || res.matchedCount !== 1) throw new UserError("Could not update!");
 
     return {
       success: true,
-      nrAffected: res.n,
+      nrAffected: res.matchedCount,
       ids: [id],
       __typename: "OkResponse",
     };
-  } catch (err) {
+  } catch (err: any) {
     return composeErrorResponse(err);
   }
 };
 
-const addIds = (currentIds: string[], updateIds: string[]): string[] => {
+const addIds = (currentIds: IUserId[], updateIds: IUserId[]): IUserId[] => {
   updateIds.forEach((id) => {
     const idx = currentIds.indexOf(id);
     if (idx < 0) currentIds.push(id);
@@ -142,7 +144,7 @@ const addIds = (currentIds: string[], updateIds: string[]): string[] => {
   return currentIds;
 };
 
-const removeIds = (currentIds: string[], updateIds: string[]): string[] => {
+const removeIds = (currentIds: IUserId[], updateIds: IUserId[]): IUserId[] => {
   updateIds.forEach((id) => {
     const idx = currentIds.indexOf(id);
     if (idx > -1) currentIds.splice(idx, 1);
@@ -151,12 +153,12 @@ const removeIds = (currentIds: string[], updateIds: string[]): string[] => {
   return currentIds;
 };
 
-const updateIds = async (
+const findUpdateIds = async (
   id: string,
   userIds: string[],
-  fieldName: string,
+  isStudent: boolean,
   req: AuthRequest,
-  workerFunc: (currentIds: string[], updateIds: string[]) => string[],
+  workerFunc: (currentIds: IUserId[], updateIds: IUserId[]) => IUserId[],
 ): Promise<IGraphQl_MutationResponse> => {
   try {
     const group = await Group.findById(id);
@@ -167,32 +169,34 @@ const updateIds = async (
         throw new UserError("Can't update a group you're not teacher in");
     }
 
-    const cnt = group[fieldName].length;
-    group[fieldName] = workerFunc(group[fieldName], userIds);
-    group.updatedBy = new mongoose.Types.ObjectId(req.user.id);
+    const fld = ()=>isStudent ? group.studentIds : group.teacherIds;
+    const cnt = fld().length;
+    const postRes = workerFunc(fld(), userIds.map(u=>newObjectId(u)));
+    isStudent ? group.studentIds = postRes : group.teacherIds = postRes;
+    group.updatedBy = newObjectId(req.user.id);
     group.markModified("updatedBy"); // need to explicitly mark as modified,
     // same user can modify again, does not trigger isModified
 
     const res = await group.save();
-    if (!res || res.isModified(fieldName))
+    if (!res || res.isModified(isStudent ? "studentIds" : "teacherIds"))
       throw new UserError("Error when updating");
 
     return {
-      nrAffected: cnt !== group[fieldName].length ? 1 : 0,
+      nrAffected: cnt !== fld().length ? 1 : 0,
       success: true,
       ids: [id],
       __typename: "OkResponse",
     };
-  } catch (err) {
+  } catch (err: any) {
     return composeErrorResponse(err);
   }
 };
 
 const allowAdminSuperTeacher: IFilterOptions = {
-  anyOf: [rolesAvailable.admin, rolesAvailable.super, rolesAvailable.teacher],
+  anyOf: [eRolesAvailable.admin, eRolesAvailable.super, eRolesAvailable.teacher],
 };
 const allowAdminSuper: IFilterOptions = {
-  anyOf: [rolesAvailable.admin, rolesAvailable.super],
+  anyOf: [eRolesAvailable.admin, eRolesAvailable.super],
 };
 
 //------------------------------------------
@@ -220,7 +224,7 @@ export default {
       teacherId,
       nameFilter,
     }: {
-      teacherId: string;
+      teacherId: IUserId;
       nameFilter?: string;
     }): Promise<IGraphQl_GroupType[]> => {
       return await groupsFor(teacherId, "teacherIds", nameFilter);
@@ -232,7 +236,7 @@ export default {
     studentId,
     nameFilter,
   }: {
-    studentId: string;
+    studentId: IUserId;
     nameFilter?: string;
   }): Promise<IGraphQl_GroupType[]> => {
     return await groupsFor(studentId, "studentIds", nameFilter);
@@ -264,7 +268,7 @@ export default {
           studentIds: newGroup.studentIds,
           name: newGroup.name,
           description: newGroup.description,
-          updatedBy: new mongoose.Types.ObjectId(req.user.id),
+          updatedBy: newObjectId(req.user.id),
         });
 
         const res = await group.save();
@@ -273,10 +277,10 @@ export default {
         return {
           success: true,
           nrAffected: 1,
-          ids: [group._doc._id],
+          ids: [group._id.toString()],
           __typename: "OkResponse",
         };
-      } catch (err) {
+      } catch (err: any) {
         return composeErrorResponse(err);
       }
     },
@@ -301,17 +305,17 @@ export default {
         }
 
         const res = await Group.deleteOne({
-          _id: new mongoose.Types.ObjectId(id),
+          _id: newObjectId(id),
         });
-        if (!res || res.n !== 1) throw new UserError("Could not delete group");
+        if (!res || res.deletedCount !== 1) throw new UserError("Could not delete group");
 
         return {
           __typename: "OkResponse",
           success: true,
-          nrAffected: res.n,
+          nrAffected: res.deletedCount,
           ids: [id],
         };
-      } catch (err) {
+      } catch (err: any) {
         return composeErrorResponse(err);
       }
     },
@@ -346,7 +350,7 @@ export default {
       { id, studentIds }: { id: string; studentIds: string[] },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
-      return updateIds(id, studentIds, "studentIds", req, addIds);
+      return findUpdateIds(id, studentIds, true, req, addIds);
     },
   ),
 
@@ -357,7 +361,7 @@ export default {
       { id, studentIds }: { id: string; studentIds: string[] },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
-      return updateIds(id, studentIds, "studentIds", req, removeIds);
+      return findUpdateIds(id, studentIds, true, req, removeIds);
     },
   ),
 
@@ -368,7 +372,7 @@ export default {
       { id, teacherIds }: { id: string; teacherIds: string[] },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
-      return updateIds(id, teacherIds, "teacherIds", req, addIds);
+      return findUpdateIds(id, teacherIds, false, req, addIds);
     },
   ),
 
@@ -379,7 +383,7 @@ export default {
       { id, teacherIds }: { id: string; teacherIds: string[] },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
-      return updateIds(id, teacherIds, "teacherIds", req, removeIds);
+      return findUpdateIds(id, teacherIds, false, req, removeIds);
     },
   ),
 };

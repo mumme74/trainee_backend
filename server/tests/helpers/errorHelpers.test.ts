@@ -1,5 +1,6 @@
 import { MongoError } from "mongodb";
 import { UserError, errorResponse } from "../../helpers/errorHelpers";
+import { throwErr } from "../common";
 
 const processEnv = process.env;
 
@@ -31,14 +32,6 @@ describe("errorReponse", () => {
       error: typeof err === "string" ? { message: err } : err,
     };
   }
-  // only used to get a stacktrace
-  function throwErr(err: Error | UserError | MongoError) {
-    try {
-      throw err;
-    } catch (e) {
-      return e;
-    }
-  }
 
   test("with string", () => {
     const res = errorResponse("testStr");
@@ -60,7 +53,7 @@ describe("errorReponse", () => {
     expect(res).toEqual(
       matchObj({
         message: "test",
-        stack: err.stack.split("\n"),
+        stack: err.stack?.split("\n") || [],
         type: "Error: test",
       }),
     );

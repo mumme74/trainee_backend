@@ -3,7 +3,7 @@ import type { Request, Response } from "express-serve-static-core";
 
 import "../../testProcess.env";
 import type { IUserDocument } from "../../../models/usersModel";
-import User, { rolesAvailable } from "../../../models/usersModel";
+import User, { eRolesAvailable } from "../../../models/usersModel";
 import type { AuthRequest } from "../../../types";
 import { initMemoryDb, closeMemoryDb } from "../../testingDatabase";
 import { userPrimaryObj, matchErrorMockCall } from "../../testHelpers";
@@ -15,6 +15,7 @@ import {
 import { UserError } from "../../../helpers/errorHelpers";
 import { MongoError } from "mongodb";
 import { IFilterOptions } from "../../../helpers/userHelpers";
+import { throwErr as throwToGetStack } from "../../common";
 
 interface IRequest extends Request {
   res: Response;
@@ -41,14 +42,6 @@ beforeEach(() => {
 // ------------------------------------------------------
 
 describe("composeErrorResponse", () => {
-  function throwToGetStack(err: Error | UserError | MongoError) {
-    try {
-      throw err;
-    } catch (e) {
-      return e;
-    }
-  }
-
   function matchObj(
     err: { message: string; type?: string; stack?: string } | string,
   ) {
@@ -119,13 +112,13 @@ describe("rolesFilter", () => {
   });
 
   afterEach(async () => {
-    await user.delete();
+    await user.deleteOne();
     callback.mockClear();
   });
 
   test("fail no match anyOf", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { anyOf: rolesAvailable.teacher };
+    const opt = { anyOf: eRolesAvailable.teacher };
     const filter = rolesFilter(opt, callback);
     expect(() => {
       filter(arg, req, info);
@@ -136,7 +129,7 @@ describe("rolesFilter", () => {
 
   test("succeed match anyOf", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { anyOf: rolesAvailable.student };
+    const opt = { anyOf: eRolesAvailable.student };
     const filter = rolesFilter(opt, callback);
     const ret = filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
@@ -146,7 +139,7 @@ describe("rolesFilter", () => {
 
   test("fail no match anyOf array", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { anyOf: [rolesAvailable.teacher, rolesAvailable.admin] };
+    const opt = { anyOf: [eRolesAvailable.teacher, eRolesAvailable.admin] };
     const filter = rolesFilter(opt, callback);
     expect(() => {
       filter(arg, req, info);
@@ -157,7 +150,7 @@ describe("rolesFilter", () => {
 
   test("succeed match anyOf array", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { anyOf: [rolesAvailable.student, rolesAvailable.teacher] };
+    const opt = { anyOf: [eRolesAvailable.student, eRolesAvailable.teacher] };
     const filter = rolesFilter(opt, callback);
     const ret = filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
@@ -167,7 +160,7 @@ describe("rolesFilter", () => {
 
   test("fail no match allOf", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { allOf: rolesAvailable.teacher };
+    const opt = { allOf: eRolesAvailable.teacher };
     const filter = rolesFilter(opt, callback);
     expect(() => {
       filter(arg, req, info);
@@ -178,7 +171,7 @@ describe("rolesFilter", () => {
 
   test("succeed match allOf", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { allOf: rolesAvailable.student };
+    const opt = { allOf: eRolesAvailable.student };
     const filter = rolesFilter(opt, callback);
     const ret = filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
@@ -188,7 +181,7 @@ describe("rolesFilter", () => {
 
   test("fail no match allOf array", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { allOf: [rolesAvailable.teacher, rolesAvailable.admin] };
+    const opt = { allOf: [eRolesAvailable.teacher, eRolesAvailable.admin] };
     const filter = rolesFilter(opt, callback);
     expect(() => {
       filter(arg, req, info);
@@ -198,10 +191,10 @@ describe("rolesFilter", () => {
   });
 
   test("succeed match allOf array", async () => {
-    user.roles.push(rolesAvailable.teacher);
+    user.roles.push(eRolesAvailable.teacher);
     await user.save();
     const req = getMockReq({ user: user, res: res });
-    const opt = { allOf: [rolesAvailable.student, rolesAvailable.teacher] };
+    const opt = { allOf: [eRolesAvailable.student, eRolesAvailable.teacher] };
     const filter = rolesFilter(opt, callback);
     const ret = filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
@@ -211,7 +204,7 @@ describe("rolesFilter", () => {
 
   test("fail no match exclude", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt: IFilterOptions = { exclude: rolesAvailable.student };
+    const opt: IFilterOptions = { exclude: eRolesAvailable.student };
     const filter = rolesFilter(opt, callback);
     expect(() => {
       filter(arg, req, info);
@@ -222,7 +215,7 @@ describe("rolesFilter", () => {
 
   test("succeed match exclude", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { exclude: rolesAvailable.teacher };
+    const opt = { exclude: eRolesAvailable.teacher };
     const filter = rolesFilter(opt, callback);
     const ret = filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
@@ -232,7 +225,7 @@ describe("rolesFilter", () => {
 
   test("fail no match exclude array", () => {
     const req = getMockReq({ user: user, res: res });
-    const opt = { exclude: [rolesAvailable.student, rolesAvailable.teacher] };
+    const opt = { exclude: [eRolesAvailable.student, eRolesAvailable.teacher] };
     const filter = rolesFilter(opt, callback);
     expect(() => {
       filter(arg, req, info);
@@ -245,9 +238,9 @@ describe("rolesFilter", () => {
     const req = getMockReq({ user: user, res: res });
     const opt = {
       exclude: [
-        rolesAvailable.teacher,
-        rolesAvailable.super,
-        rolesAvailable.admin,
+        eRolesAvailable.teacher,
+        eRolesAvailable.super,
+        eRolesAvailable.admin,
       ],
     };
     const filter = rolesFilter(opt, callback);

@@ -1,6 +1,6 @@
 import { passAsSuperAdmin, passAsTeacher } from "../../helpers/escalateRoles";
 import type { IUserDocument } from "../../models/usersModel";
-import User, { rolesAvailable } from "../../models/usersModel";
+import User, { eRolesAvailable } from "../../models/usersModel";
 
 const defaultUser = {
   id: "1234567890abc",
@@ -9,7 +9,7 @@ const defaultUser = {
   email: "mock@testschool.org",
   domain: "testschool.org",
   userName: "userName",
-  roles: [rolesAvailable.student],
+  roles: [eRolesAvailable.student],
   method: "local",
   updatedBy: "123456789abc",
   updatedAt: new Date(),

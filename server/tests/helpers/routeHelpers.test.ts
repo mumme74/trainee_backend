@@ -2,7 +2,7 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 
 import { validateBody, schemas, hasRoles } from "../../helpers/routeHelpers";
 import { AuthRequest } from "../../types";
-import User, { rolesAvailable } from "../../models/usersModel";
+import User, { eRolesAvailable } from "../../models/usersModel";
 import { matchErrorMockCall, matchError } from "../testHelpers";
 
 const { res, next, clearMockRes } = getMockRes();
@@ -317,12 +317,12 @@ describe("hasRoles function", () => {
       updatedAt: Date,
       createdAt: Date,
       lastLogin: Date,
-      roles: [rolesAvailable.student],
+      roles: [eRolesAvailable.student],
     });
   });
 
   test("fail match anyOf", () => {
-    hasRoles({ anyOf: [rolesAvailable.teacher] })(req, res, next);
+    hasRoles({ anyOf: [eRolesAvailable.teacher] })(req, res, next);
 
     expect(res.status).toBeCalledWith(403);
     const data = (res.json as jest.Mock).mock.calls[0][0];
@@ -331,8 +331,8 @@ describe("hasRoles function", () => {
   });
 
   test("succeed match anyOf", () => {
-    req.user.roles.push(rolesAvailable.teacher);
-    hasRoles({ anyOf: [rolesAvailable.teacher] })(req, res, next);
+    req.user.roles.push(eRolesAvailable.teacher);
+    hasRoles({ anyOf: [eRolesAvailable.teacher] })(req, res, next);
 
     expect(res.status).not.toBeCalled();
     expect(next).toBeCalled();
