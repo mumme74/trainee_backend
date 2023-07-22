@@ -1,6 +1,6 @@
 {
   "bail": 0,
   "verbose": true,
-  "testRegex": "/server/tests/.*\\.(test|spec)\\.[jt]sx?$",
+  "testRegex": "/src/tests/.*\\.(test|spec)\\.[jt]sx?$",
   "testEnvironment": "node"
 }

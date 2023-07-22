@@ -7,7 +7,7 @@ import { passportJWT } from "../passport";
 
 import graphQlSchema from "./schema";
 import { graphQlResolvers } from "./resolvers";
-import renderGraphiQLAuthToken from "./graphiqlWithToken";
+//import renderGraphiQLAuthToken from "./graphiqlWithToken";
 
 import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
 
@@ -34,10 +34,10 @@ function graphqlRoute(app: Express) {
   const router = Router();
   app.use("/graphql", router);
 
-  // all logic starts here
+  /*// all logic starts here
   const useGraphiql = process.env.NODE_ENV === "development";
 
-  /*if (useGraphiql) {
+  if (useGraphiql) {
     //Overiding the default express-graphql middleware
     router.use("/", async (req, res, next) => {
       const params = await getGraphQLParams(req);
@@ -62,10 +62,15 @@ function graphqlRoute(app: Express) {
     next();
   });
 
+  const handler = createHandler({
+    schema: graphQlSchema,
+    rootValue: graphQlResolvers,
+    //graphiql: useGraphiql
+  });
+
   router.use(
     "/",
-    passportJWT,
-    createHandler({ schema: graphQlSchema, rootValue: graphQlResolvers })
+    passportJWT, handler,
     /*
     graphqlHTTP({
       schema: graphQlSchema,
