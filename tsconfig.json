@@ -62,6 +62,6 @@
 
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */,
-    "rootDir": "src" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
+    "rootDir": "" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
   }
 }
