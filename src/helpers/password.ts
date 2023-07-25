@@ -18,6 +18,20 @@ export async function hashPassword(cleartext: string):
 }
 
 /**
+ * Generate a hash from cleartext
+ * @param {string} cleartext The password to hash
+ * @returns {Promise<string>} The hashed string
+ * @throws Might throw a bcrypt
+ */
+export function hashPasswordSync(cleartext: string): string
+{
+  // generate a salt
+  const salt = bcrypt.genSaltSync(10);
+  // generate a password hash
+  return bcrypt.hashSync(cleartext, salt);
+}
+
+/**
  * Compare a string against encryptedStr
  * @param {string} cleartext The password given by user
  * @param {string} encryptedStr The encrypted string in db

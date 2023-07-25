@@ -5,7 +5,10 @@ import {
 import { Role, eRolesAvailable } from "./role";
 import { Picture } from "./picture";
 import { rolesAvailableKeys } from "./role";
-import { comparePasswordHash, hashPassword } from "../helpers/password";
+import {
+  comparePasswordHash,
+  hashPasswordSync
+} from "../helpers/password";
 import { Organization } from "./organization";
 
 const nameValidator = {
@@ -92,10 +95,10 @@ export class User extends Model {
       },
       password:{
         type: DataTypes.STRING,
-        async set(cleartext: string) {
+        set(cleartext: string) {
           if (!cleartext) return;
           try {
-            const hash = await hashPassword(cleartext);
+            const hash = hashPasswordSync(cleartext);
             this.setDataValue('password', hash);
           } catch(err){
             console.error(err);
@@ -137,37 +140,21 @@ export class User extends Model {
   static bootstrapAfterHook(sequelize: Sequelize) {
     // set constraints
 
-    const roleModel = sequelize.models.core_Roles,
-          pictureModel = sequelize.models.core_Pictures,
+    const pictureModel = sequelize.models.core_Pictures,
           userModel = sequelize.models.core_Users,
           organizationModel = sequelize.models.core_Organizations;
 
-    // user can have many roles
-    userModel.hasMany(roleModel);
-    roleModel.belongsTo(userModel, {
-      foreignKey: {
-        allowNull: false,
-        name: "userId"
-      }
-    });
-
     // the avatar image
-    userModel.hasOne(pictureModel, {
-      foreignKey: "pictureId",
-    });
     userModel.belongsTo(pictureModel, {
       foreignKey:'pictureId',
       onDelete: 'SET NULL'
     });
 
     // the organization
-    organizationModel.hasMany(userModel, {
+    userModel.belongsTo(organizationModel, {
       foreignKey: 'organizationId',
       onDelete: 'CASCADE',
       onUpdate: 'CASCADE'
-    })
-    userModel.belongsTo(organizationModel, {
-      foreignKey: 'organizationId',
     })
   }
 }

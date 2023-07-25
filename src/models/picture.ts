@@ -46,10 +46,6 @@ export class Picture extends Model {
           pictureModel =sequelize.models.core_Pictures;
 
     // user has ownership over it's pictures
-    userModel.hasMany(pictureModel, {
-      foreignKey: 'ownerId',
-      onDelete: 'CASCADE',
-    });
     pictureModel.belongsTo(userModel, {
       foreignKey: 'ownerId',
       onDelete: 'CASCADE',

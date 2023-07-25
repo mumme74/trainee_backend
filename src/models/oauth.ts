@@ -39,13 +39,11 @@ export class OAuth extends Model {
 
   static bootstrapAfterHook(sequelize: Sequelize) {
     const userModel = sequelize.models.core_Users;
-    userModel.hasMany(OAuth, {
+
+    OAuth.belongsTo(userModel, {
+      foreignKey: 'userId',
       onDelete: 'CASCADE', // delete when users is deleted
       onUpdate: 'CASCADE',
-      foreignKey: 'userId',
-    });
-    OAuth.belongsTo(userModel, {
-      foreignKey: 'userId'
     });
   }
 }

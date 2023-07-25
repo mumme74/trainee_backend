@@ -55,5 +55,15 @@ export class Role extends Model {
     });
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {}
+  static bootstrapAfterHook(sequelize: Sequelize) {
+    const userModel = sequelize.models.core_Users,
+          roleModel = sequelize.models.core_Roles;
+
+    // user can have many roles
+    roleModel.belongsTo(userModel, {
+      foreignKey: "userId",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
+    });
+  }
 }
