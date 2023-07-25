@@ -2,18 +2,17 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 import type { Request, Response } from "express-serve-static-core";
 
 import "../../testProcess.env";
-import type { IUserDocument } from "../../../src/models/old_mongo/usersModel";
-import User, { eRolesAvailable } from "../../../src/models/old_mongo/usersModel";
+import { User } from "../../../src/models/user";
+import { Role, eRolesAvailable } from "../../../src/models/role";
 import type { AuthRequest } from "../../../src/types";
-import { initMemoryDb, closeMemoryDb } from "../../testingDatabase";
-import { userPrimaryObj, matchErrorMockCall } from "../../testHelpers";
+import { initTestDb, closeTestDb } from "../../testingDatabase";
+import { userPrimaryObj, matchErrorMockCall, destroyPrimaryUser, createPrimaryUser } from "../../testHelpers";
 
 import {
   composeErrorResponse,
   rolesFilter,
 } from "../../../src/graphql/resolvers/helpers";
 import { UserError } from "../../../src/helpers/errorHelpers";
-import { MongoError } from "mongodb";
 import { IFilterOptions } from "../../../src/helpers/userHelpers";
 import { throwErr as throwToGetStack } from "../../common";
 
@@ -26,11 +25,11 @@ const { res, next, clearMockRes } = getMockRes();
 const processEnv = process.env;
 
 beforeAll(async () => {
-  await initMemoryDb();
+  await initTestDb();
 });
 
 afterAll(async () => {
-  await closeMemoryDb();
+  await closeTestDb();
 });
 
 beforeEach(() => {
@@ -94,9 +93,7 @@ describe("composeErrorResponse", () => {
 });
 
 describe("rolesFilter", () => {
-  const callback = jest.fn((args: any, req: AuthRequest, info: any) => {
-    return "ret";
-  });
+  let callback: any;
 
   const arg = { args: "arg" };
   const info = "info";
@@ -105,137 +102,141 @@ describe("rolesFilter", () => {
   const ALL_OF_ERR_STRING = "You do not have all required priviledges";
   const EXCLUDE_ERR_STRING = "You have a priviledge that you shall NOT have";
 
-  let user: IUserDocument;
+
+  beforeAll(initTestDb);
+
+  afterAll(closeTestDb);
+
+  let user: User;
   beforeEach(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
+    user = await createPrimaryUser();
+    callback = jest.fn((args: any, req: AuthRequest, info: any) => {
+      return "ret";
+    });
   });
 
-  afterEach(async () => {
-    await user.deleteOne();
-    callback.mockClear();
-  });
+  afterEach(destroyPrimaryUser);
 
-  test("fail no match anyOf", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("fail no match anyOf single", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { anyOf: eRolesAvailable.teacher };
     const filter = rolesFilter(opt, callback);
-    expect(() => {
-      filter(arg, req, info);
-    }).toThrowError(new UserError(ANY_OF_ERR_STRING));
+    await expect(async () => {
+      await filter(arg, req, info);
+    }).rejects.toThrowError(new UserError(ANY_OF_ERR_STRING));
     expect(req.res?.status).toHaveBeenCalledWith(403);
     expect(callback).not.toBeCalled();
   });
 
-  test("succeed match anyOf", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("succeed match anyOf single", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { anyOf: eRolesAvailable.student };
     const filter = rolesFilter(opt, callback);
-    const ret = filter(arg, req, info);
+    const ret = await filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
     expect(ret).toEqual("ret");
     expect(req.res?.status).not.toHaveBeenCalled();
   });
 
-  test("fail no match anyOf array", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("fail no match anyOf array", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { anyOf: [eRolesAvailable.teacher, eRolesAvailable.admin] };
     const filter = rolesFilter(opt, callback);
-    expect(() => {
-      filter(arg, req, info);
-    }).toThrowError(new UserError(ANY_OF_ERR_STRING));
+    await expect(async () => {
+      await filter(arg, req, info);
+    }).rejects.toThrowError(new UserError(ANY_OF_ERR_STRING));
     expect(req.res?.status).toHaveBeenCalledWith(403);
     expect(callback).not.toBeCalled();
   });
 
-  test("succeed match anyOf array", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("succeed match anyOf array", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { anyOf: [eRolesAvailable.student, eRolesAvailable.teacher] };
     const filter = rolesFilter(opt, callback);
-    const ret = filter(arg, req, info);
+    const ret = await filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
     expect(ret).toEqual("ret");
     expect(req.res?.status).not.toHaveBeenCalled();
   });
 
-  test("fail no match allOf", () => {
-    const req = getMockReq({ user: user, res: res });
-    const opt = { allOf: eRolesAvailable.teacher };
+  test("fail no match allOf", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
+    const opt = { allOf: [eRolesAvailable.teacher] };
     const filter = rolesFilter(opt, callback);
-    expect(() => {
-      filter(arg, req, info);
-    }).toThrowError(new UserError(ALL_OF_ERR_STRING));
+    await expect(async () => {
+      await filter(arg, req, info);
+    }).rejects.toThrowError(new UserError(ALL_OF_ERR_STRING));
     expect(req.res?.status).toHaveBeenCalledWith(403);
     expect(callback).not.toBeCalled();
   });
 
-  test("succeed match allOf", () => {
-    const req = getMockReq({ user: user, res: res });
-    const opt = { allOf: eRolesAvailable.student };
+  test("succeed match allOf one", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
+    const opt = { allOf: [eRolesAvailable.student] };
     const filter = rolesFilter(opt, callback);
-    const ret = filter(arg, req, info);
+    const ret = await filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
     expect(ret).toEqual("ret");
     expect(req.res?.status).not.toHaveBeenCalled();
   });
 
-  test("fail no match allOf array", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("fail no match allOf two", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { allOf: [eRolesAvailable.teacher, eRolesAvailable.admin] };
     const filter = rolesFilter(opt, callback);
-    expect(() => {
-      filter(arg, req, info);
-    }).toThrowError(new UserError(ALL_OF_ERR_STRING));
+    await expect(async () => {
+      await filter(arg, req, info);
+    }).rejects.toThrowError(new UserError(ALL_OF_ERR_STRING));
     expect(req.res?.status).toHaveBeenCalledWith(403);
     expect(callback).not.toBeCalled();
   });
 
   test("succeed match allOf array", async () => {
-    user.roles.push(eRolesAvailable.teacher);
+    await Role.create({userId: user.id, role:eRolesAvailable.teacher});
     await user.save();
-    const req = getMockReq({ user: user, res: res });
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { allOf: [eRolesAvailable.student, eRolesAvailable.teacher] };
     const filter = rolesFilter(opt, callback);
-    const ret = filter(arg, req, info);
+    const ret = await filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
     expect(ret).toEqual("ret");
     expect(req.res?.status).not.toHaveBeenCalled();
   });
 
-  test("fail no match exclude", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("fail no match exclude", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt: IFilterOptions = { exclude: eRolesAvailable.student };
     const filter = rolesFilter(opt, callback);
-    expect(() => {
-      filter(arg, req, info);
-    }).toThrowError(new UserError(EXCLUDE_ERR_STRING));
+    await expect(async () => {
+      await filter(arg, req, info);
+    }).rejects.toThrowError(new UserError(EXCLUDE_ERR_STRING));
     expect(req.res?.status).toHaveBeenCalledWith(403);
     expect(callback).not.toBeCalled();
   });
 
-  test("succeed match exclude", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("succeed match exclude", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { exclude: eRolesAvailable.teacher };
     const filter = rolesFilter(opt, callback);
-    const ret = filter(arg, req, info);
+    const ret = await filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
     expect(ret).toEqual("ret");
     expect(req.res?.status).not.toHaveBeenCalled();
   });
 
-  test("fail no match exclude array", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("fail no match exclude array", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = { exclude: [eRolesAvailable.student, eRolesAvailable.teacher] };
     const filter = rolesFilter(opt, callback);
-    expect(() => {
-      filter(arg, req, info);
-    }).toThrowError(new UserError(EXCLUDE_ERR_STRING));
+    await expect(async () => {
+      await filter(arg, req, info);
+    }).rejects.toThrowError(new UserError(EXCLUDE_ERR_STRING));
     expect(req.res?.status).toHaveBeenCalledWith(403);
     expect(callback).not.toBeCalled();
   });
 
-  test("succeed match exclude array", () => {
-    const req = getMockReq({ user: user, res: res });
+  test("succeed match exclude array", async () => {
+    const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });
     const opt = {
       exclude: [
         eRolesAvailable.teacher,
@@ -244,7 +245,7 @@ describe("rolesFilter", () => {
       ],
     };
     const filter = rolesFilter(opt, callback);
-    const ret = filter(arg, req, info);
+    const ret = await filter(arg, req, info);
     expect(callback).toHaveBeenCalledWith(arg, req, info);
     expect(ret).toEqual("ret");
     expect(req.res?.status).not.toHaveBeenCalled();
