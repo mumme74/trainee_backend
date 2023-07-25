@@ -43,19 +43,19 @@ export class GroupStudent extends Model {
   static bootstrapAfterHook(sequelize: Sequelize) {
     const groupModel = sequelize.models.core_Groups,
           userModel  = sequelize.models.core_Users,
-          teacherModel = sequelize.models.core_GroupTeachers;
+          studentModel = sequelize.models.core_GroupStudents;
 
-    teacherModel.belongsTo(userModel, {
-      foreignKey: 'createdId',
+    studentModel.belongsTo(userModel, {
+      foreignKey: 'createdBy',
       onDelete: 'NO ACTION'
     });
 
-    teacherModel.belongsTo(userModel, {
+    studentModel.belongsTo(userModel, {
       foreignKey: 'studentId',
       onDelete: 'CASCADE'
     });
 
-    teacherModel.belongsTo(groupModel, {
+    studentModel.belongsTo(groupModel, {
       foreignKey: 'groupId',
       onDelete: 'CASCADE'
     })

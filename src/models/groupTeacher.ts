@@ -46,7 +46,7 @@ export class GroupTeacher extends Model {
           teacherModel = sequelize.models.core_GroupTeachers;
 
     teacherModel.belongsTo(userModel, {
-      foreignKey: 'createdId',
+      foreignKey: 'createdBy',
       onDelete: 'NO ACTION'
     });
 

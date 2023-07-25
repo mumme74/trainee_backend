@@ -48,8 +48,10 @@ export class Group extends Model {
   static bootstrapAfterHook(sequelize: Sequelize) {
     const groupModel = sequelize.models.core_Groups,
           userModel  = sequelize.models.core_Users;
+
     groupModel.belongsTo(userModel, {
-      foreignKey: 'ownerId'
+      foreignKey: 'ownerId',
+      onDelete: 'SET NULL',
     });
   }
 }
