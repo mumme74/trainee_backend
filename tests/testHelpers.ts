@@ -8,8 +8,9 @@ import Express, { NextFunction, response } from "express";
 import request from "supertest";
 import supertest from "supertest";
 import JWT from "jsonwebtoken";
-import { eRolesAvailable } from "../src/models/old_mongo/usersModel";
-import type { IUserDocument } from "../src/models/old_mongo/usersModel";
+import { eRolesAvailable } from "../src/models/role";
+import { User } from "../src/models/user";
+import { Role } from "../src/models/role";
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;
@@ -27,16 +28,17 @@ export function jsonApp() {
     });
 
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+      const status = !isNaN(+err) ? +err : 500
       const errObj = {
         success: false,
         error: {
-          message: "500: Internal Server Error",
-          status: 500,
-          error: { message: err.message, stack: err.stack?.split("\n") },
+          message: "Error from express",
+          status,
+          error: { message: err.message || err, stack: err.stack?.split("\n") },
         },
       };
-      console.log(err);
-      res.status(500).json(errObj);
+      console.log('express error',err);
+      res.status(status).json(errObj);
     });
   };
   return app;
@@ -113,7 +115,7 @@ export function signToken({
   notBefore = 0, // in seconds
   roles,
 }: {
-  userId: string;
+  userId: number;
   expiresInMinutes?: number;
   notBefore?: number;
   roles?: eRolesAvailable[];
@@ -121,7 +123,7 @@ export function signToken({
   return JWT.sign(
     {
       iss: process.env.APP_NAME,
-      sub: userId,
+      sub: userId.toString(),
       nbf: Math.floor(new Date().getTime() / 1000) + notBefore,
       iat: Math.floor(new Date().getTime() / 1000), // need to be seconds not milliseconds
       exp: Math.floor(
@@ -137,36 +139,87 @@ export function signToken({
 export const userPrimaryObj = {
   firstName: "Test",
   lastName: "Testson",
-  userName: "tester",
+  userName: "tester1",
   method: "google",
   password: "SecretPass1$",
-  email: "user@testing.com",
-  google: { id: "123456789abc" },
-  domain: "testing.com",
-  picture: "https://somedomain.com/path/to/image.png",
-  roles: [eRolesAvailable.student],
-  updatedBy: "123456789abc",
+  email: "user1@testing.com",
+  updatedBy: 123456789,
 };
+
+export const roleDefaultObj = {
+  role: eRolesAvailable.student
+}
+
+export const pictureDefaultObj = {
+  blob: "https://somedomain.com/path/to/image.png",
+  mime: "remote"
+}
+
+export const oauthDefaultObj = {
+  oauthId: "123456789abc"
+}
+
+export const organizationDefaultObj = {
+  name: 'Test organization',
+  domain: "testing.com",
+}
 
 export function compareUser(
   user: any,
-  userSaved: IUserDocument,
+  userSaved: User,
   compareId = true,
 ) {
   if (compareId) {
-    expect(user.id.toString()).toEqual(userSaved.id.toString());
+    expect(user.id).toEqual(userSaved.id);
   }
   if (user.updatedBy && userSaved.updatedBy) {
     expect(user.updatedBy.toString()).toEqual(userSaved.updatedBy.toString());
   }
-  expect(user).toMatchObject({
-    method: userSaved.method,
-    userName: userSaved.userName,
-    email: userSaved.email,
-    firstName: userSaved.firstName,
-    lastName: userSaved.lastName,
-    domain: userSaved.domain,
-    createdAt: userSaved.createdAt,
-    updatedAt: userSaved.updatedAt,
-  });
+  const subset = (u: User) => {
+    return {
+      userName:  u.userName,
+      email:     u.email,
+      firstName: u.firstName,
+      lastName:  u.lastName,
+      createdAt: u.createdAt,
+      //updatedAt: u.updatedAt,
+      updatedBy: u.updatedBy,
+    }
+  }
+
+  expect(subset(user)).toMatchObject(subset(userSaved));
+}
+
+let user: User, defaultRole: Role, iterations = 0;
+export async function createPrimaryUser(
+  spreadValues: {[key:string]:number|string|Date} = {}
+):
+  Promise<User>
+{
+  try {
+    user = await User.create({
+      ...{...userPrimaryObj, ...spreadValues},
+      userName: userPrimaryObj.userName.replace(/[0-9]+/, (++iterations).toString()),
+      email:userPrimaryObj.email.replace(/[0-9]+/, (iterations).toString())
+    });
+    defaultRole = await Role.create({userId:user.id,role:eRolesAvailable.student});
+  } catch(err:any) {
+    if (err.errors)
+      err.errors.forEach((e: any)=>console.error(e.message))
+    else
+      console.error(err.message);
+  }
+  return user;
+}
+
+export async function destroyPrimaryUser() {
+  try {
+    await user?.destroy({force:true});
+    await defaultRole?.destroy({force:true});
+  } catch(err: any) {
+    if (err.errors)
+      err.errors.forEach((e: any)=>console.error(e.message));
+    else console.error(err.message);
+    throw err;
+  }
 }

@@ -79,21 +79,21 @@ describe("meetRoles function", () => {
     expect(res).toEqual("");
   });
 
-  test("fail match allOf", async () => {
+  test("fail match allOf single", async () => {
     req.user.roles.push(eRolesAvailable.teacher);
-    const res = await meetRoles({ allOf: eRolesAvailable.admin }, req);
+    const res = await meetRoles({ allOf: [eRolesAvailable.admin] }, req);
     expect(res).toEqual(ALL_OF_ERR_STRING);
   });
 
-  test("succeed match allOf", async () => {
+  test("succeed match allOf single", async () => {
     req.user.roles.push(eRolesAvailable.teacher);
     req.user.roles.push(eRolesAvailable.admin);
-    const res = await meetRoles({ allOf: eRolesAvailable.teacher }, req);
+    const res = await meetRoles({ allOf: [eRolesAvailable.teacher] }, req);
     expect(res).toEqual("");
   });
 
   test("succeed match allOf value=0", async () => {
-    const res = await meetRoles({ allOf: 0 }, req);
+    const res = await meetRoles({ allOf: [0] }, req);
     expect(res).toEqual("");
   });
 

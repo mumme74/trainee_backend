@@ -1,8 +1,9 @@
 import { Request } from "express";
 
-import { Role, eRolesAvailable } from "../models/role";
+import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../models/role";
 import type { AuthRequest } from "../types";
 import type { User } from "../models/user";
+import { isNumberObject, isStringObject } from "util/types";
 
 const rolesFromReq = async (req: AuthRequest):
   Promise<eRolesAvailable[]> =>
@@ -15,8 +16,8 @@ const rolesFromReq = async (req: AuthRequest):
       attributes:["role"]
     });
 
-    if (rls.length)
-      roles.push(...rls.map(r=>r.role));
+    if (rls.length)  // use set to remove duplicates
+      roles.push(...new Set(rls.map(r=>r.role)));
   }
 
   return roles;
@@ -26,7 +27,7 @@ export interface IFilterOptions {
   // when user has any of these
   anyOf?: eRolesAvailable | eRolesAvailable[];
   // when user has all of these
-  allOf?: eRolesAvailable | eRolesAvailable[];
+  allOf?: eRolesAvailable[];
   // exclude when user has any of these
   exclude?: eRolesAvailable | eRolesAvailable[];
 }
@@ -43,35 +44,24 @@ export const meetRoles = async (opt: IFilterOptions, req: AuthRequest):
   const roles = await rolesFromReq(req);
   if (!roles.length) return "No roles for current user";
 
-  if (
-    opt.anyOf !== undefined &&
-    (Array.isArray(opt.anyOf)
-      ? opt.anyOf.find(async (any) => roles.indexOf(any) > -1) ===
-        undefined
-      : roles.indexOf(opt.anyOf) === -1)
-  ) {
+  const hasProp = (prop: any) =>
+    !isNaN(prop) || Array.isArray(prop) || typeof prop === 'string';
+
+  const hasRole = (prop: any) => {
+    if (Array.isArray(prop))
+      return prop.find(any=>roles.indexOf(any) > -1) !== undefined;
+    const role = isNaN(prop) ? rolesAvailableNrs[prop] : prop;
+    return roles.indexOf(role) > -1
+  }
+
+  if (hasProp(opt.anyOf) && !hasRole(opt.anyOf))
     return "Insufficient priviledges";
-  }
 
-  if (
-    opt.exclude !== undefined &&
-    (Array.isArray(opt.exclude)
-      ? opt.exclude.find((any) => roles.indexOf(any) > -1) !==
-        undefined
-      : roles.indexOf(opt.exclude) > -1)
-  ) {
+  if (hasProp(opt.exclude) && hasRole(opt.exclude))
     return "You have a priviledge that you shall NOT have";
-  }
 
-  if (
-    opt.allOf !== undefined &&
-    (Array.isArray(opt.allOf)
-      ? opt.allOf.filter((any) => roles.indexOf(any) > -1)
-          .length !== opt.allOf.length
-      : roles.indexOf(opt.allOf) === -1)
-  ) {
+  if (hasProp(opt.allOf) && opt.allOf?.find(r=>roles.indexOf(r)===-1))
     return "You do not have all required priviledges";
-  }
 
   return "";
 };
