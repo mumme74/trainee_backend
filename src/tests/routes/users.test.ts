@@ -7,7 +7,7 @@ import type { CallbackHandler } from "supertest";
 import "../testProcess.env";
 
 import type { IUsersController } from "../../controllers/users";
-import User, { IUserDocument, eRolesAvailable } from "../../models/usersModel";
+import User, { IUserDocument, eRolesAvailable } from "../../models/old_mongo/usersModel";
 import userRoutes from "../../routes/users";
 import { initMemoryDb, closeMemoryDb } from "../testingDatabase";
 import {

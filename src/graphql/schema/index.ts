@@ -9,6 +9,9 @@ import {
   usersSchemaQueries,
 } from "./users";
 
+import { picturesSchemaTypes } from "./pictures";
+import { organizationSchemaTypes } from "./organizations";
+
 import {
   groupsSchemaTypes,
   groupsSchemaInputs,
@@ -31,7 +34,7 @@ export interface IGraphQl_ErrorResponse
 export interface IGraphQl_OkResponse extends IGraphQl_Response {
   success: true;
   nrAffected: number;
-  ids?: string[];
+  ids?: number[];
 }
 
 export type IGraphQl_MutationResponse =
@@ -50,6 +53,7 @@ const testingErrorResponseQueries = `
 // our API schema types
 const schemaStr = `
     scalar Date
+    scalar Blob
 
     type Error {
       message: String!
@@ -73,7 +77,9 @@ const schemaStr = `
     union MutationResponse =  OkResponse | ErrorResponse
 
     ${usersSchemaTypes}
+    ${picturesSchemaTypes}
     ${groupsSchemaTypes}
+    ${organizationSchemaTypes}
 
     ${usersSchemaInputs}
     ${groupsSchemaInputs}

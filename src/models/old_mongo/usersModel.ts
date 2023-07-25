@@ -2,22 +2,11 @@ import mongoose, { Schema, model, Document } from "mongoose";
 import bcrypt from "bcrypt";
 //import { string } from "joi";
 
-import { UserError } from "../helpers/errorHelpers";
+import { UserError } from "../../helpers/errorHelpers";
 
-/**
- * @brief these are the 4 different roles a user can have
- */
-export enum eRolesAvailable {
-  "student" = 0,
-  "teacher" = 1,
-  "admin" = 2,
-  "super" = 3,
-}
-export const rolesAvailableKeys = Object.keys(eRolesAvailable)
-  .map((key) => {
-    return isNaN(+key) ? key : undefined;
-  })
-  .filter((itm) => itm !== undefined) as string[];
+// import and re-export
+import { eRolesAvailable, rolesAvailableKeys } from "../role";
+export { eRolesAvailable, rolesAvailableKeys };
 
 //export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys);
 

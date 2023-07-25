@@ -1,6 +1,7 @@
 {
   "bail": 0,
   "verbose": true,
-  "testRegex": "/src/tests/.*\\.(test|spec)\\.[jt]sx?$",
-  "testEnvironment": "node"
+  "testRegex": "/tests/.*\\.(test|spec)\\.[jt]sx?$",
+  "testEnvironment": "node",
+  "preset": "ts-jest/presets/js-with-babel"
 }

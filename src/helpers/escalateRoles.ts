@@ -1,6 +1,8 @@
-import { IUserDocument } from "../models/usersModel";
+import { User } from "../models/user";
 
-export const passAsTeacher = (user: IUserDocument): boolean => {
+export const passAsTeacher = async (user: User):
+  Promise<boolean> =>
+{
   let matchCnt = 0,
     regexCnt = 0;
   function match(regexStr: string, input: string): void {
@@ -9,20 +11,19 @@ export const passAsTeacher = (user: IUserDocument): boolean => {
         ++regexCnt;
         if (new RegExp(regexStr).test(input)) ++matchCnt;
       }
-    } catch (e) {
-      /*squelsh*/
-    }
+    } catch (e) { /*squelsh*/ }
   }
 
   if (
     process.env.ENABLE_AUTO_ROLE_TEACHER !== "true" ||
-    (process.env.AUTO_ROLE_REQUIRE_GOOGLE_ID && !user.google?.id)
+    (process.env.AUTO_ROLE_REQUIRE_GOOGLE_ID)
   ) {
     return false;
   }
 
   // to auto escalate, we must be part of a domain
-  if (user.domain) {
+  const organization = await user.getOrganization()
+  if (organization?.domain) {
     // match against env variable regex
     if (process.env.TEACHER_EMAIL_REGEX)
       match(process.env.TEACHER_EMAIL_REGEX, user.email);
@@ -31,7 +32,7 @@ export const passAsTeacher = (user: IUserDocument): boolean => {
     if (process.env.TEACHER_LAST_NAME_REGEX)
       match(process.env.TEACHER_LAST_NAME_REGEX, user.lastName);
     if (process.env.TEACHER_DOMAIN_REGEX)
-      match(process.env.TEACHER_DOMAIN_REGEX, user.domain);
+      match(process.env.TEACHER_DOMAIN_REGEX, organization.domain);
   }
 
   return matchCnt > 0 && matchCnt === regexCnt;
@@ -43,7 +44,7 @@ export const passAsTeacher = (user: IUserDocument): boolean => {
  * @param user user to check against
  * @returns true if user matches
  */
-export const passAsSuperAdmin = (user: IUserDocument): boolean => {
+export const passAsSuperAdmin = (user: User): boolean => {
   if (process.env.ENABLE_AUTO_ROLE_SUPER_ADMIN !== "true") {
     return false;
   }

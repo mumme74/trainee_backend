@@ -10,22 +10,31 @@ import cors from "cors";
 import sanitize from "./helpers/sanitize";
 import userRoutes from "./routes/users";
 import graphQlRoute from "./graphql";
+import { initDb } from "./models"
+
+try{
+  initDb();
+}catch(e){
+  console.error(e)
+}
 
 mongoose.Promise = global.Promise;
 
+/*
 // "mongodb://user:password@localhost:port/database";
-const mongoHost = process.env.MONGO_HOST || "localhost";
-const mongoUser = process.env.MONGO_USER;
-const mongoPass = process.env.MONGO_PASS;
-const mongoPort = process.env.MONGO_PORT || 27017;
-const mongoDb = process.env.MONGO_DB;
+const dbHost = process.env.DB_HOST || "localhost";
+const dbUser = process.env.DB_USER;
+const dbPass = process.env.DB_PASS;
+const dbPort = process.env.DB_PORT || 27017;
+const dbName = process.env.DB_NAME;
 
-const connectionString = `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${mongoDb}`;
+const connectionString = `mongodb://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}`;
 
 // connect to DB
 mongoose.connect(connectionString, { });
+*/
 
-// crate the global app
+// create the global app
 const app = express();
 
 // cross origin

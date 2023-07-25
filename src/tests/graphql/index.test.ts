@@ -12,8 +12,8 @@ import {
 } from "../testHelpers";
 
 import graphqlRoute from "../../graphql";
-import type { IUserDocument } from "../../models/usersModel";
-import User from "../../models/usersModel";
+import type { IUserDocument } from "../../models/old_mongo/usersModel";
+import User from "../../models/old_mongo/usersModel";
 import { closeMemoryDb, initMemoryDb } from "../testingDatabase";
 
 const processEnv = process.env;
@@ -208,13 +208,13 @@ describe("error response", () => {
   test("testMutationResponseOk", (done: CallbackHandler) => {
     req
       .post({
-        query: `query { 
+        query: `query {
                   testMutationResponseOk {
                     ... on ErrorResponse {
                       success error { message, type, stack}
                     }
                     ... on OkResponse {
-                       success nrAffected, ids 
+                       success nrAffected, ids
                     }
                   }
                 }`,
@@ -235,13 +235,13 @@ describe("error response", () => {
   test("testMutationResponseErr", (done: CallbackHandler) => {
     req
       .post({
-        query: `query { 
+        query: `query {
                   testMutationResponseErr {
                     ... on ErrorResponse {
                       success error { message, type, stack}
                     }
                     ... on OkResponse {
-                       success nrAffected, ids 
+                       success nrAffected, ids
                     }
                   }
                 }`,

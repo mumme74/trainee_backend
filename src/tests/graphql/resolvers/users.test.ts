@@ -12,8 +12,8 @@ import {
 } from "../../testHelpers";
 
 import graphqlRoute from "../../../graphql";
-import { IUserDocument, eRolesAvailable } from "../../../models/usersModel";
-import User from "../../../models/usersModel";
+import { User } from "../../../models/user";
+import { eRolesAvailable } from "../../../models/role";
 import { closeMemoryDb, initMemoryDb } from "../../testingDatabase";
 import UsersController from "../../../controllers/users";
 import { userLoader } from "../../../graphql/resolvers/users";
@@ -33,10 +33,10 @@ afterAll(async () => {
   process.env = processEnv;
 });
 
-let users: IUserDocument[];
+let users: User[];
 // helpers
 async function fillDbWithUSers() {
-  users = await User.create([
+  users = await User.bulkBuild([
     {
       ...userPrimaryObj,
       userName: "user0",
@@ -79,16 +79,16 @@ describe("userLoader", () => {
   });
 
   afterAll(async () => {
-    await User.deleteMany({});
+    await User.truncate();
   });
 
   test("empty array non existant id", async () => {
-    const user = await userLoader.load("01234567890abcdefabcdefa");
+    const user = await userLoader.load(1234567890);
     expect(user).toStrictEqual([]);
   });
 
   test("succeed when user found", async () => {
-    expect(await userLoader.load(users[2].id.toString())).toMatchObject(
+    expect(await userLoader.load(users[2].id)).toMatchObject(
       users[2],
     );
   });
@@ -96,9 +96,9 @@ describe("userLoader", () => {
   test("fail when one id of many not found", async () => {
     expect(async () => {
       await userLoader.loadMany([
-        users[0].id.toString(),
-        users[1].id.toString(),
-        "01234567890abcdefabcdefa",
+        users[0].id,
+        users[1].id,
+        1235467890,
       ]);
     }).toThrowError();
   });

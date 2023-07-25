@@ -8,8 +8,8 @@ import Express, { NextFunction, response } from "express";
 import request from "supertest";
 import supertest from "supertest";
 import JWT from "jsonwebtoken";
-import { eRolesAvailable } from "../models/usersModel";
-import type { IUserDocument } from "../models/usersModel";
+import { eRolesAvailable } from "../models/old_mongo/usersModel";
+import type { IUserDocument } from "../models/old_mongo/usersModel";
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;

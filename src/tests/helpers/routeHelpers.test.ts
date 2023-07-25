@@ -2,7 +2,8 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 
 import { validateBody, schemas, hasRoles } from "../../helpers/routeHelpers";
 import { AuthRequest } from "../../types";
-import User, { eRolesAvailable } from "../../models/usersModel";
+import { User } from "../../models/user";
+import { Role, eRolesAvailable } from "../../models/role";
 import { matchErrorMockCall, matchError } from "../testHelpers";
 
 const { res, next, clearMockRes } = getMockRes();
@@ -307,22 +308,26 @@ describe("hasRoles function", () => {
   let req: AuthRequest;
   beforeEach(() => {
     req = getMockReq() as AuthRequest;
-    req.user = new User({
-      firstName: "Test",
-      lastName: "Testson",
-      userName: "testUser",
-      email: "email@user.com",
-      method: "local",
-      updatedBy: "123456789abc",
-      updatedAt: Date,
-      createdAt: Date,
-      lastLogin: Date,
+    req.user = {
+      user: User.build({
+        id: 1,
+        firstName: "Test",
+        lastName: "Testson",
+        userName: "testUser",
+        email: "email@user.com",
+        updatedBy: "123456789abc",
+        updatedAt: Date,
+        createdAt: Date,
+        lastLogin: Date,
+      }),
       roles: [eRolesAvailable.student],
-    });
+      userPic: null,
+      oauth: null
+    }
   });
 
-  test("fail match anyOf", () => {
-    hasRoles({ anyOf: [eRolesAvailable.teacher] })(req, res, next);
+  test("fail match anyOf", async () => {
+    await hasRoles({ anyOf: [eRolesAvailable.teacher] })(req, res, next);
 
     expect(res.status).toBeCalledWith(403);
     const data = (res.json as jest.Mock).mock.calls[0][0];
@@ -330,9 +335,9 @@ describe("hasRoles function", () => {
     expect(next).not.toBeCalled();
   });
 
-  test("succeed match anyOf", () => {
+  test("succeed match anyOf", async () => {
     req.user.roles.push(eRolesAvailable.teacher);
-    hasRoles({ anyOf: [eRolesAvailable.teacher] })(req, res, next);
+    await hasRoles({ anyOf: [eRolesAvailable.teacher] })(req, res, next);
 
     expect(res.status).not.toBeCalled();
     expect(next).toBeCalled();

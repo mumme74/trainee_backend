@@ -1,13 +1,27 @@
 import Router from "express-promise-router";
-import type { Express, Request, Response, NextFunction } from "express";
-import UsersController, { IUsersController } from "../controllers/users";
-import { passportGoogle, passportLogin, passportJWT } from "../passport";
+import type {
+  Express, Request,
+  Response, NextFunction
+} from "express";
+import UsersController, {
+   IUsersController
+} from "../controllers/users";
+import {
+  passportGoogle,
+  passportLogin,
+  passportJWT
+} from "../passport";
 
-import { validateBody, schemas, hasRoles } from "../helpers/routeHelpers";
-import { eRolesAvailable } from "../models/usersModel";
+import {
+  validateBody,
+  schemas,
+  hasRoles
+} from "../helpers/routeHelpers";
+import { eRolesAvailable } from "../models/role";
 
 function userRoutes(
   app: Express,
+  // pass in controller to ba able to mock when testing
   controller: IUsersController = UsersController,
 ) {
   const router = Router();

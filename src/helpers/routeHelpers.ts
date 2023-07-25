@@ -84,8 +84,8 @@ export const schemas = {
  * @returns the response of next function
  */
 export const hasRoles = (filterOpt: IFilterOptions) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const blockedStr = meetRoles(filterOpt, req);
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const blockedStr = await meetRoles(filterOpt, req as AuthRequest);
     if (blockedStr) {
       return res.status(403).json(errorResponse(blockedStr));
     }

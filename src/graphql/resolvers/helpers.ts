@@ -19,11 +19,22 @@ export const composeErrorResponse = (
   };
 };
 
+export const tryCatch = (controllerName: string, cb: Function) => {
+  return (args: any, req: any, info: any) => {
+    try {
+      return cb(args, req, info);
+    } catch(err:any) {
+      console.log(`Catch error from graphQl controller ${controllerName}`);
+      composeErrorResponse(err);
+    }
+  }
+}
+
 export const rolesFilter = (opt: IFilterOptions, cb: Function) => {
-  return function (args: any, req: any, info: any) {
+  return async (args: any, req: any, info: any) => {
     const authReq = req as AuthRequest;
 
-    const blockedStr = meetRoles(opt, req);
+    const blockedStr = await meetRoles(opt, req);
     if (blockedStr) {
       req.res.status(403);
       throw new UserError(blockedStr);

@@ -1,75 +1,58 @@
 import DataLoader from "dataloader";
-import mongoose from "mongoose";
-
-import User, {
-  IUserDocument,
-  IUserId,
-  eRolesAvailable,
-  rolesAvailableKeys,
-} from "../../models/usersModel";
 import {
-  IGraphQl_UserCreateStudentInput,
+  IGraphQl_UserCreateUsersInput,
+  IGraphQl_UserCreateType,
   IGraphQl_UserType,
 } from "../schema/users";
+import { pictureLoader, transformPicture } from "./pictures";
 import { IGraphQl_MutationResponse } from "../schema/index";
 import { AuthRequest } from "../../types";
 import { composeErrorResponse, rolesFilter } from "./helpers";
 import { UserError } from "../../helpers/errorHelpers";
-import { newObjectId } from "../../helpers/dbHelpers";
+import { User } from "../../models/user";
+import { Op, Sequelize } from "sequelize";
+import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../../models/role";
+import { organizationLoader, transformOrganization } from "./organizations";
+import { Organization, fetchOrganizationNr } from "../../models/organization";
+import { Picture } from "../../models/picture";
+import { OAuth } from "../../models/oauth";
 
 export const userLoader = new DataLoader(
-  async (userIds: readonly string[]): Promise<IUserDocument[]> => {
-    const result = await User.find({
-      _id: {
-        $in: userIds.map((id) => {
-          return newObjectId(id);
-        }),
-      },
+  async (userIds: readonly number[]):
+    Promise<User[]> =>
+  {
+    const result = await User.findAll({
+      where: { id:{ [Op.in]:[...userIds] } },
     });
     return result;
   },
 );
 
-export const lookupUser = async (
-  userId: IUserId,
-): Promise<IUserDocument | undefined> => {
-  return lookupUserByStr(userId.toString());
-};
-
-export const lookupUserByStr = async (
-  userId: string,
-): Promise<IUserDocument | undefined> => {
-  if (!userId) return;
-  try {
-    const user = await userLoader.load(userId);
-    if (!user) throw new UserError(`User '${userId}' not found!`);
-    return user;
-  } catch (err: any) {
-    throw err;
-  }
-};
-
-export const transformUser = (user: IUserDocument): IGraphQl_UserType => {
-  const roles = user.roles.map((role) => {
-    return eRolesAvailable[role];
-  }) as string[];
-
+export const transformUser = (user: User):
+  IGraphQl_UserType =>
+{
   return {
     id: user.id,
+    fullName: user.fullName(),
     firstName: user.firstName,
     lastName: user.lastName,
-    fullName: `${user.firstName} ${user.lastName}`,
     email: user.email,
-    picture: user.picture || "",
-    domain: user.domain || "",
-    roles: roles,
-    googleId: user.google?.id || "",
+    picture: async () => {
+      const pic = await pictureLoader.load(user.pictureId);
+      return transformPicture(pic);
+    },
+    organization: async ()=>{
+      const org = await organizationLoader.load(user.organizationId);
+      return transformOrganization(org);
+    },
+    roles: async ()=> {
+      return await user.roles();
+    },
     updatedAt: user.updatedAt,
     createdAt: user.createdAt,
     lastLogin: user.lastLogin,
     updater: async () => {
-      const u = await lookupUser(user.updatedBy);
-      if (!u) return undefined;
+      const u = await userLoader.load(user.updatedBy);
       return transformUser(u);
     },
   };
@@ -86,24 +69,24 @@ export default {
       ],
     },
     async (
-      { ids }: { ids: string[] },
+      { ids }: { ids: number[] },
       req: AuthRequest,
     ): Promise<IGraphQl_UserType[]> => {
       try {
-        const users = (await userLoader.loadMany(ids)) as IUserDocument[];
-        //const objIds = ids.map((id)=>{return newObjectId(id)});
-        //const users = await User.find({"_id":{$in: objIds}});
-        if (!users) return [];
+        // don't use loadMany here as we explicitly want to fail if one of ids fails
+        let users = await Promise.all(ids.map((id)=>userLoader.load(id)));
 
-        const res = users.map((user: IUserDocument) => {
-          return transformUser(user);
+        // if we are super user return unfiltered
+        // else return only those belonging to my domain
+        const reqUser = req.user.user;
+        if (req.user.roles.indexOf(eRolesAvailable.super) === -1)
+          users = users.filter(u=>u.organizationId===reqUser.organizationId);
+
+        // transform to graphQl type
+        return users.map((vlu: User) => {
+          return transformUser(vlu);
         });
 
-        // if we are super user retun unfiltered
-        if (req.user.roles.indexOf(eRolesAvailable.super) > -1) return res;
-
-        // else return only those belonging to my domain
-        return res.filter((u) => u.domain === (req.user.domain || ""));
       } catch (err) {
         throw err;
       }
@@ -115,35 +98,39 @@ export default {
   },
 
   // mutations
-  userCreateStudent: rolesFilter(
-    { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
+  userCreateStudents: rolesFilter({
+    anyOf: [
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
     async (
-      { newUser }: { newUser: IGraphQl_UserCreateStudentInput },
+      { input }: { input: IGraphQl_UserCreateUsersInput },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
+      const t = await (User.sequelize as Sequelize).transaction();
       try {
-        const user = new User({
-          userName: newUser.userName,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          email: newUser.email,
-          "google.id": newUser.googleId || "",
-          domain: newUser.domain || "",
-          picture: newUser.picture,
-          updatedBy: req.user.id,
-          roles: [eRolesAvailable.student],
-          method: newUser.googleId ? "google" : "local",
-        });
+        // find optional organization from input.domain
+        const orgId = input.domain ?
+          fetchOrganizationNr(input.domain) : undefined;
 
-        await user.save();
+        const ids = [];
+        for (const newUser of input.users) {
+          const user = await createUserAndRoles(newUser, req);
+          createUserAvatar(user, newUser);
+          createOAuthEntry(user, newUser);
+          ids.push(user.id);
+        }
+        await t.commit();
 
         return {
           success: true,
-          nrAffected: 1,
-          ids: [user._id],
+          nrAffected: ids.length,
+          ids,
           __typename: "OkResponse",
         };
       } catch (err: any) {
+        t.rollback();
         return composeErrorResponse(err);
       }
     },
@@ -152,43 +139,43 @@ export default {
   userChangeRoles: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
-      { id, roles }: { id: string; roles: string[] },
+      { id, roles }: { id: number; roles: string[] },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
       try {
         // string role names to available Roles
         // using set here to ensure we only have one of each type
         const newRoles = [
-          ...new Set(
-            roles.map((role: string) => {
-              const idx = rolesAvailableKeys.indexOf(role);
-              if (idx < 0) throw new UserError("Role not valid");
-              return idx;
-            }),
-          ),
+          ...roles.map((role: string) => {
+            const idx = rolesAvailableKeys.indexOf(role);
+            if (idx < 0) throw new UserError("Role not valid");
+            return idx;
+          }),
         ];
 
-        if (
-          newRoles.indexOf(eRolesAvailable.super) > -1 &&
-          req.user.roles.indexOf(eRolesAvailable.super) < 0
-        ) {
+        if (newRoles.indexOf(eRolesAvailable.super) > -1 &&
+            req.user.roles.indexOf(eRolesAvailable.super) < 0)
+        {
           throw new UserError(
-            "Can't set super admin role when you are not super admin.\n Insufficient credentials.",
-          );
+            "Can't set super admin role when you are not super admin.\n"+
+            "Insufficient credentials.");
         }
 
-        const res = await User.updateOne(
-          { _id: newObjectId(id) },
-          {
-            roles: newRoles,
-            updatedBy: req.user.id,
-          },
-        );
-        if (!res.matchedCount) throw new UserError("Failed to match user");
+        if (!(await User.findByPk(id)))
+          throw new UserError("Failed to match user");
+
+        const myRoles = await Role.findAll({where:{userId:id}});
+
+        // delete unwanted roles
+        let cnt = myRoles.filter(r=>newRoles.indexOf(r.role)<0)
+                              .map(r=>r.destroy()).length;
+        // inserts new roles
+        cnt += newRoles.filter(r=>!myRoles.find(o=>o.role===r))
+                       .map(r=>Role.create({userId:id,role:r})).length;
 
         return {
           success: true,
-          nrAffected: res.matchedCount,
+          nrAffected: cnt,
           __typename: "OkResponse",
         };
       } catch (err: any) {
@@ -200,31 +187,40 @@ export default {
   userMoveToDomain: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
-      { id, domain }: { id: string; domain?: string },
+      { id, domain }: { id: number; domain?: string },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
       try {
-        if (!domain) domain = req.user.domain || "";
+        let orgId;
+        if (!domain) orgId = req.user.user.organizationId;
+        else {
+          // lookup organzation, specialcase moving out to no domain
+          const org = await Organization.findOne({where:{domain}});
+          if (!org && domain)
+            throw new UserError("Domain not found in any organization");
+          orgId = org?.id || 0;
+        }
 
         if (req.user.roles.indexOf(eRolesAvailable.super) < 0) {
           // not super admin
-          if (domain !== req.user.domain && domain !== "")
+          if (orgId !== req.user.user.organizationId && domain !== "")
             throw new UserError(
               "You dont have priviledges to move user to another domain than your own",
             );
         }
 
-        const res = await User.updateOne(
-          { _id: newObjectId(id) },
-          { domain: domain },
-        );
+        const [res] = await User.update({
+          organizationId:orgId
+        }, {
+          where:{id}
+        });
 
-        if (!res || res.matchedCount < 1)
+        if (res < 1)
           throw new UserError("User not found!");
 
         return {
           success: true,
-          nrAffected: res.matchedCount,
+          nrAffected: res,
           ids: [id],
           __typename: "OkResponse",
         };
@@ -236,19 +232,20 @@ export default {
 
   userSetSuperUser: rolesFilter(
     { anyOf: eRolesAvailable.super },
-    async ({ id }: { id: string }): Promise<IGraphQl_MutationResponse> => {
+    async ({ id }: { id: number }):
+      Promise<IGraphQl_MutationResponse> =>
+    {
       try {
-        const user = await User.findOne({
-          _id: newObjectId(id),
-        });
+        const user = await User.findByPk(id);
         if (!user) throw new UserError("User not found!");
 
-        user.roles.push(eRolesAvailable.super);
-        await user.save();
+        const [role, created] = await Role.findOrCreate({
+          where:{[Op.and]:[{userId:id},{role:eRolesAvailable.super}]}
+        });
 
         return {
           success: true,
-          nrAffected: 1,
+          nrAffected: +created,
           ids: [id],
           __typename: "OkResponse",
         };
@@ -261,26 +258,23 @@ export default {
   userDeleteUser: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
-      { id }: { id: string },
+      { id }: { id: number },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
       try {
         // filter out so we can't delete a user outside of our domain
-        const domainFilter =
-          req.user.roles.indexOf(eRolesAvailable.super) < 0
-            ? { domain: { $eq: req.user.domain || "" } }
-            : undefined;
-        const res = await User.deleteOne({
-          _id: newObjectId(id),
-          domain: domainFilter?.domain,
-        });
+        const organizationId = req.user.user.organizationId;
+        const where = req.user.roles.indexOf(eRolesAvailable.super)<0 ?
+            { where: {[Op.and]:[{id},{organizationId}]}} :
+              { where: {id} };
+        const res = await User.destroy({where});
 
-        if (!res || +(res?.deletedCount || 0) < 1)
+        if (!res)
           throw new UserError("User not found, could not delete.");
 
         return {
           success: true,
-          nrAffected: res?.deletedCount || 0,
+          nrAffected: res,
           ids: [id],
           __typename: "OkResponse",
         };
@@ -290,3 +284,78 @@ export default {
     },
   ),
 };
+
+const createUserAndRoles = async (
+  newUser: IGraphQl_UserCreateType,
+  req: AuthRequest,
+): Promise<User> => {
+  const user = await User.create({
+    userName: newUser.userName,
+    firstName: newUser.firstName,
+    lastName: newUser.lastName,
+    email: newUser.email,
+    updatedBy: req.user.user.id,
+  });
+  if (!user)
+    throw new UserError(`Failed to create ${newUser.userName}`);
+
+  // create roles
+  const highestRole = (await req.user.user.getRoles())
+                        .map(r=>r.role)
+                        .reduce((p, v)=>(p<v?v:p))
+  for (const roleStr of (newUser?.roles || [])) {
+    const roleNr = rolesAvailableNrs[roleStr as any];
+
+    // make sure we only add with lower privs them ourselfs
+    if (roleNr >= highestRole) continue;
+
+    const r = await Role.create({userId: user.id, roleNr});
+    if (!r) throw new UserError(
+              `Failed to create roles for ${newUser.userName}`);
+  }
+
+  return user;
+}
+
+/**
+ * Create a avatar picture for user
+ */
+const createUserAvatar = async (
+  user: User,
+  newUser: IGraphQl_UserCreateType
+) => {
+  if (newUser.picture) {
+    let pic = await Picture.create({
+      userId: user.id,
+      blob: Buffer.from(newUser.picture),
+      mime: "remote"
+    });
+
+    const err = new UserError(
+      `Failed to create user avatar picture for ${newUser.userName}`);
+    if (!pic) throw err;
+
+    user.pictureId = pic.id;
+    if (!user.save()) throw err;
+  }
+}
+
+
+/**
+ * Create a oauth entry for user
+ */
+const createOAuthEntry = async (
+  user: User,
+  newUser: IGraphQl_UserCreateType
+) => {
+  if (newUser.oauthId && newUser.oauthProvider) {
+    const oauth = await OAuth.create({
+      userId: user.id,
+      provider: newUser.oauthProvider,
+      idString: newUser.oauthId
+    });
+    if (!oauth)
+      throw new UserError(
+        `Failed to create OAuth entry for ${newUser.userName}`);
+  }
+}

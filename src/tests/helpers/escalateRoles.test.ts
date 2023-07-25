@@ -1,70 +1,88 @@
 import { passAsSuperAdmin, passAsTeacher } from "../../helpers/escalateRoles";
-import type { IUserDocument } from "../../models/usersModel";
-import User, { eRolesAvailable } from "../../models/usersModel";
+import { User} from "../../models/user";
+import { Role, eRolesAvailable } from "../../models/role";
 
 const defaultUser = {
-  id: "1234567890abc",
+  id: 1,
   firstName: "mock",
   lastName: "mock",
   email: "mock@testschool.org",
   domain: "testschool.org",
   userName: "userName",
-  roles: [eRolesAvailable.student],
-  method: "local",
-  updatedBy: "123456789abc",
+  updatedBy: 2,
   updatedAt: new Date(),
   createdAt: new Date(),
   lastLogin: new Date(),
 };
 
-const student: IUserDocument = new User({
-  ...defaultUser,
-  firstName: "Student",
-  lastName: "Studentson",
-  email: "student1@testschool.org",
-  userName: "001stustu",
-});
+const defaultRole = {
+  id: 1,
+  userId: 1,
+  createdAt: new Date(),
+  role: eRolesAvailable.student
+};
 
-const external: IUserDocument = new User({
-  ...defaultUser,
-  firstName: "123TEGY External",
-  lastName: "Externalson 123TEGY",
-  email: "External@external.com",
-  userName: "001stustu",
-  domain: "external.com",
-});
+let student: User,
+    external: User,
+    teacherNoEscalate: User,
+    teacherEscalate: User,
+    teacherEscalateSuper: User,
+    studentRole: Role;
 
-const teacherNoEscalate: IUserDocument = new User({
-  ...defaultUser,
-  firstName: "Teacher",
-  lastName: "Teacherson",
-  email: "teacher123@testschool.org",
-  userName: "noEscalateTeacher",
-});
+function buildUsers() {
+  student = User.build({
+    ...defaultUser,
+    firstName: "Student",
+    lastName: "Studentson",
+    email: "student1@testschool.org",
+    userName: "001stustu",
+  });
 
-const teacherEscalate: IUserDocument = new User({
-  ...defaultUser,
-  firstName: "123KAGY Teacher",
-  lastName: "Teacherson 123KAGY",
-  email: "teacher123@teacher.testschool.org",
-  userName: "escalateTeacher",
-});
+  external = User.build({
+    ...defaultUser,
+    firstName: "123TEGY External",
+    lastName: "Externalson 123TEGY",
+    email: "External@external.com",
+    userName: "001stustu",
+    domain: "external.com",
+  });
 
-const teacherEscalateSuper: IUserDocument = new User({
-  ...defaultUser,
-  firstName: "TeacherSuper",
-  lastName: "Teacherson 123KUGY",
-  email: "teacher123super@teacher.testschool.org",
-  userName: "escalateTeacherSuper",
-});
+  teacherNoEscalate = User.build({
+    ...defaultUser,
+    firstName: "Teacher",
+    lastName: "Teacherson",
+    email: "teacher123@testschool.org",
+    userName: "noEscalateTeacher",
+  });
+
+  teacherEscalate = User.build({
+    ...defaultUser,
+    firstName: "123KAGY Teacher",
+    lastName: "Teacherson 123KAGY",
+    email: "teacher123@teacher.testschool.org",
+    userName: "escalateTeacher",
+  });
+
+  teacherEscalateSuper = User.build({
+    ...defaultUser,
+    firstName: "TeacherSuper",
+    lastName: "Teacherson 123KUGY",
+    email: "teacher123super@teacher.testschool.org",
+    userName: "escalateTeacherSuper",
+  });
+
+  studentRole = Role.build(defaultRole);
+}
 
 let oldProcessEnv: any;
 beforeAll(() => {
+  buildUsers();
   oldProcessEnv = process.env;
 });
 
 afterAll(() => {
   process.env = oldProcessEnv;
+  User.truncate();
 });
 
 beforeEach(() => {

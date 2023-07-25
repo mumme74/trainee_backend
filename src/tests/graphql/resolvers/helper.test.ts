@@ -2,8 +2,8 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 import type { Request, Response } from "express-serve-static-core";
 
 import "../../testProcess.env";
-import type { IUserDocument } from "../../../models/usersModel";
-import User, { eRolesAvailable } from "../../../models/usersModel";
+import type { IUserDocument } from "../../../models/old_mongo/usersModel";
+import User, { eRolesAvailable } from "../../../models/old_mongo/usersModel";
 import type { AuthRequest } from "../../../types";
 import { initMemoryDb, closeMemoryDb } from "../../testingDatabase";
 import { userPrimaryObj, matchErrorMockCall } from "../../testHelpers";

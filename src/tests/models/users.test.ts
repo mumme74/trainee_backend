@@ -1,11 +1,11 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 
-import type { IUserDocument } from "../../models/usersModel";
+import type { IUserDocument } from "../../models/old_mongo/usersModel";
 import User, {
   eRolesAvailable,
   comparePasswordHash,
-} from "../../models/usersModel";
+} from "../../models/old_mongo/usersModel";
 
 let mongod: MongoMemoryServer;
 

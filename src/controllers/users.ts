@@ -1,17 +1,24 @@
 import JWT from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import { Request, Response, NextFunction, RequestHandler } from "express";
+import {
+  Request,
+  Response,
+  NextFunction,
+  RequestHandler
+} from "express";
 
-import User, {
-  comparePasswordHash,
-  IUserDocument,
+
+import { comparePasswordHash } from "../helpers/password";
+import {
   eRolesAvailable,
-  rolesAvailableKeys,
-} from "../models/usersModel";
-import mongoose from "mongoose";
+  rolesAvailableKeys
+} from "../models/old_mongo/usersModel";
+import { User } from "../models/user";
+import { Role } from "../models/role";
+import { Op } from "sequelize";
 
 import type { IUserInfoResponse, AuthRequest } from "../types";
-import { errorResponse } from "../helpers/errorHelpers";
+import { UserError, errorResponse } from "../helpers/errorHelpers";
 
 interface IUsersController {
   signup: RequestHandler;
@@ -27,14 +34,14 @@ interface IUsersController {
 export type { IUsersController };
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const ObjectId = mongoose.Types.ObjectId;
 
 const USER_NOT_FOUND = "User not found!";
 
-const signToken = (
-  user: IUserDocument,
-  expiresInMinutes: number = 60 * 8,
-): string => {
+const signToken = async (
+  user: User,
+  method: string,
+  expiresInMinutes: number = 60 * 8
+): Promise<string> => {
   return JWT.sign(
     {
       iss: process.env.APP_NAME,
@@ -44,25 +51,22 @@ const signToken = (
         new Date(new Date().getTime() + expiresInMinutes * 60000).getTime() /
           1000,
       ),
-      roles: user.roles.map((role) => {
-        return rolesAvailableKeys[role];
-      }),
+      roles: await user.roles(),
+      method
     },
     process.env.JWT_SECRET + "",
   );
 };
 
-const userInfoResponse = (user: IUserDocument): IUserInfoResponse => {
+const userInfoResponse = async (user: User): Promise<IUserInfoResponse> => {
   return {
     id: user.id,
-    method: user.method,
     userName: user.userName,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    picture: user.picture,
-    googleId: user?.google?.id,
-    domain: user.domain,
+    pictureId: user.pictureId,
+    domain: await user.domain(),
     updatedBy: user.updatedBy,
     lastLogin: user.lastLogin,
     createdAt: user.createdAt,
@@ -70,11 +74,11 @@ const userInfoResponse = (user: IUserDocument): IUserInfoResponse => {
   };
 };
 
-const loginResponse = (token: string, user: IUserDocument) => {
+const loginResponse = async (token: string, user: User) => {
   return {
     success: true,
     access_token: token,
-    user: userInfoResponse(user),
+    user: await userInfoResponse(user),
   };
 };
 
@@ -87,7 +91,12 @@ const UsersController: IUsersController = {
 
     //check if there is a user with same email
     const foundUser = await User.findOne({
-      $or: [{ email: email }, { userName: userName }],
+      where: {
+        [Op.or]: [
+          {email},
+          {userName}
+        ]
+      }
     });
     if (foundUser) {
       return res
@@ -102,76 +111,85 @@ const UsersController: IUsersController = {
     }
 
     // create a new user
-    const newUser = new User({
-      method: "local",
+    const newUser = await User.create({
       email,
       password,
       userName,
       firstName,
       lastName,
-      domain: "",
       roles: [eRolesAvailable.student],
     });
-    await newUser.save();
+    if (!newUser)
+      throw new UserError('Failed to create new user');
+
+    const role = await Role.create({
+      userId: newUser.id,
+      role: eRolesAvailable.student
+    });
 
     // generate new token
-    const token = signToken(newUser);
+    const token = await signToken(newUser, 'local');
 
     // respond with token
-    return res.status(200).json(loginResponse(token, newUser));
+    return res.status(200).json(await loginResponse(token, newUser));
   },
 
   // if we get here we are authenticated by previous middleware
   login: async (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
+    const authObj = (req as AuthRequest).user;
     // generate token
-    const token = signToken(authReq.user);
-    return res.status(200).json(loginResponse(token, authReq.user));
+    const token = await signToken(authObj.user, 'local');
+    return res.status(200).json(await loginResponse(token, authObj.user));
   },
 
   googleOAuthOk: async (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
+    const authReq = req as AuthRequest,
+          authObj = authReq.user;
     // login succeded from google oauth
     // generate token
     //console.log("req.user", authReq.user);
 
-    const token = signToken(authReq.user, authReq.tokenExpiresIn);
-    return res.status(200).json(loginResponse(token, authReq.user));
+    const token = await signToken(authObj.user, 'google', authReq.tokenExpiresIn);
+    return res.status(200).json(await loginResponse(token, authObj.user));
   },
 
-  myInfo: (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
-    return res.status(200).json(userInfoResponse(authReq.user));
+  myInfo: async (req: Request, res: Response, next: NextFunction) => {
+    const authObj = (req as AuthRequest).user;
+    return res.status(200).json(await userInfoResponse(authObj.user));
   },
 
   saveMyUserInfo: async (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
-    const user = await User.findOneAndUpdate(
-      { _id: new ObjectId(authReq.user.id) },
-      {
-        firstName: authReq.body.firstName,
-        lastName: authReq.body.lastName,
-        email: authReq.body.email,
-        picture: authReq.body.picture,
-        updatedBy: authReq.user.id,
-      },
-      { returnOriginal: false, new: true },
-    );
-    if (!user) {
+    const authReq = req as AuthRequest,
+          authObj = authReq.user;
+    let user = await User.findByPk(authObj.user.id);
+    if (!user)
       return res.status(404).json(errorResponse(USER_NOT_FOUND));
-    }
-    return res.status(200).json(userInfoResponse(user));
+
+    user.firstName = authReq.body.firstName;
+    user.lastName = authReq.body.lastName;
+    user.email = authReq.body.email;
+    user.updatedBy = authReq.body.id;
+    user = await user.save();
+
+    if (user)
+      return res.status(500).json(errorResponse('Error saving user to database'));
+
+    return res.status(200).json(await userInfoResponse(user));
   },
 
   changeMyPassword: async (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
+    const authReq = req as AuthRequest,
+          authObj = authReq.user
     // we can't use findAndUpdate here as that doesn't hash the password
-    const user = await User.findById(authReq.user.id);
-    if (!user) return res.status(404).json(errorResponse(USER_NOT_FOUND));
+    let user = await User.findByPk(authObj.user.id);
+    if (!user)
+      return res.status(404).json(errorResponse(USER_NOT_FOUND));
 
     user.password = authReq.body.password;
-    user.updatedBy = authReq.user.id;
-    await user.save();
+    user.updatedBy = authObj.user.id;
+    user = await user.save();
+    if (!user)
+      return res.status(500).json(errorResponse('Error saving password to database'))
     return res.status(200).json({ success: true });
   },
 
@@ -184,24 +202,30 @@ const UsersController: IUsersController = {
   // we must send our firstName, lastName and email and password just as it is stored in the database
   deleteMyself: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const authReq = req as AuthRequest;
-      console.log("Trying to delete user " + authReq.user.email);
+      const authReq = req as AuthRequest,
+            authObj = authReq.user,
+            user = authObj.user;
+      console.log("Trying to delete user " + user.email);
 
       const passWdMatch = await comparePasswordHash(
         authReq.body.password + "",
-        authReq.user.password + "",
+        user.password + "",
       );
 
       if (passWdMatch) {
-        const result = await User.deleteOne({
-          _id: new ObjectId(authReq.user.id),
-          email: authReq.body.email,
-          userName: authReq.body.userName,
-          firstName: authReq.body.firstName,
-          lastName: authReq.body.lastName,
+        const result = await User.destroy({
+          where: {
+            [Op.and]: [
+              {id: user.id},
+              {email: user.email},
+              {userName: user.userName},
+              {firstName: user.firstName},
+              {lastName: user.lastName}
+            ]
+          }
         });
-        if (result.deletedCount === 1 && result.acknowledged) {
-          console.log("Deleting user " + authReq.user.email);
+        if (result === 1) {
+          console.log("Deleting user " + user.email);
           return res.status(200).json({ success: true });
         }
       }

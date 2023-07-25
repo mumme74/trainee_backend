@@ -4,14 +4,21 @@ import passport from "passport";
 import { Request, Response, NextFunction } from "express";
 import { Strategy as JwtStrategy } from "passport-jwt";
 import { ExtractJwt } from "passport-jwt";
-import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as LocalStrategy} from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-verify-token";
+import { VerifiedCallback } from "passport-jwt";
 
-import User, { eRolesAvailable } from "./models/usersModel";
+import { User } from "./models/user";
+import { eRolesAvailable } from "./models/old_mongo/usersModel";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
 import { UserError } from "./helpers/errorHelpers";
 import { errorResponse } from "./helpers/errorHelpers";
+import { Op } from "sequelize";
+import { Role } from "./models/role";
+import { OAuth } from "./models/oauth";
+import { Organization } from "./models/organization";
+import { Picture } from "./models/picture";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -22,10 +29,10 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromHeader("authorization"),
       secretOrKey: process.env.JWT_SECRET,
     },
-    async (payload: any, done: Function) => {
+    async (payload: any, done: VerifiedCallback) => {
       try {
         // find the user specified in token
-        const user = await User.findById(payload.sub);
+        const user = await User.findByPk(payload.sub);
 
         // if user doesn't exist, handle it
         if (!user) {
@@ -35,7 +42,7 @@ passport.use(
         }
 
         // Otherwise, return the user
-        done(null, user, "User found");
+        done(null, {user, roles:[], oauth:null, userPic:null}, "User found");
       } catch (err: any) {
         done(err, false, err.message);
       }
@@ -49,11 +56,16 @@ passport.use(
     {
       usernameField: "login", // change default behavior and listen to email first
     },
-    async (login: string, password: string, done: Function) => {
+    async (login: string, password: string, done: VerifiedCallback) => {
       try {
         // find the user given  the email
         const user = await User.findOne({
-          $or: [{ email: login }, { userName: login }],
+          where: {
+            [Op.or]: [
+              {email: login},
+              {userName:login}
+            ]
+          }
         });
 
         //console.log(user, login);
@@ -69,16 +81,15 @@ passport.use(
         const isMatch = await user.isValidPassword(password);
 
         // if not, handle it
-        if (!isMatch) {
+        if (!isMatch)
           return done(403, false, "Password incorrect");
-        }
 
         // update last login
         user.lastLogin = new Date();
         await user.save();
 
         // otherwise return the user
-        done(null, user, "User found");
+        done(null, {user, roles:[], oauth:null, userPic:null}, "User found");
       } catch (err: any) {
         done(err, false, err.message);
       }
@@ -97,78 +108,39 @@ passport.use(
       req: Express.Request,
       parsedToken: any,
       googleId: string,
-      done: Function,
+      done: VerifiedCallback,
     ) => {
       //console.log(parsedToken);
       //console.log(googleId);
 
       try {
-        const auds: [string] = Array.isArray(parsedToken.aud)
-          ? parsedToken.aud
-          : [parsedToken.aud];
-        if (!auds.find((aud) => aud === process.env.GOOGLE_CLIENT_ID))
-          throw new UserError("Wrong google OAuth clientId!");
-
-        // we need to make exp from millisconds since epoch to minutes
-        const expiresAt =
-          Math.floor(parsedToken.exp / 60) -
-          Math.floor(new Date().getTime() / 60000);
-        if (expiresAt < 0)
-          throw new UserError(
-            "Expiration date was already passed on google token",
-          );
-
+        // checks, throws if error
+        validateAud(parsedToken);
+        const expiresAt = validateExpiration(parsedToken);
         (req as AuthRequest).tokenExpiresIn = expiresAt;
 
-        // find, update or create a new one
-        const email = parsedToken.email_verified ? parsedToken.email : null;
-        if (!email) throw new UserError("Not a verified google email!");
-        const user = await User.findOneAndUpdate(
-          { "google.id": googleId },
-          {
-            method: "google",
-            firstName: parsedToken.given_name,
-            lastName: parsedToken.family_name,
-            userName: email.substr(0, email.indexOf("@")),
-            email: email,
-            picture: parsedToken.picture,
-            domain: parsedToken.hd,
-            google: {
-              id: parsedToken.sub,
-            },
-            lastLogin: new Date(),
-          },
-          { returnOriginal: false, new: true, upsert: true },
-        );
+        if (!parsedToken.email_verified)
+          throw new UserError("Not a verified email in oath token!");
 
-        if (user.banned) {
+        // done with validation,find user
+        const email = parsedToken.email,
+              provider = parsedToken.name.toLowerCase();
+
+        let {user, oauth} = await findUserAndOAuth(
+          email,provider, parsedToken.sub);
+
+        // if not found create user and oauth entry
+        if (!user)
+          user = await createNewUserFromOAuth(parsedToken);
+        if (!oauth)
+          oauth = await createOAuth(user.id, provider, parsedToken.sub);
+        // update user avatar?
+        const userPic = await checkUserPic(user, parsedToken);
+
+        if (user.banned)
           return done(403, false, "User is banned");
-        }
 
-        // a new record would probably have the same time in create and update timestamps
-        if (
-          Math.floor(user.createdAt.getTime() / 1000) ===
-          Math.floor(user.updatedAt.getTime() / 1000)
-        ) {
-          // check if user is a teacher
-          if (passAsTeacher(user)) {
-            user.roles.push(eRolesAvailable.teacher);
-            // a super admin?
-            if (passAsSuperAdmin(user)) {
-              user.roles.push(eRolesAvailable.super);
-            }
-            const res = await User.updateOne(
-              { _id: user._id },
-              { roles: user.roles },
-            );
-            if (!res || res.matchedCount !== 1 || !res.acknowledged || res.modifiedCount !== 1)
-              throw new UserError(
-                "Could not save escalated roles when creating user",
-              );
-          }
-        }
-
-        return done(null, user);
+        return done(null, {user, roles:[], oauth, userPic});
       } catch (err: any) {
         console.log(err.message);
         return done(err, false, err.message);
@@ -207,3 +179,126 @@ export const passportJWT = (
     },
   )(req, res, next);
 };
+
+function validateAud(parsedToken: any){
+  const auds: [string] = Array.isArray(parsedToken.aud)
+  ? parsedToken.aud
+  : [parsedToken.aud];
+
+  if (!auds.find((aud) => aud === process.env.GOOGLE_CLIENT_ID))
+    throw new UserError("Wrong OAuth clientId!");
+}
+
+function validateExpiration(parsedToken: any) {
+  // we need to make exp from millisconds since epoch to minutes
+  const expiresAt =
+    Math.floor(parsedToken.exp / 60) -
+    Math.floor(new Date().getTime() / 60000);
+  if (expiresAt < 0)
+    throw new UserError(
+      "Expiration date was already passed on oauth token",
+    );
+  return expiresAt;
+}
+
+async function findUserAndOAuth(
+  email:string,
+  provider:string,
+  idString:string
+): Promise<{user: User|null, oauth: OAuth|null}> {
+  let oauth = await OAuth.findOne({
+    where: {
+      [Op.and]: [
+        {provider},{idString}
+      ]
+    }
+  });
+
+  let user = await User.findOne({
+    where: {email}
+  });
+
+  return {oauth, user};
+}
+
+async function createNewUserFromOAuth(parsedToken: any):
+  Promise<User>
+{
+  const organization = await Organization.findOne({
+    where: { domain: parsedToken.hd }
+  });
+
+  const email = parsedToken.email;
+
+  const user = await User.create({
+    firstName: parsedToken.given_name,
+    lastName: parsedToken.family_name,
+    userName: email.substr(0, email.indexOf("@")),
+    email: email,
+    organizationId: organization?.id || null,
+  });
+  if (!user)
+    throw new UserError('Failed to save new user from oauth');
+
+  await addRolesToNewUser(user);
+
+  return user;
+}
+
+async function createOAuth(
+  userId: number,
+  provider: string,
+  idString: string
+) {
+  return await OAuth.create({
+    userId,
+    provider,
+    idString,
+  });
+}
+
+async function checkUserPic(user: User, parsedToken:any):
+  Promise<Picture|null>
+{
+  let userPic = await user.getPicture();
+  if (userPic?.mime==='remote') {
+    if (userPic.blob.toString() !== parsedToken.picture){
+      if (!parsedToken.picture)
+        userPic.destroy();
+      else
+        userPic.blob = Buffer.from(parsedToken.picture);
+      userPic.save();
+    }
+  } else if (!userPic) {
+    userPic = await Picture.create({
+      blob: Buffer.from(parsedToken.picture),
+      mime: 'remote'
+    });
+    if (userPic) {
+      user.pictureId = userPic.id;
+      await user.save();
+    }
+  }
+  return userPic;
+}
+
+async function addRolesToNewUser(user: User) {
+  const roles = [eRolesAvailable.student];
+
+  // check if user is a teacher
+  if (await passAsTeacher(user)) {
+    const roles = [eRolesAvailable.teacher];
+    // a super admin?
+    if (passAsSuperAdmin(user))
+      roles.push(eRolesAvailable.super);
+  }
+
+  for (const role of roles){
+    const record = await Role.create({
+      userId: user.id, role
+    });
+    if (!record)
+      throw new UserError(
+        "Could not save roles when creating user");
+  }
+}

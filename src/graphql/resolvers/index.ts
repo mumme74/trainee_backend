@@ -24,7 +24,7 @@ const testResolvers =
           return {
             success: true,
             nrAffected: 0,
-            ids: ["12345676789abcd"],
+            ids: [9],
             __typename: "OkResponse",
           };
         },
@@ -35,7 +35,7 @@ const testResolvers =
           return {
             success: true,
             nrAffected: 0,
-            ids: ["12345676789abcd"],
+            ids: [10],
             __typename: "OkResponse",
           };
         },
