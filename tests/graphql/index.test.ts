@@ -12,9 +12,8 @@ import {
 } from "../testHelpers";
 
 import graphqlRoute from "../../src/graphql";
-import type { IUserDocument } from "../../src/models/old_mongo/usersModel";
-import User from "../../src/models/old_mongo/usersModel";
-import { closeMemoryDb, initMemoryDb } from "../testingDatabase";
+import { User } from "../../src/models/user";
+import { closeTestDb, initTestDb } from "../testingDatabase";
 
 const processEnv = process.env;
 
@@ -24,10 +23,10 @@ app.finalize();
 
 const req = new JsonReq(app, "/graphql");
 
-beforeAll(initMemoryDb);
+beforeAll(initTestDb);
 
 afterAll(async () => {
-  await closeMemoryDb();
+  await closeTestDb();
   process.env = processEnv;
 });
 
@@ -36,15 +35,15 @@ afterAll(async () => {
 // -----------------------------------------------
 
 describe("graphql endpoint auth and grapiql checks", () => {
-  let user: IUserDocument;
+  let user: User;
   beforeEach(async () => {
-    user = new User(userPrimaryObj);
+    user = User.build(userPrimaryObj);
     await user.save();
   });
 
   afterEach(async () => {
     process.env = processEnv;
-    await User.deleteMany();
+    await User.truncate();
     req.setToken("");
   });
 
@@ -98,7 +97,7 @@ describe("graphql endpoint auth and grapiql checks", () => {
   });
 
   test("fail when user deleted", (done: any) => {
-    req.setToken(signToken({ userId: "$absd1234567890" }));
+    req.setToken(signToken({ userId: 1234567890 }));
     req
       .post({})
       .expect(401)
@@ -136,15 +135,15 @@ describe("graphql endpoint auth and grapiql checks", () => {
 });
 
 describe("error response", () => {
-  let user: IUserDocument;
+  let user: User;
   beforeAll(async () => {
-    user = new User(userPrimaryObj);
+    user = User.build(userPrimaryObj);
     await user.save();
     req.setToken(signToken({ userId: user.id }));
   });
 
   afterAll(async () => {
-    await User.deleteMany();
+    await User.truncate();
     req.setToken("");
   });
 

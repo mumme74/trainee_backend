@@ -1,27 +1,20 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
-import mongoose from "mongoose";
+import { defineDb } from "../src/models";
+import { Sequelize } from "sequelize";
 
 import "./testProcess.env";
 
-let mongod: MongoMemoryServer;
-
 let connections = 0;
+let sequelize: Sequelize | undefined;
 
-export async function initMemoryDb() {
+export async function initTestDb() {
   if (connections++ === 0) {
-    // This will create an new instance of "MongoMemoryServer" and automatically start it
-    mongod = await MongoMemoryServer.create();
-
-    const uri = mongod.getUri();
-
-    //connect to DB
-    await mongoose.connect(uri, { });
+    sequelize = await defineDb("sqlite::memory",{logging:false});
   }
 }
 
-export async function closeMemoryDb() {
+export async function closeTestDb() {
   if (--connections === 0) {
-    await mongoose.disconnect();
-    return await mongod.stop();
+    await sequelize?.close();
+    sequelize = undefined;
   }
 }

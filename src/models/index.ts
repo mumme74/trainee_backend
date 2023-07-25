@@ -9,6 +9,15 @@ import { Group } from "./group";
 import { GroupTeacher } from "./groupTeacher";
 import { GroupStudent } from "./groupStudent";
 
+
+/**
+ * Initializes db and the models
+ *
+ * Reads from .env.production or .env.dev file
+ * Builds the connectionsString to sequelize and
+ * calls defineDb
+ * @returns {Sequelize} The sequelize singleton
+ */
 export async function initDb() {
   const dbHost = process.env.DB_HOST || "localhost";
   const dbUser = process.env.DB_USER;
@@ -17,8 +26,22 @@ export async function initDb() {
   const dbName = process.env.DB_NAME||"";
 
   const connectionString = `mysql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}`;
+  return await defineDb(connectionString, {
+    logging: process.env.NODE_ENV !== 'production'
+  });
+}
 
-  const sequelize = new Sequelize(connectionString);
+/**
+ * Creates Sequelize and defines the models
+ * @param {string} connectionString  Connection string to Sequelize
+ * @returns {Sequelize} The sequelize singleton
+ */
+export async function defineDb(
+  connectionString: string,
+  opt: {[key:string]:any} = {}
+) {
+
+  const sequelize = new Sequelize(connectionString, opt);
 
   // all models in application, initialize in this order
   const modelClasses = [
@@ -39,6 +62,7 @@ export async function initDb() {
   await sequelize.sync();
 
   console.log('Started database');
+  return sequelize
 }
 
 
