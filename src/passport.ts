@@ -9,7 +9,7 @@ import { Strategy as GoogleStrategy } from "passport-google-verify-token";
 import { VerifiedCallback } from "passport-jwt";
 
 import { User } from "./models/user";
-import { eRolesAvailable } from "./models/old_mongo/usersModel";
+import { eRolesAvailable } from "./models/role";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
 import { UserError } from "./helpers/errorHelpers";

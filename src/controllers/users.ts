@@ -10,11 +10,11 @@ import {
 
 import { comparePasswordHash } from "../helpers/password";
 import {
+  Role,
   eRolesAvailable,
   rolesAvailableKeys
-} from "../models/old_mongo/usersModel";
+} from "../models/role";
 import { User } from "../models/user";
-import { Role } from "../models/role";
 import { Op } from "sequelize";
 
 import type { IUserInfoResponse, AuthRequest } from "../types";
