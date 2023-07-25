@@ -7,16 +7,22 @@ import type { CallbackHandler } from "supertest";
 import "../testProcess.env";
 
 import type { IUsersController } from "../../src/controllers/users";
-import User, { IUserDocument, eRolesAvailable } from "../../src/models/old_mongo/usersModel";
+import { User } from "../../src/models/user";
+import { Role, eRolesAvailable } from "../../src/models/role";
 import userRoutes from "../../src/routes/users";
-import { initMemoryDb, closeMemoryDb } from "../testingDatabase";
+import { initTestDb, closeTestDb } from "../testingDatabase";
 import {
   JsonReq,
   matchErrorSupertest,
   signToken,
   jsonApp,
   userPrimaryObj,
+  organizationDefaultObj,
+  oauthDefaultObj,
   compareUser,
+  pictureDefaultObj,
+  createPrimaryUser,
+  destroyPrimaryUser,
 } from "../testHelpers";
 
 function respond(req: Request, res: Response, next: NextFunction) {
@@ -40,11 +46,11 @@ const router = userRoutes(app, mockController);
 app.finalize();
 
 beforeAll(async () => {
-  await initMemoryDb();
+  await initTestDb();
 });
 
 afterAll(async () => {
-  await closeMemoryDb();
+  await closeTestDb();
 });
 
 beforeEach(() => {
@@ -54,6 +60,14 @@ beforeEach(() => {
 });
 
 // helper functions
+let user: User;
+async function createUser() {
+  user = await createPrimaryUser()
+}
+
+async function destroyUser() {
+  await destroyPrimaryUser();
+}
 
 // -----------------------------------------------------
 
@@ -146,15 +160,9 @@ describe("login", () => {
     password: userPrimaryObj.password,
   };
 
-  let user: IUserDocument;
-  beforeAll(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
-  });
+  beforeAll(createUser);
 
-  afterAll(async () => {
-    await user.deleteOne();
-  });
+  afterAll(destroyUser);
 
   test("fail login name empty", (done: CallbackHandler) => {
     req
@@ -214,24 +222,26 @@ describe("login", () => {
 
   test("succeed login with email", (done: CallbackHandler) => {
     req
-      .post({ ...loginObj, login: userPrimaryObj.email })
+      .post({ ...loginObj, login: user.email })
       .expect(200)
       .expect((response: request.Response) => {
         expect(mockController.login).toBeCalled();
         const request = (mockController.login as jest.Mock).mock.calls[0][0];
-        compareUser(request.user, user);
+        compareUser(request.user.user, user);
+        expect(request.user.user.updatedAt.getTime())
+          .toBeGreaterThan(user.updatedAt.getTime())
       })
       .end(done);
   });
 
   test("succeed login with userName", (done: CallbackHandler) => {
     req
-      .post({ ...loginObj })
+      .post({ ...loginObj, login: user.userName })
       .expect(200)
       .expect((response: request.Response) => {
         expect(mockController.login).toBeCalled();
         const request = (mockController.login as jest.Mock).mock.calls[0][0];
-        compareUser(request.user, user);
+        compareUser(request.user.user, user);
       })
       .end(done);
   });
@@ -244,15 +254,10 @@ describe("oauth google", () => {
 describe("myinfo", () => {
   const req = new JsonReq(app, "/users/myinfo");
   let token: string;
-  let user: IUserDocument;
-  beforeEach(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
-  });
 
-  afterEach(async () => {
-    await User.deleteMany();
-  });
+  beforeEach(createUser);
+
+  afterEach(destroyUser);
 
   afterEach(() => {
     req.setToken("");
@@ -272,7 +277,7 @@ describe("myinfo", () => {
   test("fail expired token", (done: CallbackHandler) => {
     req.setToken(
       signToken({
-        userId: user.id.toString(),
+        userId: user.id,
         expiresInMinutes: 0,
       }),
     );
@@ -289,7 +294,7 @@ describe("myinfo", () => {
   test("fail not yet valid token", (done: CallbackHandler) => {
     req.setToken(
       signToken({
-        userId: user.id.toString(),
+        userId: user.id,
         expiresInMinutes: 10,
         notBefore: 5,
       }),
@@ -306,7 +311,7 @@ describe("myinfo", () => {
 
   test("fail tampered token", (done: CallbackHandler) => {
     const tokenPaths = signToken({
-      userId: user.id.toString(),
+      userId: user.id,
     }).split(".");
     tokenPaths[1] = (() => {
       const data = JSON.parse(
@@ -332,7 +337,7 @@ describe("myinfo", () => {
     user
       .save()
       .then(() => {
-        req.setToken(signToken({ userId: user.id.toString() }));
+        req.setToken(signToken({ userId: user.id }));
         req
           .get()
           .expect(403)
@@ -346,9 +351,9 @@ describe("myinfo", () => {
   });
 
   test("fail token belongs to deleted user", (done: any) => {
-    User.deleteMany()
+    user.destroy()
       .then(() => {
-        req.setToken(signToken({ userId: user.id.toString() }));
+        req.setToken(signToken({ userId: user.id }));
         req
           .get()
           .expect(401)
@@ -362,14 +367,14 @@ describe("myinfo", () => {
   });
 
   test("succeed with valid token", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .get()
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.myInfo).toBeCalled();
         const r = (mockController.myInfo as jest.Mock).mock.calls[0][0];
-        compareUser(r.user, user);
+        compareUser(r.user.user, user);
       })
       .end(done);
   });
@@ -378,23 +383,17 @@ describe("myinfo", () => {
 describe("savemyuserinfo", () => {
   const req = new JsonReq(app, "/users/savemyuserinfo");
   let token: string;
-  let user: IUserDocument;
 
   const userObj = {
     firstName: userPrimaryObj.firstName,
     lastName: userPrimaryObj.lastName,
     email: userPrimaryObj.email,
-    picture: userPrimaryObj.picture,
+    picture: pictureDefaultObj.blob
   };
 
-  beforeAll(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
-  });
+  beforeAll(createUser);
 
-  afterAll(async () => {
-    await User.deleteMany();
-  });
+  afterAll(destroyUser);
 
   afterEach(() => {
     req.setToken("");
@@ -416,7 +415,7 @@ describe("savemyuserinfo", () => {
   });
 
   test("fail invalid email", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, email: "no@invalid" })
       .expect(400)
@@ -428,7 +427,7 @@ describe("savemyuserinfo", () => {
   });
 
   test("fail invalid firstName", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, firstName: "n" })
       .expect(400)
@@ -440,7 +439,7 @@ describe("savemyuserinfo", () => {
   });
 
   test("fail invalid lastName", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, lastName: "n" })
       .expect(400)
@@ -452,7 +451,7 @@ describe("savemyuserinfo", () => {
   });
 
   test("fail invalid picture", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, picture: "invalid" })
       .expect(400)
@@ -464,14 +463,14 @@ describe("savemyuserinfo", () => {
   });
 
   test("succeed with save userInfo", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj })
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.saveMyUserInfo).toBeCalled();
         const r = (mockController.saveMyUserInfo as jest.Mock).mock.calls[0][0];
-        compareUser(r.user, user);
+        compareUser(r.user.user, user);
       })
       .end(done);
   });
@@ -480,20 +479,14 @@ describe("savemyuserinfo", () => {
 describe("changemypassword", () => {
   const req = new JsonReq(app, "/users/changemypassword");
   let token: string;
-  let user: IUserDocument;
 
   const userObj = {
     password: "SecretPass1$",
   };
 
-  beforeAll(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
-  });
+  beforeAll(createUser);
 
-  afterAll(async () => {
-    await User.deleteMany();
-  });
+  afterAll(destroyUser);
 
   afterEach(() => {
     req.setToken("");
@@ -515,7 +508,7 @@ describe("changemypassword", () => {
   });
 
   test("fail invalid password", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id}));
     req
       .post({ ...userObj, password: "Secretpass1" })
       .expect(400)
@@ -530,7 +523,7 @@ describe("changemypassword", () => {
   });
 
   test("succeed with change password", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj })
       .expect(200)
@@ -538,7 +531,7 @@ describe("changemypassword", () => {
         expect(mockController.changeMyPassword).toBeCalled();
         const r = (mockController.changeMyPassword as jest.Mock).mock
           .calls[0][0];
-        compareUser(r.user, user);
+        compareUser(r.user.user, user);
       })
       .end(done);
   });
@@ -547,7 +540,6 @@ describe("changemypassword", () => {
 describe("deletemyself", () => {
   const req = new JsonReq(app, "/users/deletemyself");
   let token: string;
-  let user: IUserDocument;
 
   const userObj = {
     userName: userPrimaryObj.userName,
@@ -557,14 +549,9 @@ describe("deletemyself", () => {
     password: userPrimaryObj.password,
   };
 
-  beforeAll(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
-  });
+  beforeAll(createUser);
 
-  afterAll(async () => {
-    await User.deleteMany();
-  });
+  afterAll(destroyUser);
 
   afterEach(() => {
     req.setToken("");
@@ -586,7 +573,7 @@ describe("deletemyself", () => {
   });
 
   test("fail invalid userName", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, userName: "no@" })
       .expect(400)
@@ -601,7 +588,7 @@ describe("deletemyself", () => {
   });
 
   test("fail invalid email", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, email: "no@invalid" })
       .expect(400)
@@ -613,7 +600,7 @@ describe("deletemyself", () => {
   });
 
   test("fail invalid firstName", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, firstName: "n" })
       .expect(400)
@@ -625,7 +612,7 @@ describe("deletemyself", () => {
   });
 
   test("fail invalid lastName", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, lastName: "n" })
       .expect(400)
@@ -637,7 +624,7 @@ describe("deletemyself", () => {
   });
 
   test("fail invalid password", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, password: "SecretPass1" })
       .expect(400)
@@ -652,27 +639,27 @@ describe("deletemyself", () => {
   });
 
   test("succeed with save userInfo", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj })
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).toBeCalled();
         const r = (mockController.deleteMyself as jest.Mock).mock.calls[0][0];
-        compareUser(r.user, user);
+        compareUser(r.user.user, user);
       })
       .end(done);
   });
 
   test("succeed with save userInfo and empty password", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .post({ ...userObj, password: "" })
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).toBeCalled();
         const r = (mockController.deleteMyself as jest.Mock).mock.calls[0][0];
-        compareUser(r.user, user);
+        compareUser(r.user.user, user);
       })
       .end(done);
   });
@@ -681,16 +668,10 @@ describe("deletemyself", () => {
 describe("avaliableroles", () => {
   const req = new JsonReq(app, "/users/availableroles");
   let token: string;
-  let user: IUserDocument;
 
-  beforeAll(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
-  });
+  beforeAll(createUser);
 
-  afterAll(async () => {
-    await User.deleteMany();
-  });
+  afterAll(destroyUser);
 
   afterEach(() => {
     req.setToken("");
@@ -712,11 +693,10 @@ describe("avaliableroles", () => {
   });
 
   test("fail with role student", (done: any) => {
-    user.roles = [eRolesAvailable.student];
     user
       .save()
       .then(() => {
-        req.setToken(signToken({ userId: user.id.toString() }));
+        req.setToken(signToken({ userId: user.id }));
         req
           .get()
           .expect(403)
@@ -730,11 +710,12 @@ describe("avaliableroles", () => {
   });
 
   test("fail with role teacher", (done: any) => {
-    user.roles.push(eRolesAvailable.teacher);
-    user
+    Role.create({userId:user.id,role:eRolesAvailable.teacher})
+    .then(()=>{
+      user
       .save()
       .then(() => {
-        req.setToken(signToken({ userId: user.id.toString() }));
+        req.setToken(signToken({ userId: user.id }));
         req
           .get()
           .expect(403)
@@ -745,62 +726,62 @@ describe("avaliableroles", () => {
           .end(done);
       })
       .catch(done);
+    })
   });
 
   test("succeed with role admin", (done: any) => {
-    user.roles.push(eRolesAvailable.admin);
-    user
-      .save()
-      .then(() => {
-        req.setToken(signToken({ userId: user.id.toString() }));
-        req
-          .get()
-          .expect(200)
-          .expect((res: request.Response) => {
-            expect(mockController.rolesAvailable).toBeCalled();
-            const r = (mockController.rolesAvailable as jest.Mock).mock
-              .calls[0][0];
-            compareUser(r.user, user);
-          })
-          .end(done);
-      })
-      .catch(done);
+
+    Role.create({userId:user.id,role:eRolesAvailable.admin})
+    .then(()=>{
+      user
+        .save()
+        .then(() => {
+          req.setToken(signToken({ userId: user.id }));
+          req
+            .get()
+            .expect(200)
+            .expect((res: request.Response) => {
+              expect(mockController.rolesAvailable).toBeCalled();
+              const r = (mockController.rolesAvailable as jest.Mock).mock
+                .calls[0][0];
+              compareUser(r.user.user, user);
+            })
+            .end(done);
+        })
+        .catch(done);
+      });
   });
 
   test("succeed with role super admin", (done: any) => {
-    user.roles.push(eRolesAvailable.super);
-    user
-      .save()
-      .then(() => {
-        req.setToken(signToken({ userId: user.id.toString() }));
-        req
-          .get()
-          .expect(200)
-          .expect((res: request.Response) => {
-            expect(mockController.rolesAvailable).toBeCalled();
-            const r = (mockController.rolesAvailable as jest.Mock).mock
-              .calls[0][0];
-            compareUser(r.user, user);
-          })
-          .end(done);
-      })
-      .catch(done);
+    Role.create({userId:user.id,role:eRolesAvailable.super})
+    .then(()=>{
+      user
+        .save()
+        .then(() => {
+          req.setToken(signToken({ userId: user.id }));
+          req
+            .get()
+            .expect(200)
+            .expect((res: request.Response) => {
+              expect(mockController.rolesAvailable).toBeCalled();
+              const r = (mockController.rolesAvailable as jest.Mock).mock
+                .calls[0][0];
+              compareUser(r.user.user, user);
+            })
+            .end(done);
+        })
+        .catch(done);
+    });
   });
 });
 
 describe("secret", () => {
   const req = new JsonReq(app, "/users/secret");
   let token: string;
-  let user: IUserDocument;
 
-  beforeAll(async () => {
-    user = new User(userPrimaryObj);
-    await user.save();
-  });
+  beforeAll(createUser);
 
-  afterAll(async () => {
-    await User.deleteMany();
-  });
+  afterAll(destroyUser);
 
   afterEach(() => {
     req.setToken("");
@@ -822,14 +803,14 @@ describe("secret", () => {
   });
 
   test("succeed with token", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id.toString() }));
+    req.setToken(signToken({ userId: user.id }));
     req
       .get()
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.secret).toBeCalled();
         const r = (mockController.secret as jest.Mock).mock.calls[0][0];
-        compareUser(r.user, user);
+        compareUser(r.user.user, user);
       })
       .end(done);
   });

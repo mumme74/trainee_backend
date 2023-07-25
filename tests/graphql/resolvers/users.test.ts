@@ -14,7 +14,7 @@ import {
 import graphqlRoute from "../../../src/graphql";
 import { User } from "../../../src/models/user";
 import { eRolesAvailable } from "../../../src/models/role";
-import { closeMemoryDb, initMemoryDb } from "../../testingDatabase";
+import { closeTestDb, initTestDb } from "../../testingDatabase";
 import UsersController from "../../../src/controllers/users";
 import { userLoader } from "../../../src/graphql/resolvers/users";
 
@@ -26,10 +26,10 @@ app.finalize();
 
 const req = new JsonReq(app, "/graphql");
 
-beforeAll(initMemoryDb);
+beforeAll(initTestDb);
 
 afterAll(async () => {
-  await closeMemoryDb();
+  await closeTestDb();
   process.env = processEnv;
 });
 
