@@ -1,12 +1,15 @@
 import { User } from "../../src/models/user";
-import { comparePasswordHash, hashPassword, hashPasswordSync } from "../../src/helpers/password";
+import { comparePasswordHash} from "../../src/helpers/password";
 import {
   Role,
   rolesAvailableKeys,
   eRolesAvailable,
 } from "../../src/models/role";
 import { initTestDb, closeTestDb } from "../testingDatabase";
-import { createPrimaryUser as createTestUser, destroyPrimaryUser as destroyTestUser } from "../testHelpers";
+import {
+  createTestUser,
+  destroyTestUser
+} from "../testHelpers";
 
 
 beforeAll(async () => {

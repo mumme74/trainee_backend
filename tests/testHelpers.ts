@@ -191,7 +191,7 @@ export function compareUser(
 }
 
 let user: User, defaultRole: Role, iterations = 0;
-export async function createPrimaryUser(
+export async function createTestUser(
   spreadValues: {[key:string]:number|string|Date} = {}
 ):
   Promise<User>
@@ -212,7 +212,7 @@ export async function createPrimaryUser(
   return user;
 }
 
-export async function destroyPrimaryUser() {
+export async function destroyTestUser() {
   try {
     await user?.destroy({force:true});
     await defaultRole?.destroy({force:true});

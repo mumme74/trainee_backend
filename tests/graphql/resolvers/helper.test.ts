@@ -6,7 +6,10 @@ import { User } from "../../../src/models/user";
 import { Role, eRolesAvailable } from "../../../src/models/role";
 import type { AuthRequest } from "../../../src/types";
 import { initTestDb, closeTestDb } from "../../testingDatabase";
-import { userPrimaryObj, matchErrorMockCall, destroyPrimaryUser, createPrimaryUser } from "../../testHelpers";
+import {
+  destroyTestUser,
+  createTestUser
+} from "../../testHelpers";
 
 import {
   composeErrorResponse,
@@ -109,13 +112,13 @@ describe("rolesFilter", () => {
 
   let user: User;
   beforeEach(async () => {
-    user = await createPrimaryUser();
+    user = await createTestUser();
     callback = jest.fn((args: any, req: AuthRequest, info: any) => {
       return "ret";
     });
   });
 
-  afterEach(destroyPrimaryUser);
+  afterEach(destroyTestUser);
 
   test("fail no match anyOf single", async () => {
     const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });

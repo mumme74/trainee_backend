@@ -21,8 +21,8 @@ import {
   oauthDefaultObj,
   compareUser,
   pictureDefaultObj,
-  createPrimaryUser,
-  destroyPrimaryUser,
+  createTestUser,
+  destroyTestUser,
 } from "../testHelpers";
 
 function respond(req: Request, res: Response, next: NextFunction) {
@@ -62,11 +62,11 @@ beforeEach(() => {
 // helper functions
 let user: User;
 async function createUser() {
-  user = await createPrimaryUser()
+  user = await createTestUser()
 }
 
 async function destroyUser() {
-  await destroyPrimaryUser();
+  await destroyTestUser();
 }
 
 // -----------------------------------------------------
