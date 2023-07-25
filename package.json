@@ -1,5 +1,5 @@
 {
-  "name": "Trainee_backend",
+  "name": "trainee_backend",
   "version": "0.0.2",
   "description": "Backend to Trainee system. It's a system that trains students.",
   "main": "server/index.js",
