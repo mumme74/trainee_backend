@@ -1,3 +1,4 @@
+import { Organization } from "../models/organization";
 import { User } from "../models/user";
 
 export const passAsTeacher = async (user: User):
@@ -22,7 +23,7 @@ export const passAsTeacher = async (user: User):
   }
 
   // to auto escalate, we must be part of a domain
-  const organization = await user.getOrganization()
+  const organization = await Organization.findByPk(user.organizationId);
   if (organization?.domain) {
     // match against env variable regex
     if (process.env.TEACHER_EMAIL_REGEX)

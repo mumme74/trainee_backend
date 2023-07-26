@@ -12,7 +12,7 @@ import {
 import { Organization } from "./organization";
 
 const nameValidator = {
-  args: /^[^\s\d]\S+$/,
+  args: /^[^\s].*\S+$/,
   msg: 'Not a valid name'
 };
 

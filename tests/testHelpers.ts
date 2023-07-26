@@ -161,7 +161,7 @@ export const oauthDefaultObj = {
 
 export const organizationDefaultObj = {
   name: 'Test organization',
-  domain: "testing.com",
+  domain: "testschool.com",
 }
 
 export function compareUser(
@@ -191,35 +191,47 @@ export function compareUser(
 }
 
 let user: User, defaultRole: Role, iterations = 0;
+const users: User[] = [], defaultRoles: Role[] = [];
 export async function createTestUser(
   spreadValues: {[key:string]:number|string|Date} = {}
 ):
   Promise<User>
 {
   try {
+    const values = {...userPrimaryObj, ...spreadValues}
     user = await User.create({
-      ...{...userPrimaryObj, ...spreadValues},
-      userName: userPrimaryObj.userName.replace(/[0-9]+/, (++iterations).toString()),
-      email:userPrimaryObj.email.replace(/[0-9]+/, (iterations).toString())
+      ...values,
+      userName: values.userName.replace(/[0-9]+/, (++iterations).toString()),
+      email:values.email.replace(/[0-9]+/, (iterations).toString())
     });
+    users.push(user);
     defaultRole = await Role.create({userId:user.id,role:eRolesAvailable.student});
+    defaultRoles.push(defaultRole);
   } catch(err:any) {
     if (err.errors)
-      err.errors.forEach((e: any)=>console.error(e.message))
+      err.errors.forEach((e: any)=>console.error(e.message, e.value || err.stack))
     else
-      console.error(err.message);
+      console.error(err.message || err, err.stack);
   }
   return user;
 }
 
-export async function destroyTestUser() {
+export async function destroyTestUser(user: User | undefined = undefined) {
   try {
-    await user?.destroy({force:true});
-    await defaultRole?.destroy({force:true});
+    const ids:number[] = [];
+    for (const u of users.length ? users : (user ? [user] : [])) {
+      ids.push(u.id);
+      await u.destroy({force:true});
+    }
+
+    defaultRoles.filter(r=>ids.indexOf(r.userId)>-1)
+      .forEach(async (r)=>{
+        await r.destroy({force:true})
+      })
   } catch(err: any) {
     if (err.errors)
       err.errors.forEach((e: any)=>console.error(e.message));
-    else console.error(err.message);
+    else console.error(err.message || err, err.stack);
     throw err;
   }
 }
