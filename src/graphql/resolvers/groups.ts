@@ -227,7 +227,7 @@ const addRemovePeopleValidate = async (
           await GroupTeacher.findOne(option) :
             await GroupStudent.findOne(option);
     if (!person) {
-      if (!isAdmin(req)) // normal teacher
+      if (!await isAdmin(req)) // normal teacher
         throw new UserError("You are not associated to group");
 
       if (!await isSuperAdmin(req)) { // plain admin, same organization policy

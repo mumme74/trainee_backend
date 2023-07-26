@@ -4,40 +4,44 @@ import { meetRoles, isAdmin } from "../../src/helpers/userHelpers";
 import { AuthRequest } from "../../src/types";
 import { Role, eRolesAvailable } from "../../src/models/role";
 import { User } from "../../src/models/user";
+import { closeTestDb, initTestDb } from "../testingDatabase";
 
 const { res, next, clearMockRes } = getMockRes();
+
+beforeAll(initTestDb);
+afterAll(closeTestDb);
 
 beforeEach(() => {
   clearMockRes();
 });
 
 // ----------------------------------------------------------------
+let req: AuthRequest;
+beforeEach(() => {
+  const now = new Date();
+  req = getMockReq() as AuthRequest;
+  req.user = {
+    user: User.build({
+      firstName: "Test",
+      lastName: "Testson",
+      userName: "testUser",
+      email: "email@user.com",
+      updatedBy: 10,
+      updatedAt: now,
+      createdAt: now,
+      lastLogin: now,
+    }),
+    roles: [eRolesAvailable.student],
+    userPic: null,
+    oauth: null,
+  };
+});
 
 describe("meetRoles function", () => {
   const ANY_OF_ERR_STRING = "Insufficient priviledges";
   const ALL_OF_ERR_STRING = "You do not have all required priviledges";
   const EXCLUDE_ERR_STRING = "You have a priviledge that you shall NOT have";
 
-  let req: AuthRequest;
-  beforeEach(() => {
-    const now = new Date();
-    req = getMockReq() as AuthRequest;
-    req.user = {
-      user: User.build({
-        firstName: "Test",
-        lastName: "Testson",
-        userName: "testUser",
-        email: "email@user.com",
-        updatedBy: 10,
-        updatedAt: now,
-        createdAt: now,
-        lastLogin: now,
-      }),
-      roles: [eRolesAvailable.student],
-      userPic: null,
-      oauth: null,
-    };
-  });
 
   afterEach(async ()=>{
     await User.truncate()
@@ -153,60 +157,54 @@ describe("meetRoles function", () => {
 
 describe("isAdmin function", () => {
 
-  let req: AuthRequest;
-  beforeEach(() => {
-    req = getMockReq() as AuthRequest;
-    req.user.roles.push(eRolesAvailable.student)
-  });
-
-  test("fail isAdmin [student]", () => {
-    const res = isAdmin(req);
+  test("fail isAdmin [student]", async () => {
+    const res = await isAdmin(req);
     expect(res).toEqual(false);
   });
 
-  test("fail isAdmin [teacher]", () => {
+  test("fail isAdmin [teacher]", async () => {
     req.user.roles = [eRolesAvailable.teacher];
-    const res = isAdmin(req);
+    const res = await isAdmin(req);
     expect(res).toEqual(false);
   });
 
-  test("fail isAdmin [student, teacher]", () => {
+  test("fail isAdmin [student, teacher]", async () => {
     req.user.roles.push(eRolesAvailable.teacher);
-    const res = isAdmin(req);
+    const res = await isAdmin(req);
     expect(res).toEqual(false);
   });
 
-  test("success isAdmin [admin]", () => {
+  test("success isAdmin [admin]", async () => {
     req.user.roles = [eRolesAvailable.admin];
-    const res = isAdmin(req);
+    const res = await isAdmin(req);
     expect(res).toEqual(true);
   });
 
-  test("success isAdmin [teacher, admin]", () => {
+  test("success isAdmin [teacher, admin]", async () => {
     req.user.roles = [eRolesAvailable.teacher, eRolesAvailable.admin];
-    const res = isAdmin(req);
+    const res = await isAdmin(req);
     expect(res).toEqual(true);
   });
 
-  test("success isAdmin [super]", () => {
+  test("success isAdmin [super]", async () => {
     req.user.roles = [eRolesAvailable.super];
-    const res = isAdmin(req);
+    const res = await isAdmin(req);
     expect(res).toEqual(true);
   });
 
-  test("success isAdmin [super, admin]", () => {
+  test("success isAdmin [super, admin]", async () => {
     req.user.roles = [eRolesAvailable.super, eRolesAvailable.admin];
-    const res = isAdmin(req);
+    const res = await  isAdmin(req);
     expect(res).toEqual(true);
   });
 
-  test("success isAdmin [super, admin, teacher]", () => {
+  test("success isAdmin [super, admin, teacher]", async () => {
     req.user.roles = [
       eRolesAvailable.super,
       eRolesAvailable.admin,
       eRolesAvailable.teacher,
     ];
-    const res = isAdmin(req);
+    const res = await isAdmin(req);
     expect(res).toEqual(true);
   });
 });
