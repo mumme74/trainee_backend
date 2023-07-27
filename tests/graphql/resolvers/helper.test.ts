@@ -14,7 +14,7 @@ import {
 import {
   composeErrorResponse,
   rolesFilter,
-} from "../../../src/graphql/resolvers/helpers";
+} from "../../../src/graphql/helpers";
 import { UserError } from "../../../src/helpers/errorHelpers";
 import { IFilterOptions } from "../../../src/helpers/userHelpers";
 import { throwErr as throwToGetStack } from "../../common";
@@ -27,17 +27,27 @@ const { res, next, clearMockRes } = getMockRes();
 
 const processEnv = process.env;
 
-beforeAll(async () => {
-  await initTestDb();
+beforeAll(() => {
+  return initTestDb();
 });
 
-afterAll(async () => {
-  await closeTestDb();
+afterAll(() => {
+  return closeTestDb();
 });
 
-beforeEach(() => {
+let callback: any, user: User;
+beforeEach(async () => {
   clearMockRes();
   process.env = processEnv;
+
+  user = await createTestUser();
+  callback = jest.fn((args: any, req: AuthRequest, info: any) => {
+    return "ret";
+  });
+});
+
+afterEach(()=>{
+  return destroyTestUser()
 });
 
 // ------------------------------------------------------
@@ -96,7 +106,6 @@ describe("composeErrorResponse", () => {
 });
 
 describe("rolesFilter", () => {
-  let callback: any;
 
   const arg = { args: "arg" };
   const info = "info";
@@ -106,19 +115,6 @@ describe("rolesFilter", () => {
   const EXCLUDE_ERR_STRING = "You have a priviledge that you shall NOT have";
 
 
-  beforeAll(initTestDb);
-
-  afterAll(closeTestDb);
-
-  let user: User;
-  beforeEach(async () => {
-    user = await createTestUser();
-    callback = jest.fn((args: any, req: AuthRequest, info: any) => {
-      return "ret";
-    });
-  });
-
-  afterEach(destroyTestUser);
 
   test("fail no match anyOf single", async () => {
     const req = getMockReq({ user: {user,roles:[],oauth:null}, res: res });

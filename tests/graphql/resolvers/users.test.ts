@@ -9,6 +9,7 @@ import {
   signToken,
   JsonReq,
   userPrimaryObj,
+  compareUser,
 } from "../../testHelpers";
 
 import graphqlRoute from "../../../src/graphql";
@@ -29,6 +30,8 @@ const req = new JsonReq(app, "/graphql");
 beforeAll(initTestDb);
 
 afterAll(async () => {
+  for (const u of users)
+    await u.destroy({force:true})
   await closeTestDb();
   process.env = processEnv;
 });
@@ -39,35 +42,36 @@ async function fillDbWithUSers() {
   users = await User.bulkBuild([
     {
       ...userPrimaryObj,
-      userName: "user0",
+      userName: "user1",
       firstName: "AdminTeacher",
-      email: "user0@testing.com",
+      email: "user1@testing.com",
       roles: [eRolesAvailable.admin, eRolesAvailable.teacher],
     },
     {
       ...userPrimaryObj,
-      userName: "user1",
+      userName: "user2",
       firstName: "Super",
-      email: "user1@testing.com",
+      email: "user2@testing.com",
       roles: [eRolesAvailable.super],
     },
     {
       ...userPrimaryObj,
-      userName: "user2",
+      userName: "user3",
       firstName: "Teacher",
-      email: "user2@testing.com",
+      email: "user3@testing.com",
       roles: [eRolesAvailable.teacher],
     },
     {
       ...userPrimaryObj,
-      userName: "user3",
+      userName: "user4",
       firstName: "Student",
-      email: "user3@testing.com",
+      email: "user4@testing.com",
     },
   ]);
   users[2].updatedBy = users[0].id;
   users[0].updatedBy = users[1].id;
   await users[2].save();
+  await users[1].save();
   await users[0].save();
 }
 
@@ -83,23 +87,23 @@ describe("userLoader", () => {
   });
 
   test("empty array non existant id", async () => {
-    const user = await userLoader.load(1234567890);
-    expect(user).toStrictEqual([]);
+    const user = await userLoader.loadMany([1234567890]);
+    expect(user[0] instanceof Error).toBe(true);
+    expect((user[0] as Error).message).toContain('User.id=');
+    expect((user[0] as Error).message).toContain('not found');
   });
 
   test("succeed when user found", async () => {
-    expect(await userLoader.load(users[2].id)).toMatchObject(
-      users[2],
-    );
+    compareUser(await userLoader.load(users[2].id), users[2]);
   });
 
   test("fail when one id of many not found", async () => {
-    expect(async () => {
-      await userLoader.loadMany([
+    expect(() => {
+      return userLoader.loadAll([
         users[0].id,
         users[1].id,
-        1235467890,
+        1234567890,
       ]);
-    }).toThrowError();
+    }).rejects.toThrowError();
   });
 });

@@ -11,13 +11,10 @@ const { res, next, clearMockRes } = getMockRes();
 beforeAll(initTestDb);
 afterAll(closeTestDb);
 
-beforeEach(() => {
-  clearMockRes();
-});
-
 // ----------------------------------------------------------------
 let req: AuthRequest;
 beforeEach(() => {
+  clearMockRes();
   const now = new Date();
   req = getMockReq() as AuthRequest;
   req.user = {

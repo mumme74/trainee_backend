@@ -1,12 +1,25 @@
 import { getMockReq, getMockRes } from "@jest-mock/express";
 
-import { validateBody, schemas, hasRoles } from "../../src/helpers/routeHelpers";
+import {
+  validateBody,
+  schemas,
+  hasRoles
+} from "../../src/helpers/routeHelpers";
 import { AuthRequest } from "../../src/types";
 import { User } from "../../src/models/user";
-import { Role, eRolesAvailable } from "../../src/models/role";
-import { matchErrorMockCall, matchError } from "../testHelpers";
+import { eRolesAvailable } from "../../src/models/role";
+import {
+  matchErrorMockCall,
+  matchError,
+  createTestUser,
+  destroyTestUser
+} from "../testHelpers";
+import { closeTestDb, initTestDb } from "../testingDatabase";
 
 const { res, next, clearMockRes } = getMockRes();
+
+beforeAll(initTestDb);
+afterAll(closeTestDb);
 
 beforeEach(() => {
   clearMockRes();
@@ -305,26 +318,24 @@ describe("deleteMySelf schema", () => {
 });
 
 describe("hasRoles function", () => {
-  let req: AuthRequest;
-  beforeEach(() => {
+  let req: AuthRequest, user: User;
+  beforeEach(async () => {
+    user = await createTestUser({
+      firstName: "Test",
+      lastName: "Testson",
+      userName: "testUser",
+      email: "email@user.com",
+      updatedBy: 123456789,
+    });
     req = getMockReq() as AuthRequest;
     req.user = {
-      user: User.build({
-        id: 1,
-        firstName: "Test",
-        lastName: "Testson",
-        userName: "testUser",
-        email: "email@user.com",
-        updatedBy: "123456789abc",
-        updatedAt: Date,
-        createdAt: Date,
-        lastLogin: Date,
-      }),
-      roles: [eRolesAvailable.student],
+      user,
+      roles: [],
       userPic: null,
       oauth: null
     }
   });
+  afterEach(destroyTestUser)
 
   test("fail match anyOf", async () => {
     await hasRoles({ anyOf: [eRolesAvailable.teacher] })(req, res, next);

@@ -9,6 +9,8 @@ import {
   signToken,
   JsonReq,
   userPrimaryObj,
+  createTestUser,
+  destroyTestUser,
 } from "../testHelpers";
 
 import graphqlRoute from "../../src/graphql";
@@ -30,20 +32,21 @@ afterAll(async () => {
   process.env = processEnv;
 });
 
+let user: User;
+beforeEach(async () => {
+  user = await createTestUser();
+});
+
+afterEach(destroyTestUser);
+
 // helpers
 
 // -----------------------------------------------
 
 describe("graphql endpoint auth and grapiql checks", () => {
-  let user: User;
-  beforeEach(async () => {
-    user = User.build(userPrimaryObj);
-    await user.save();
-  });
 
   afterEach(async () => {
     process.env = processEnv;
-    await User.truncate();
     req.setToken("");
   });
 
@@ -135,15 +138,11 @@ describe("graphql endpoint auth and grapiql checks", () => {
 });
 
 describe("error response", () => {
-  let user: User;
-  beforeAll(async () => {
-    user = User.build(userPrimaryObj);
-    await user.save();
+  beforeEach(() => {
     req.setToken(signToken({ userId: user.id }));
   });
 
-  afterAll(async () => {
-    await User.truncate();
+  afterEach(() => {
     req.setToken("");
   });
 
