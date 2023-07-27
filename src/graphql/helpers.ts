@@ -1,11 +1,9 @@
-import { MongoError } from "mongodb";
-
-import type { IGraphQl_ErrorResponse } from "../schema";
-import type { AuthRequest } from "../../types";
-import { UserError } from "../../helpers/errorHelpers";
-import type { IFilterOptions } from "../../helpers/userHelpers";
-import { meetRoles } from "../../helpers/userHelpers";
-import { errorResponse } from "../../helpers/errorHelpers";
+import type { IGraphQl_ErrorResponse } from "./schema";
+import type { AuthRequest } from "../types";
+import { UserError } from "../helpers/errorHelpers";
+import type { IFilterOptions } from "../helpers/userHelpers";
+import { meetRoles } from "../helpers/userHelpers";
+import { errorResponse } from "../helpers/errorHelpers";
 
 /// This file must NOT import anything from resolvers folder
 

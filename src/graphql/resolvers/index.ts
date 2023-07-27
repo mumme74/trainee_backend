@@ -1,7 +1,7 @@
 import usersController from "./users";
 import groupsController from "./groups";
 
-import { composeErrorResponse } from "./helpers";
+import { composeErrorResponse } from "../helpers";
 import { errorResponse, IErrorResponse } from "../../helpers/errorHelpers";
 import {
   IGraphQl_ErrorResponse,
