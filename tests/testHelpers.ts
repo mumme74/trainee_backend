@@ -224,10 +224,8 @@ export async function destroyTestUser(user: User | undefined = undefined) {
       await u.destroy({force:true});
     }
 
-    defaultRoles.filter(r=>ids.indexOf(r.userId)>-1)
-      .forEach(async (r)=>{
-        await r.destroy({force:true})
-      })
+    for (const r of defaultRoles.filter(r=>ids.indexOf(r.userId)>-1))
+      await r.destroy({force:true})
   } catch(err: any) {
     if (err.errors)
       err.errors.forEach((e: any)=>console.error(e.message));
