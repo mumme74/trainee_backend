@@ -32,30 +32,48 @@ export function findStrings(branch: any): any {
   return branch;
 }
 
-export default {
-  preJsonParse(app: Express): void {
-    // safeguard service, need to turn of content-security when dev, to make graphiql work
-    app.use(
-      helmet({
-        contentSecurityPolicy:
-          process.env.NODE_ENV === "development" ? false : undefined,
-      }),
-    );
-    app.use(hpp());
-    // Restrict all routes to only 100 requests per IP address every 1o minutes
-    app.use(
-      rateLimit({
-        windowMs: 10 * 60 * 1000, // 10 minutes
-        max: 100, // 100 requests per IP
-      }),
-    );
-  },
+export function preJsonParse(app: Express):
+  void
+{
+  // safeguard service, need to turn of content-security when dev, to make graphiql work
+  app.use(
+    helmet({
+      contentSecurityPolicy:
+        process.env.NODE_ENV === "development" ? false : undefined,
+    }),
+  );
+  app.use(hpp());
+  // Restrict all routes to only 100 requests per IP address every 1o minutes
+  app.use(
+    rateLimit({
+      windowMs: 10 * 60 * 1000, // 10 minutes
+      max: 100, // 100 requests per IP
+    }),
+  );
+}
 
-  postJsonParse(app: Express): void {
-    app.use(mongoSanitize());
-    app.use((req: Request, res: Response, next: NextFunction): void => {
-      req.body = findStrings(req.body);
-      next();
-    });
-  },
-};
+export function postJsonParse(app: Express):
+  void
+{
+  app.use(mongoSanitize());
+  app.use((req: Request, res: Response, next: NextFunction): void => {
+    req.body = findStrings(req.body);
+    next();
+  });
+}
+
+export function base64ToBytes(base64:string):
+  Uint8Array
+{
+  const cb = (m:string) =>
+    m.codePointAt(0) || 0;
+  const binString = atob(base64);
+  return Uint8Array.from(binString, cb);
+}
+
+export function bytesToBase64(bytes:Uint8Array):
+  string
+{
+  const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join("");
+  return btoa(binString);
+}

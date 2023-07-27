@@ -1,4 +1,5 @@
 import { GraphQLScalarType, Kind } from "graphql";
+import { base64ToBytes, bytesToBase64 } from "../../helpers/sanitize";
 
 export const dateScalar = new GraphQLScalarType({
   name: "Date",
@@ -21,14 +22,21 @@ export const blobType = new GraphQLScalarType({
   name: "Blob",
   description: "Blob custom type",
   serialize(value: any) {
-    return value.toString('base64');
+    if (!(value instanceof Uint8Array)) {
+      if (typeof value !== 'string')
+        throw new Error(`Unhandled type in blob ${typeof value}`)
+      value = Uint8Array.from(value, c=>c.charCodeAt(0));
+    }
+    const res = bytesToBase64(value);
+    return res;
   },
   parseValue(value: any) {
-    return Buffer.from(value, 'base64');
+    const bytes = base64ToBytes(value);
+    return bytes;
   },
   parseLiteral(ast) {
     if (ast.kind === Kind.STRING)
-      return Buffer.from(ast.value, 'base64')
+      return Uint8Array.from(atob(ast.value), c=>c.charCodeAt(0))
     return null;
   }
 })
