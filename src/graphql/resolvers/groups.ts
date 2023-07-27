@@ -1,9 +1,8 @@
-import DataLoader from "dataloader";
+import ModelDataLoader from "../modelDataLoader";
 import { Sequelize, Op, QueryTypes, Model } from "sequelize";
 
-import { composeErrorResponse, rolesFilter, tryCatch } from "./helpers";
+import { composeErrorResponse, rolesFilter, tryCatch } from "../helpers";
 import { isAdmin, isSuperAdmin } from "../../helpers/userHelpers";
-import { newObjectId } from "../../helpers/dbHelpers";
 
 import { transformUser, userLoader } from "./resolvers.common";
 import { Group } from "../../models/group";
@@ -23,14 +22,7 @@ import { boolean, number, string } from "joi";
 import { groupTeacherLoader } from "./groupTeachers";
 import { groupStudentLoader } from "./groupStudents";
 
-export const groupLoader = new DataLoader(
-  async (ids: readonly number[]): Promise<Group[]> => {
-    const result = await Group.findAll({
-      where: {id: {[Op.in]:ids} }
-    });
-    return result;
-  },
-);
+export const groupLoader = new ModelDataLoader<Group>(Group);
 
 export const transformGroup = (group: Group):
   IGraphQl_GroupType =>
@@ -250,8 +242,8 @@ const addPeople = async (
   const isTeacher =
     await addRemovePeopleValidate(id, req,peopleType);
 
-  // Promise to through on non existing users
-  const users = await Promise.all(userIds.map(id=>userLoader.load(id)));
+  // Load all or fail
+  const users = await userLoader.loadAll(userIds);
 
   const t = await (Group.sequelize as Sequelize).transaction()
   for (const person of users) {
@@ -285,8 +277,8 @@ const removePeople = async (
 
   // Promise to remove people from group
   const loader = isTeacher ?
-    groupTeacherLoader.load : groupStudentLoader.load;
-  const people = await Promise.all(userIds.map(id=>loader(id)));
+    groupTeacherLoader : groupStudentLoader;
+  const people = await loader.loadAll(userIds);
 
   const t = await (Group.sequelize as Sequelize).transaction()
   for (const person of people) {

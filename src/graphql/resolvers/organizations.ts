@@ -1,20 +1,12 @@
-import DataLoader from "dataloader";
+import ModelDataLoader from "../modelDataLoader";
 import { Organization } from "../../models/organization";
 import { Op } from "sequelize";
 import { IGraphQL_OrganizationType } from "../schema/organizations";
 import { pictureLoader, transformPicture } from "./pictures";
 import { transformUser, userLoader } from "./users";
 
-export const organizationLoader = new DataLoader(
-  async (ids: readonly number[]):
-    Promise<Organization[]> =>
-  {
-    const result = await Organization.findAll({
-      where: { id: { [Op.in]:[...ids] } },
-    });
-    return result;
-  }
-);
+export const organizationLoader =
+  new ModelDataLoader<Organization>(Organization);
 
 export const transformOrganization = (org: Organization):
   IGraphQL_OrganizationType =>

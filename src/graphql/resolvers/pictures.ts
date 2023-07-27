@@ -1,19 +1,10 @@
-import DataLoader from "dataloader";
+import ModelDataLoader from "../modelDataLoader";
 import { Picture } from "../../models/picture";
 import { Op } from "sequelize";
 import { IGraphQl_PictureType } from "../schema/pictures";
 import { transformUser, userLoader } from "./users";
 
-export const pictureLoader = new DataLoader(
-  async (ids: readonly number[]):
-    Promise<Picture[]> =>
-  {
-    const result = await Picture.findAll({
-      where: { id:{ [Op.in]:[...ids] } },
-    });
-    return result;
-  },
-);
+export const pictureLoader = new ModelDataLoader<Picture>(Picture);
 
 export const transformPicture = (pic: Picture):
   IGraphQl_PictureType =>

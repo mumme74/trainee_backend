@@ -1,4 +1,4 @@
-import DataLoader from "dataloader";
+import ModelDataLoader from "../modelDataLoader";
 import {
   IGraphQl_UserCreateUsersInput,
   IGraphQl_UserCreateType,
@@ -7,7 +7,7 @@ import {
 import { pictureLoader, transformPicture } from "./pictures";
 import { IGraphQl_MutationResponse } from "../schema/index";
 import { AuthRequest } from "../../types";
-import { composeErrorResponse, rolesFilter } from "./helpers";
+import { composeErrorResponse, rolesFilter } from "../helpers";
 import { UserError } from "../../helpers/errorHelpers";
 import { User } from "../../models/user";
 import { Op, Sequelize } from "sequelize";
@@ -17,16 +17,7 @@ import { Organization, fetchOrganizationNr } from "../../models/organization";
 import { Picture } from "../../models/picture";
 import { OAuth } from "../../models/oauth";
 
-export const userLoader = new DataLoader(
-  async (userIds: readonly number[]):
-    Promise<User[]> =>
-  {
-    const result = await User.findAll({
-      where: { id:{ [Op.in]:[...userIds] } },
-    });
-    return result;
-  },
-);
+export const userLoader = new ModelDataLoader<User>(User);
 
 export const transformUser = (user: User):
   IGraphQl_UserType =>
@@ -73,8 +64,8 @@ export default {
       req: AuthRequest,
     ): Promise<IGraphQl_UserType[]> => {
       try {
-        // don't use loadMany here as we explicitly want to fail if one of ids fails
-        let users = await Promise.all(ids.map((id)=>userLoader.load(id)));
+        // load all or fail
+        let users = await userLoader.loadAll(ids);
 
         // if we are super user return unfiltered
         // else return only those belonging to my domain
