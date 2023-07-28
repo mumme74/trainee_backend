@@ -94,6 +94,12 @@ export class JsonReq {
     return req;
   }
 
+  options(path?: string) {
+    const req = request(this.app).options(this.basePath + (path || ""));
+    return this.setHeaders(req)
+      .send({})
+  }
+
   post(postObj: any, path?: string) {
     const req = request(this.app).post(this.basePath + (path || ""));
     return this.setHeaders(req)

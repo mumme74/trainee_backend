@@ -70,7 +70,7 @@ const schemaStr = `
     type OkResponse {
         success: Boolean! # true
         nrAffected: Int!
-        ids: [ID!]
+        ids: [Int!]
     }
 
     # standard response if anything goes ok or error

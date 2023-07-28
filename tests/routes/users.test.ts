@@ -342,8 +342,9 @@ describe("myinfo", () => {
           .get()
           .expect(403)
           .expect((res: request.Response) => {
+            expect(res.forbidden).toBe(true);
             expect(mockController.myInfo).not.toBeCalled();
-            matchErrorSupertest(res, "Unauthenticated");
+            matchErrorSupertest(res, "User is banned");
           })
           .end(done);
       })

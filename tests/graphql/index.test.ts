@@ -16,6 +16,7 @@ import {
 import graphqlRoute from "../../src/graphql";
 import { User } from "../../src/models/user";
 import { closeTestDb, initTestDb } from "../testingDatabase";
+import { response } from "express";
 
 const processEnv = process.env;
 
@@ -43,11 +44,25 @@ afterEach(destroyTestUser);
 
 // -----------------------------------------------
 
-describe("graphql endpoint auth and grapiql checks", () => {
+describe("graphql endpoint auth", () => {
 
   afterEach(async () => {
     process.env = processEnv;
     req.setToken("");
+  });
+
+  test("succeed HTTP OPTIONS", (done: CallbackHandler)=>{
+    req.options()
+      .expect(200)
+      .expect((response) => {
+        expect(response.unauthorized).toBe(false)
+        expect(response.headers['content-length']).toBe('0');
+        expect(response.headers['access-control-allow-headers'])
+          .toBe('Content-Type, Authorization');
+        expect(response.headers['access-control-allow-methods'])
+          .toBe('POST,GET,OPTIONS');
+      })
+      .end(done);
   });
 
   test("fail no token", (done: CallbackHandler) => {
@@ -55,6 +70,7 @@ describe("graphql endpoint auth and grapiql checks", () => {
       .post({})
       .expect(401)
       .expect((response) => {
+        expect(response.unauthorized).toBe(true)
         matchErrorSupertest(response, "No auth token");
       })
       .end(done);
@@ -66,6 +82,7 @@ describe("graphql endpoint auth and grapiql checks", () => {
       .post({})
       .expect(401)
       .expect((response) => {
+        expect(response.unauthorized).toBe(true)
         matchErrorSupertest(response, "jwt not active");
       })
       .end(done);
@@ -77,6 +94,7 @@ describe("graphql endpoint auth and grapiql checks", () => {
       .post({})
       .expect(401)
       .expect((response) => {
+        expect(response.unauthorized).toBe(true)
         matchErrorSupertest(response, "jwt expired");
       })
       .end(done);
@@ -92,7 +110,8 @@ describe("graphql endpoint auth and grapiql checks", () => {
           .post({})
           .expect(403)
           .expect((response) => {
-            matchErrorSupertest(response, "Unauthenticated");
+            expect(response.forbidden).toBe(true)
+            matchErrorSupertest(response, "User is banned");
           })
           .end(done);
       })
@@ -105,9 +124,18 @@ describe("graphql endpoint auth and grapiql checks", () => {
       .post({})
       .expect(401)
       .expect((response) => {
+        expect(response.unauthorized).toBe(true)
         matchErrorSupertest(response, "Unauthenticated");
       })
       .end(done);
+  });
+});
+
+describe("GraphiQl", ()=>{
+
+  afterEach(async () => {
+    process.env = processEnv;
+    req.setToken("");
   });
 
   test("succeed get graphiql when token is valid", (done: CallbackHandler) => {
@@ -121,6 +149,7 @@ describe("graphql endpoint auth and grapiql checks", () => {
       .get()
       .expect(200)
       .expect((response) => {
+        expect(response.unauthorized).toBe(false)
         expect(/<!DOCTYPE html/g.test(response.text)).toEqual(true);
       })
       .end(done);
@@ -133,11 +162,13 @@ describe("graphql endpoint auth and grapiql checks", () => {
     app.finalize();
     const req = new JsonReq(app, "/graphql", [["Accept", "text/html"]]);
     req.setToken(signToken({ userId: user.id }));
-    req.get().expect(400).end(done);
+    req.get().expect(400).expect(response=>{
+      expect(response.unauthorized).toBe(true)
+    }).end(done);
   });
 });
 
-describe("error response", () => {
+describe("Error responses", () => {
   beforeEach(() => {
     req.setToken(signToken({ userId: user.id }));
   });
@@ -197,7 +228,7 @@ describe("error response", () => {
         expect(obj.data.testOkResponse).toEqual({
           success: true,
           nrAffected: 0,
-          ids: ["12345676789abcd"],
+          ids: [9],
         });
       })
       .end(done);
@@ -224,7 +255,7 @@ describe("error response", () => {
         expect(obj.data.testMutationResponseOk).toEqual({
           success: true,
           nrAffected: 0,
-          ids: ["12345676789abcd"],
+          ids: [10],
         });
       })
       .end(done);

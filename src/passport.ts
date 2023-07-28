@@ -38,11 +38,11 @@ passport.use(
         if (!user) {
           return done(401, false, "User does not exist");
         } else if (user.banned) {
-          return done(403, false, "User is banned");
+          return done(false, user, "User is banned");
         }
 
         // Otherwise, return the user
-        done(null, {user, roles:[], oauth:null, userPic:null}, "User found");
+        done(null, user, "User found");
       } catch (err: any) {
         done(err, false, err.message);
       }
@@ -74,7 +74,7 @@ passport.use(
         if (!user) {
           return done(401, false, "User does not exist");
         } else if (user.banned) {
-          return done(403, false, "User is banned");
+          return done(false, user, "User is banned");
         }
 
         // check is the password is correct
@@ -89,7 +89,7 @@ passport.use(
         await user.save();
 
         // otherwise return the user
-        done(null, {user, roles:[], oauth:null, userPic:null}, "User found");
+        done(null, {user, roles:[],oauth:null,pic:null}, "User found");
       } catch (err: any) {
         done(err, false, err.message);
       }
@@ -138,7 +138,7 @@ passport.use(
         const userPic = await checkUserPic(user, parsedToken);
 
         if (user.banned)
-          return done(403, false, "User is banned");
+          return done(false, user, "User is banned");
 
         return done(null, {user, roles:[], oauth, userPic});
       } catch (err: any) {
@@ -170,11 +170,18 @@ export const passportJWT = (
     },
     (err: any, user: any, info: any) => {
       if (err || !user) {
-        return res
-          .status(!isNaN(err) && err ? err : 401)
+        return res.status(!isNaN(err) && err ? err : 401)
           .json(errorResponse(info?.message || "Unauthenticated"));
+      } else if (user?.banned) {
+        return res.status(403)
+          .json(errorResponse(info?.message||info||"User is banned"));
+
       }
-      if (!req.user && user) req.user = user;
+      if (!req.user && user) {
+        req.user = {
+          user,roles:[],oauth:null,pic:null
+        };
+      }
       return next();
     },
   )(req, res, next);

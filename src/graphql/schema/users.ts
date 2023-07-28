@@ -54,7 +54,7 @@ type UserType {
     updater: UserType
 }
 
-type UserCreateType {
+input UserCreateType {
   firstName: String!
   lastName: String!
   userName: String!

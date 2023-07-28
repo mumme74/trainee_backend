@@ -57,7 +57,7 @@ function graphqlRoute(app: Express) {
     );
 
     if (req.method === "OPTIONS") {
-      return res.sendStatus(200);
+      return res.status(200).send();
     }
     next();
   });
