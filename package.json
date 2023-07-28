@@ -6,8 +6,10 @@
   "scripts": {
     "test": "NODE_ENV=test && node_modules/jest/bin/jest.js $INIT_CWD/src",
     "build": "tsc --build",
-    "start-dev": "NODE_ENV=development nodemon -e ts,js --watch src/ --exec \"npm run build && node build/index.js --harmony\"",
-    "start": "NODE_ENV=production node build/index.js",
+    "postbuild": "npm run copyFiles",
+    "copyFiles": "copyfiles --error --up 1 src/views/*.* build",
+    "start-dev": "NODE_ENV=development nodemon -e ts,js --watch src/ --exec \"npm run build && node build/src/index.js --harmony\"",
+    "start": "NODE_ENV=production node build/src/index.js",
     "lint": "eslint 'src/**/*.{js,ts}' --quiet --fix"
   },
   "author": "Fredrik Johansson (mumme74 @ github)",
@@ -66,6 +68,7 @@
     "@typescript-eslint/eslint-plugin": "^6.1.0",
     "@typescript-eslint/parser": "^6.1.0",
     "babel-jest": "^29.6.0",
+    "copyfiles": "^2.4.1",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^5.0.0",

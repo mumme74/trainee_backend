@@ -1,0 +1,179 @@
+<!--
+ *  Copyright (c) 2021 GraphQL Contributors
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the license found in the
+ *  LICENSE file in the root directory of this source tree.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>GraphiQL</title>
+    <style>
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #graphiql {
+        height: 100vh;
+      }
+
+      .errorMsg {
+        background-color: red;
+        color: antiquewhite;
+        border-radius: 0.2rem;
+      }
+    </style>
+    </style>
+
+    <!--
+      This GraphiQL example depends on Promise and fetch, which are available in
+      modern browsers, but can be "polyfilled" for older browsers.
+      GraphiQL itself depends on React DOM.
+      If you do not want to rely on a CDN, you can host these files locally or
+      include them directly in your favored resource bundler.
+    -->
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+    <script
+      src="https://unpkg.com/graphiql/graphiql.min.js"
+      type="application/javascript"
+    ></script>
+    <script
+      src="https://unpkg.com/@graphiql/plugin-explorer/dist/index.umd.js"
+      crossorigin
+    ></script>
+    <script>
+      let jwt,
+        onSubmit,
+        loginObj = { login: null, password: null };
+      const promises = [];
+
+      async function loginDlg() {
+        console.log("enter loginDlg");
+        const promise = new Promise((resolve) => {
+          if (promises.length) return;
+
+          const dlg = document.getElementById("loginDlg"),
+            frm = document.getElementById("loginForm");
+          onSubmit = (evt) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+            dlg.removeAttribute("open");
+            loginObj.login = frm["login"].value;
+            loginObj.password = frm["passwd"].value;
+            resolve(loginObj);
+            promises.shift();
+
+            for (let prom = promises.shift(); prom; prom = promises.shift())
+              prom.resolve();
+            return false;
+          };
+
+          dlg.setAttribute("open", true);
+          if (promises.length < 1) frm.addEventListener("submit", onSubmit);
+        });
+
+        promises.push(promise);
+
+        return promise;
+      }
+
+      const showMsg = async (msg) => {
+        const msgNode = document.getElementById("loginMsg");
+        msgNode.textContent = msg;
+        msgNode.classList.add("errorMsg");
+        await loginDlg();
+      }
+
+      async function authFetcher(resource, options) {
+        console.log("enter authFetcher");
+        //console.log(options?.body);
+        headers = {
+          ...options?.headers,
+          'content-type': "application/json; charset=utf-8"
+        };
+        options = {...options, headers};
+
+        if (!jwt) {
+          while (!loginObj.login || !loginObj.password) await loginDlg();
+
+          console.log(loginObj.login, loginObj.password);
+          const res = await fetch("/api/v1/users/login", {
+            headers,
+            body: JSON.stringify(loginObj),
+            method: "POST",
+          });
+
+          if (res.status !== 200) {
+            await showMsg(`${res.status} ${res.statusText}`);
+            return authFetcher(resource, options);
+          } else {
+            const json = await res.json();
+            if (!json.success) {
+              await showMsg(`${res.status} ${res.statusText}`);
+              return authFetcher(resource, options);
+            }
+
+            jwt = json.access_token;
+          }
+        }
+
+        const res = await fetch(resource, {
+          ...options,
+          headers: {
+            ...headers,
+            'authorization': jwt
+          }
+        });
+
+        return res;
+      }
+    </script>
+    <!--
+      These two files can be found in the npm module, however you may wish to
+      copy them directly into your environment, or perhaps include them in your
+      favored resource bundler.
+     -->
+    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+  </head>
+
+  <body>
+    <dialog id="loginDlg" style="position: fixed; z-index: 10">
+      <form id="loginForm" onsubmit="return false">
+        <div style="justify-content: center" id="loginMsg">Login</div>
+        <label for="login">user or email</label>
+        <input name="login" id="login" />
+        <label for="password">Password</label>
+        <input name="passwd" id="passwd" type="password" />
+        <button type="submit">Login</button>
+      </form>
+    </dialog>
+    <div id="graphiql">Loading...</div>
+    <script>
+      const root = ReactDOM.createRoot(document.getElementById("graphiql"));
+      const fetcher = GraphiQL.createFetcher({
+        fetch: authFetcher,
+        url: "/graphql",
+        headers: { "X-Example-Header": "foo" },
+      });
+      const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
+      root.render(
+        React.createElement(GraphiQL, {
+          fetcher,
+          defaultEditorToolsVisibility: true,
+          plugins: [explorerPlugin],
+        }),
+      );
+    </script>
+  </body>
+</html>

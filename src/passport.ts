@@ -36,13 +36,14 @@ passport.use(
 
         // if user doesn't exist, handle it
         if (!user) {
-          return done(401, false, "User does not exist");
+          done(401, false, "User does not exist");
         } else if (user.banned) {
-          return done(false, user, "User is banned");
+          done(false, user, "User is banned");
+        } else {
+          // Otherwise, return the user
+          done(null, user, "User found");
         }
 
-        // Otherwise, return the user
-        done(null, user, "User found");
       } catch (err: any) {
         done(err, false, err.message);
       }
@@ -72,24 +73,26 @@ passport.use(
 
         // if not, handle it
         if (!user) {
-          return done(401, false, "User does not exist");
+          done(false, false, "User does not exist");
         } else if (user.banned) {
-          return done(false, user, "User is banned");
+          done(false, user, "User is banned");
+        } else {
+          // check is the password is correct
+          const isMatch = await user.isValidPassword(password);
+
+          // if not, handle it
+          if (!isMatch) {
+            done(403, false, "Password incorrect");
+          } else {
+            // update last login
+            user.lastLogin = new Date();
+            await user.save();
+
+            // otherwise return the user
+            done(null, {user, roles:[],oauth:null,pic:null}, "User found");
+          }
         }
 
-        // check is the password is correct
-        const isMatch = await user.isValidPassword(password);
-
-        // if not, handle it
-        if (!isMatch)
-          return done(403, false, "Password incorrect");
-
-        // update last login
-        user.lastLogin = new Date();
-        await user.save();
-
-        // otherwise return the user
-        done(null, {user, roles:[],oauth:null,pic:null}, "User found");
       } catch (err: any) {
         done(err, false, err.message);
       }
@@ -138,12 +141,12 @@ passport.use(
         const userPic = await checkUserPic(user, parsedToken);
 
         if (user.banned)
-          return done(false, user, "User is banned");
-
-        return done(null, {user, roles:[], oauth, userPic});
+          done(false, user, "User is banned");
+        else
+          done(null, {user, roles:[], oauth, userPic});
       } catch (err: any) {
         console.log(err.message);
-        return done(err, false, err.message);
+        done(err, false, err.message);
       }
     },
   ),

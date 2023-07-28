@@ -1,7 +1,7 @@
-import Router from "express-promise-router";
-import type {
+import PromiseRouter from "express-promise-router";
+import {
   Express, Request,
-  Response, NextFunction
+  Response, NextFunction, Router
 } from "express";
 import UsersController, {
    IUsersController
@@ -20,31 +20,31 @@ import {
 import { eRolesAvailable } from "../models/role";
 
 function userRoutes(
-  app: Express,
+  router: Router,
   // pass in controller to ba able to mock when testing
   controller: IUsersController = UsersController,
 ) {
-  const router = Router();
-  app.use("/users/", router);
+  const usersRouter = PromiseRouter();
+  router.use("/users", usersRouter);
 
-  router.use((req: Request, res: Response, next: NextFunction) => {
+  usersRouter.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     next();
   });
 
-  router
+  usersRouter
     .route("/signup")
     .post(validateBody(schemas.newUserSchema), controller.signup);
 
-  router
+  usersRouter
     .route("/login")
     .post(validateBody(schemas.loginSchema), passportLogin, controller.login);
 
-  router.route("/oauth/google").post(passportGoogle, controller.googleOAuthOk);
+  usersRouter.route("/oauth/google").post(passportGoogle, controller.googleOAuthOk);
 
-  router.route("/myinfo").get(passportJWT, controller.myInfo);
+  usersRouter.route("/myinfo").get(passportJWT, controller.myInfo);
 
-  router
+  usersRouter
     .route("/savemyuserinfo")
     .post(
       passportJWT,
@@ -52,7 +52,7 @@ function userRoutes(
       controller.saveMyUserInfo,
     );
 
-  router
+  usersRouter
     .route("/changemypassword")
     .post(
       passportJWT,
@@ -60,9 +60,9 @@ function userRoutes(
       controller.changeMyPassword,
     );
 
-  router.route("/secret").get(passportJWT, controller.secret);
+  usersRouter.route("/secret").get(passportJWT, controller.secret);
 
-  router
+  usersRouter
     .route("/deletemyself")
     .post(
       passportJWT,
@@ -70,7 +70,7 @@ function userRoutes(
       controller.deleteMyself,
     );
 
-  router
+  usersRouter
     .route("/availableroles")
     .get(
       passportJWT,
@@ -78,7 +78,7 @@ function userRoutes(
       controller.rolesAvailable,
     );
 
-  return router;
+  return usersRouter;
 }
 
 export default userRoutes;

@@ -16,7 +16,9 @@ import {
 import graphqlRoute from "../../src/graphql";
 import { User } from "../../src/models/user";
 import { closeTestDb, initTestDb } from "../testingDatabase";
-import { response } from "express";
+
+import request from "supertest";
+import supertest from "supertest";
 
 const processEnv = process.env;
 
@@ -138,19 +140,17 @@ describe("GraphiQl", ()=>{
     req.setToken("");
   });
 
-  test("succeed get graphiql when token is valid", (done: CallbackHandler) => {
+  test("succeed get graphiql html when develpoment", (done: CallbackHandler) => {
     process.env = { ...processEnv, NODE_ENV: "development" };
     const app = jsonApp();
     graphqlRoute(app);
     app.finalize();
-    const req = new JsonReq(app, "/graphql", [["Accept", "text/html"]], /html/);
-    req.setToken(signToken({ userId: user.id }));
-    req
-      .get()
+    request(app).get('/graphiql')
       .expect(200)
-      .expect((response) => {
+      .expect("Content-Type", /application\/html/)
+      .expect((response)=>{
         expect(response.unauthorized).toBe(false)
-        expect(/<!DOCTYPE html/g.test(response.text)).toEqual(true);
+        expect(/(?:<!--.*-->)?<!DOCTYPE html/gi.test(response.text)).toEqual(true);
       })
       .end(done);
   });
@@ -160,11 +160,18 @@ describe("GraphiQl", ()=>{
     const app = jsonApp();
     graphqlRoute(app);
     app.finalize();
-    const req = new JsonReq(app, "/graphql", [["Accept", "text/html"]]);
-    req.setToken(signToken({ userId: user.id }));
-    req.get().expect(400).expect(response=>{
-      expect(response.unauthorized).toBe(true)
-    }).end(done);
+    request(app).get('/graphiql')
+    .expect(404)
+    .expect("Content-Type", /application\/json/)
+    .expect((response)=>{
+      expect(response.unauthorized).toBe(false)
+      expect(response.status).toEqual(404);
+      expect(response.body).toMatchObject({
+        error:{message:'Not found /graphiql'},
+        success:false
+      })
+    })
+    .end(done);
   });
 });
 

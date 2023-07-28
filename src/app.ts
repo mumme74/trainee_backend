@@ -7,7 +7,8 @@ import morgan from "morgan";
 import cors from "cors";
 
 import { postJsonParse, preJsonParse } from "./helpers/sanitize";
-import userRoutes from "./routes/users";
+import initApi from "./routes";
+import pictureRoutes from "./routes/pictures";
 import graphQlRoute from "./graphql";
 import { initDb } from "./models"
 
@@ -20,6 +21,7 @@ try{
 // create the global app
 const app = express();
 
+
 // cross origin
 app.use(cors({ origin: process.env.CORS_HOST }));
 
@@ -30,12 +32,16 @@ if (process.env.NODE_ENV !== "test") {
   app.use(morgan("dev")); // dont clutter logs
 }
 
+// pictures
+pictureRoutes(app);
+
 app.use(express.json());
 
 postJsonParse(app);
 
 // Routes
-userRoutes(app);
+initApi(app);
+// graphql
 graphQlRoute(app);
 
 // 404

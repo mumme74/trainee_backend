@@ -7,6 +7,8 @@ import { passportJWT } from "../passport";
 
 import graphQlSchema from "./schema";
 import { graphQlResolvers } from "./resolvers";
+import {promises as fs}  from "fs";
+import path from "path";
 //import renderGraphiQLAuthToken from "./graphiqlWithToken";
 
 import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
@@ -34,19 +36,18 @@ function graphqlRoute(app: Express) {
   const router = Router();
   app.use("/graphql", router);
 
-  /*// all logic starts here
+  // all logic starts here
   const useGraphiql = process.env.NODE_ENV === "development";
 
   if (useGraphiql) {
     //Overiding the default express-graphql middleware
-    router.use("/", async (req, res, next) => {
-      const params = await getGraphQLParams(req);
-      if (!params.raw && accepts(req).types(["json", "html"]) === "html") {
-        res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.send(renderGraphiQLAuthToken(params));
-      } else next();
+    app.use("/graphiql", async (req, res) => {
+      const p = path.join(path.resolve('./build'), '/views/graphiql.html');
+      const html = await fs.readFile(p, 'utf-8');
+      res.setHeader('Content-Type','application/html')
+      res.send(html);
     });
-  }*/
+  }
 
   router.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader("Access-Control-Allow-Origin", process.env.CORS_HOST + "");

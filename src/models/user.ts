@@ -33,8 +33,8 @@ export class User extends Model {
 
   // virtual functions
   async roles(): Promise<string[]> {
-    const myroles = await this.getRoles()
-    const res = await myroles.map((n: Role)=>rolesAvailableKeys[n.role]);
+    const myroles = await this.getRoles();
+    const res = myroles.map((n: Role)=>rolesAvailableKeys[n.role]);
     return res;
   }
   fullName(): string {
@@ -46,6 +46,7 @@ export class User extends Model {
     return !cleartext;
   }
   async domain(): Promise<string|null>  {
+    if (!this.organizationId) return null;
     const res = await this.sequelize.query(
       'SELECT domain FROM core_Organiztion WHERE id=?'
       , {
@@ -54,12 +55,16 @@ export class User extends Model {
       }) as {domain:string}[];
     return res ? res[0].domain : null;
   }
-  //declare organizations: string;
 
-
-  declare getRoles: ()=>Promise<Role[]>;
-  declare getPicture: ()=>Promise<Picture|null>;
-  declare getOrganization: ()=>Promise<Organization|null>;
+  async getRoles(): Promise<Role[]> {
+    return (await Role.findAll({where:{userId:this.id}})) || [];
+  }
+  getPicture(): Promise<Picture|null> {
+    return Picture.findByPk(this.pictureId);
+  }
+  getOrganization(): Promise<Organization|null> {
+    return Organization.findByPk(this.organizationId);
+  }
 
   // run once
   static bootstrap(sequelize: Sequelize) {
