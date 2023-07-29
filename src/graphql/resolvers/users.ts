@@ -29,10 +29,12 @@ export const transformUser = (user: User):
     lastName: user.lastName,
     email: user.email,
     picture: async () => {
+      if (!user.pictureId) return;
       const pic = await pictureLoader.load(user.pictureId);
       return transformPicture(pic);
     },
     organization: async ()=>{
+      if (!user.organizationId) return;
       const org = await organizationLoader.load(user.organizationId);
       return transformOrganization(org);
     },
@@ -43,6 +45,7 @@ export const transformUser = (user: User):
     createdAt: user.createdAt,
     lastLogin: user.lastLogin,
     updater: async () => {
+      if (!user.updatedBy) return;
       const u = await userLoader.load(user.updatedBy);
       return transformUser(u);
     },

@@ -54,6 +54,7 @@ const testingErrorResponseQueries = `
 const schemaStr = `
     scalar Date
     scalar Blob
+    scalar IntID
 
     type Error {
       message: String!
@@ -70,7 +71,7 @@ const schemaStr = `
     type OkResponse {
         success: Boolean! # true
         nrAffected: Int!
-        ids: [Int!]
+        ids: [IntID!]
     }
 
     # standard response if anything goes ok or error

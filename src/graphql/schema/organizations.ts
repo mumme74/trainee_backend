@@ -5,16 +5,16 @@ export interface IGraphQL_OrganizationType {
   id: number;
   name: string;
   domain: string;
-  picture: ()=>Promise<IGraphQl_PictureType>;
+  picture: ()=>Promise<IGraphQl_PictureType | undefined>;
   description: string;
-  updatedBy: ()=>Promise<IGraphQl_UserType>;
+  updatedBy: ()=>Promise<IGraphQl_UserType | undefined>;
   createdAt: Date;
   updatedAt: Date;
 };
 
 export const organizationSchemaTypes = `
 type OrganizationType {
-  id: Int!
+  id: IntID!
   name: String!
   domain: String!
   picture: PictureType

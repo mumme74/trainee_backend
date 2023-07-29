@@ -52,6 +52,7 @@ export const transformGroup = (group: Group):
     updatedAt: group.updatedAt,
     createdAt: group.createdAt,
     updater: async () => {
+      if (!group.updatedBy) return;
       const user = await userLoader.load(group.updatedBy);
       return transformUser(user);
     },

@@ -41,7 +41,7 @@ enum Roles {
 }
 
 type UserType {
-    id: Int!
+    id: IntID!
     fullName: String!
     firstName: String!
     lastName: String!
@@ -76,7 +76,7 @@ input UserCreateUsersInput {
 `;
 
 export const usersSchemaQueries = `
-    users(ids: [Int!]!): [UserType!]!
+    users(ids: [IntID!]!): [UserType!]!
     userAvailableRoles: [String!]!
 `;
 
@@ -85,17 +85,17 @@ export const usersSchemaMutations = `
     userCreateStudent(newUser: UserCreateUsersInput): MutationResponse
 
     # must have admin roles to change this, cant set user to super admin
-    userChangeRoles(id: Int!, roles: [String!]!): MutationResponse
+    userChangeRoles(id: IntID!, roles: [String!]!): MutationResponse
 
     # move user to domain, must have admin priviledges to move anyone to our domain
     # and then a admin can only move users which have empty domain
     # super users can do anything
-    userMoveToDomain(id: Int! domain: String): MutationResponse
+    userMoveToDomain(id: IntID! domain: String): MutationResponse
 
     # must have super admin role to set a user to this priviledge
-    userSetSuperUser(id: Int!): MutationResponse
+    userSetSuperUser(id: IntID!): MutationResponse
 
     # must be admin to delete a user in same domain, super user to delete any users
-    userDeleteUser(id: Int!): MutationResponse
+    userDeleteUser(id: IntID!): MutationResponse
 
 `;

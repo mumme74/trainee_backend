@@ -39,4 +39,23 @@ export const blobType = new GraphQLScalarType({
       return Uint8Array.from(atob(ast.value), c=>c.charCodeAt(0))
     return null;
   }
+});
+
+const intIDserializer = (value: any) => {
+  if (typeof value !== 'number' || Number.isNaN(value))
+    throw new Error('IntID must be number type')
+  if (value !== Math.round(value))
+    throw new Error('IntID must be a integer');
+  return +value;
+}
+export const intId = new GraphQLScalarType({
+  name: "IntID",
+  description: "ID as a int",
+  serialize: intIDserializer,
+  parseValue(value: any) {
+    return intIDserializer(+value);
+  },
+  parseLiteral(ast) {
+    return ast.kind === Kind.INT ? +ast.value : null;
+  }
 })

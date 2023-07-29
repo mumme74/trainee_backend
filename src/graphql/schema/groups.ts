@@ -31,7 +31,7 @@ enum GroupPeopleType {
 }
 
 type GroupType {
-  id: Int!
+  id: IntID!
   teachers: [UserType]!
   students: [UserType]!
   name: String!
@@ -45,27 +45,27 @@ type GroupType {
 export const groupsSchemaInputs = `
 # used by a teacher or admin to add a new group
 input GroupCreateInput {
-    teacherIds: [Int]
-    studentIds: [Int]
+    teacherIds: [IntID]
+    studentIds: [IntID]
     name: String!
     description: String
 }
 `;
 
 export const groupSchemaQueries = `
-    groups(ids: [Int!]!): [GroupType]!
+    groups(ids: [IntID!]!): [GroupType]!
     groupsForTeacher(
-      teacherId: Int!
+      teacherId: IntID!
       nameFilter: String
       desc: Boolean
     ): [GroupType]!
     groupsForStudent(
-      studentId: Int!
+      studentId: IntID!
       nameFilter: String
       desc: Boolean
     ): [GroupType]!
     groupsForOwner(
-      ownerId: Int!
+      ownerId: IntID!
       nameFilter: String
       desc: Boolean
     ): [GroupType]!
@@ -75,24 +75,24 @@ export const groupSchemaMutations = `
     groupCreate(
       newGroup: GroupCreateInput
     ): MutationResponse!
-    groupDelete(id: Int!): MutationResponse!
+    groupDelete(id: IntID!): MutationResponse!
     groupUpdateString(
-      id: Int!
+      id: IntID!
       field: GroupStringField!
       newStr: String!
     ): MutationResponse!
     groupTransferOwnership(
-      id: Int!
-      newOwnerId: Int!
+      id: IntID!
+      newOwnerId: IntID!
     ): MutationResponse!
     groupAddPeople(
-      id: Int!
+      id: IntID!
       peopleType: GroupPeopleType!
       userIds: [Int!]!
     ): MutationResponse!
     groupRemovePeople(
-      id: Int!
+      id: IntID!
       peopleType: GroupPeopleType!
-      userIds: [Int!]!
+      userIds: [IntID!]!
     ): MutationResponse!
 `;

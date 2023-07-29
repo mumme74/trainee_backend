@@ -165,11 +165,12 @@ export const passportJWT = (
   res: Response,
   next: NextFunction,
 ) => {
+  const errResponeJson = JSON.stringify(errorResponse("Invalid token"))
   return passport.authenticate(
     "jwt",
     {
       session: false,
-      failureFlash: JSON.stringify(errorResponse("Invalid token")),
+      failureFlash: errResponeJson,
     },
     (err: any, user: any, info: any) => {
       if (err || !user) {

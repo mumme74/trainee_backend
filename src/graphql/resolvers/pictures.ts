@@ -12,6 +12,7 @@ export const transformPicture = (pic: Picture):
   return {
     id: pic.id,
     owner: async ()=> {
+      if (!pic.ownerId) return;
       const u = await userLoader.load(pic.ownerId);
       return transformUser(u);
     },

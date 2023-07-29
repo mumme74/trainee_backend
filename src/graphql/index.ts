@@ -44,8 +44,8 @@ function graphqlRoute(app: Express) {
     app.use("/graphiql", async (req, res) => {
       const p = path.join(path.resolve('./build'), '/views/graphiql.html');
       const html = await fs.readFile(p, 'utf-8');
-      res.setHeader('Content-Type','application/html')
-      res.send(html);
+      res.setHeader('Content-Type','text/html')
+      res.status(200).send(html);
     });
   }
 
@@ -71,13 +71,14 @@ function graphqlRoute(app: Express) {
 
   router.use(
     "/",
-    passportJWT, handler,
-    /*
-    graphqlHTTP({
-      schema: graphQlSchema,
-      rootValue: graphQlResolvers,
-      graphiql: false, //useGraphiql,
-    }),*/
+    passportJWT, (req: Request, res: Response, next: NextFunction) => {
+      const handler = createHandler({
+        schema: graphQlSchema,
+        rootValue: graphQlResolvers,
+        context: req as any
+      });
+      handler(req, res, next);
+    },
   );
 }
 

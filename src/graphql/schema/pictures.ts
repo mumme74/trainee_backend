@@ -2,7 +2,7 @@ import { IGraphQl_UserType } from "./users";
 
 export interface IGraphQl_PictureType {
   id: number;
-  owner: ()=>Promise<IGraphQl_UserType>;
+  owner: ()=>Promise<IGraphQl_UserType | undefined>;
   blob: Buffer;
   mime: string;
   title: string;
@@ -11,7 +11,7 @@ export interface IGraphQl_PictureType {
 
 export const picturesSchemaTypes = `
 type PictureType {
-  id: Int!
+  id: IntID!
   owner: UserType
   blob: Blob!
   title: String

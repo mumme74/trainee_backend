@@ -16,11 +16,13 @@ export const transformOrganization = (org: Organization):
     name: org.name,
     domain: org.name,
     picture: async () => {
+      if (!org.pictureId) return;
       const pic = await pictureLoader.load(org.pictureId);
       return transformPicture(pic);
     },
     description: org.description,
     updatedBy: async ()=> {
+      if (!org.updatedBy) return;
       const u = await userLoader.load(org.updatedBy);
       return transformUser(u);
     },
