@@ -247,8 +247,8 @@ const genInitOptions = (
 (()=>{
   registerDbPlugin(
     "Core",
-    "core", `
-    All models for the core system`);
+    "core",
+    `All models for the core system`);
 
   // read sync to make sure core is initialized before any plugins
   const files = fs.readdirSync(__dirname);
