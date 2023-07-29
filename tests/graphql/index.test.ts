@@ -147,7 +147,7 @@ describe("GraphiQl", ()=>{
     app.finalize();
     request(app).get('/graphiql')
       .expect(200)
-      .expect("Content-Type", /application\/html/)
+      .expect("Content-Type", /text\/html/)
       .expect((response)=>{
         expect(response.unauthorized).toBe(false)
         expect(/(?:<!--.*-->)?<!DOCTYPE html/gi.test(response.text)).toEqual(true);

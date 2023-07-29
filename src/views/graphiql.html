@@ -25,6 +25,7 @@
         background-color: red;
         color: antiquewhite;
         border-radius: 0.2rem;
+        padding: 0.5rem;
       }
     </style>
     </style>
@@ -58,6 +59,22 @@
         loginObj = { login: null, password: null };
       const promises = [];
 
+      function tokenPayload() {
+        try {
+          const parts = jwt?.split(".");
+          if (parts?.length !== 3) return false;
+
+          const payload = parts[1];
+          if (!payload) return false;
+
+          const decoded = window.atob(payload);
+          const json = JSON.parse(decoded);
+          return json;
+        } catch (err) {
+          return {};
+        }
+      }
+
       async function loginDlg() {
         console.log("enter loginDlg");
         const promise = new Promise((resolve) => {
@@ -88,11 +105,12 @@
         return promise;
       }
 
-      const showMsg = async (msg) => {
+      const showMsg = (msg) => {
         const msgNode = document.getElementById("loginMsg");
         msgNode.textContent = msg;
         msgNode.classList.add("errorMsg");
-        await loginDlg();
+        document.getElementById('loginDlg')
+          .setAttribute("open", true);
       }
 
       async function authFetcher(resource, options) {
@@ -107,7 +125,6 @@
         if (!jwt) {
           while (!loginObj.login || !loginObj.password) await loginDlg();
 
-          console.log(loginObj.login, loginObj.password);
           const res = await fetch("/api/v1/users/login", {
             headers,
             body: JSON.stringify(loginObj),
@@ -115,7 +132,8 @@
           });
 
           if (res.status !== 200) {
-            await showMsg(`${res.status} ${res.statusText}`);
+            showMsg(`${res.status} ${res.statusText}`);
+            await loginDlg();
             return authFetcher(resource, options);
           } else {
             const json = await res.json();
@@ -125,6 +143,11 @@
             }
 
             jwt = json.access_token;
+            const payload = tokenPayload();
+            if (payload.roles.indexOf('super') < 0) {
+              showMsg(`Insufficient privileges for ${loginObj.login}`);
+              return authFetcher(resource, options);
+            }
           }
         }
 
@@ -150,7 +173,8 @@
   <body>
     <dialog id="loginDlg" style="position: fixed; z-index: 10">
       <form id="loginForm" onsubmit="return false">
-        <div style="justify-content: center" id="loginMsg">Login</div>
+        <div style="justify-content: center;margin:0.2rem;"
+             id="loginMsg">Login</div>
         <label for="login">user or email</label>
         <input name="login" id="login" />
         <label for="password">Password</label>

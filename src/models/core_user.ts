@@ -130,6 +130,7 @@ export class User extends Model {
       ...options,
       paranoid: true, // recoverable delete
       hooks: {
+        ...options.hooks,
         async afterCreate(user: User, options: CreateOptions<any>) {
           // create a default role for new users
           const defaultŔole = Role.build({

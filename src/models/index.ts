@@ -143,7 +143,7 @@ async function cleanUpUniqueIndex(
   model:ModelStatic<any>,
   options: SyncOptions
 ): Promise<void> {
-  if (!options.alter) return;
+  if (options.alter === false) return;
   const existingIndexes = await queryInterface
     .showIndex(model.tableName, options) as Array<{[key:string]:any}>;
   // filter in only unique indexes with duplicates of name
@@ -194,8 +194,12 @@ export async function defineDb(
   opt: {[key:string]:any} = {}
 ) {
 
-  const force = opt.sync?.force || false, // if true it drops database
-  alter = opt.sync?.alter;
+  // if true it drops database
+  const force = typeof opt.sync?.force !== 'undefined' ?
+    opt.sync.force : false,
+  // if true if alters (recreates the database on startup)
+  alter = typeof opt.sync?.alter !== 'undefined' ?
+    opt.sync.alter : true;
 
   const sequelize = new Sequelize(connectionString, opt);
 
@@ -236,7 +240,6 @@ const genInitOptions = (
       // fields bug https://github.com/sequelize/sequelize/issues/12889
       // should affect affects sequelize < 7.0
       afterSync: async (options: SyncOptions) => {
-        if (alter) return;
         await cleanUpUniqueIndex(
           sequelize.getQueryInterface(), entry.model, options);
       }
