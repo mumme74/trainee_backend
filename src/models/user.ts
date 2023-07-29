@@ -2,6 +2,8 @@ import {
   Model, DataTypes, Sequelize,
   CreateOptions, QueryTypes
 } from "sequelize";
+import { HookReturn } from "sequelize/types/hooks";
+import { cleanUpUniqueIndex } from "./helpers";
 import { Role, eRolesAvailable } from "./role";
 import { Picture } from "./picture";
 import { rolesAvailableKeys } from "./role";
@@ -130,6 +132,10 @@ export class User extends Model {
       modelName: 'core_Users',
       paranoid: true, // recoverable delete
       hooks: {
+        afterSync: (options):HookReturn =>{
+          return cleanUpUniqueIndex(
+            sequelize.getQueryInterface(), User, options);
+        },
         async afterCreate(user: User, options: CreateOptions<any>) {
           // create a default role for new users
           const defaultŔole = Role.build({

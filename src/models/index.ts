@@ -16,7 +16,7 @@ import { GroupStudent } from "./groupStudent";
  * Reads from .env.production or .env.dev file
  * Builds the connectionsString to sequelize and
  * calls defineDb
- * @returns {Sequelize} The sequelize singleton
+ * @returns {Promise<Sequelize>} The sequelize singleton
  */
 export async function initDb() {
   const dbHost = process.env.DB_HOST || "localhost";
@@ -34,7 +34,7 @@ export async function initDb() {
 /**
  * Creates Sequelize and defines the models
  * @param {string} connectionString  Connection string to Sequelize
- * @returns {Sequelize} The sequelize singleton
+ * @returns {Promise<Sequelize>} The sequelize singleton
  */
 export async function defineDb(
   connectionString: string,
@@ -59,7 +59,7 @@ export async function defineDb(
   for (const model of modelClasses)
     model.bootstrapAfterHook(sequelize);
 
-  await sequelize.sync();
+  await sequelize.sync({ force: false, alter: true });
 
   console.log('Started database');
   return sequelize

@@ -1,5 +1,7 @@
 import { Model, DataTypes, Sequelize } from "sequelize";
 import { Picture } from "./picture";
+import { HookReturn } from "sequelize/types/hooks";
+import { cleanUpUniqueIndex } from "./helpers";
 
 export class Organization extends Model {
   declare id: number;
@@ -59,6 +61,11 @@ export class Organization extends Model {
     },{
       modelName: 'core_Organizations',
       paranoid: true,
+      hooks: {
+        afterSync: (options):HookReturn =>{
+          return cleanUpUniqueIndex(sequelize.getQueryInterface(), Organization, options);
+        }
+      },
       sequelize
     });
   }
