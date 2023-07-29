@@ -1,10 +1,10 @@
 import { passAsSuperAdmin, passAsTeacher } from "../../src/helpers/escalateRoles";
-import { User} from "../../src/models/user";
-import { Role, eRolesAvailable } from "../../src/models/role";
+import { User} from "../../src/models/core_user";
+import { Role, eRolesAvailable } from "../../src/models/core_role";
 import {
   createTestUser, destroyTestUser, organizationDefaultObj
 } from "../testHelpers";
-import { Organization } from "../../src/models/organization";
+import { Organization } from "../../src/models/core_organization";
 import { closeTestDb, initTestDb } from "../testingDatabase";
 
 const defaultUser = {

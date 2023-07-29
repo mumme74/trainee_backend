@@ -1,4 +1,4 @@
-import { rolesAvailableKeys } from "../../models/role";
+import { rolesAvailableKeys } from "../../models/core_role";
 import { IGraphQL_OrganizationType } from "./organizations";
 import { IGraphQl_PictureType } from "./pictures";
 

@@ -6,8 +6,8 @@ import {
   hasRoles
 } from "../../src/helpers/routeHelpers";
 import { AuthRequest } from "../../src/types";
-import { User } from "../../src/models/user";
-import { eRolesAvailable } from "../../src/models/role";
+import { User } from "../../src/models/core_user";
+import { eRolesAvailable } from "../../src/models/core_role";
 import {
   matchErrorMockCall,
   matchError,

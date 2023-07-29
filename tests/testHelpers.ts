@@ -8,9 +8,9 @@ import Express, { NextFunction, response } from "express";
 import request from "supertest";
 import supertest from "supertest";
 import JWT from "jsonwebtoken";
-import { eRolesAvailable } from "../src/models/role";
-import { User } from "../src/models/user";
-import { Role } from "../src/models/role";
+import { eRolesAvailable } from "../src/models/core_role";
+import { User } from "../src/models/core_user";
+import { Role } from "../src/models/core_role";
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;

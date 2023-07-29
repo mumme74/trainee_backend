@@ -1,17 +1,16 @@
 import {
   Model, DataTypes, Sequelize,
-  CreateOptions, QueryTypes
+  CreateOptions, QueryTypes, InitOptions
 } from "sequelize";
-import { HookReturn } from "sequelize/types/hooks";
-import { cleanUpUniqueIndex } from "./helpers";
-import { Role, eRolesAvailable } from "./role";
-import { Picture } from "./picture";
-import { rolesAvailableKeys } from "./role";
+import { registerDbModel } from "./index";
+import { Role, eRolesAvailable } from "./core_role";
+import { Picture } from "./core_picture";
+import { rolesAvailableKeys } from "./core_role";
 import {
   comparePasswordHash,
   hashPasswordSync
 } from "../helpers/password";
-import { Organization } from "./organization";
+import { Organization } from "./core_organization";
 
 const nameValidator = {
   args: /^[^\s].*\S+$/,
@@ -69,7 +68,7 @@ export class User extends Model {
   }
 
   // run once
-  static bootstrap(sequelize: Sequelize) {
+  static async bootstrap(options: InitOptions) {
 
 
     const userModel = User.init({
@@ -128,14 +127,9 @@ export class User extends Model {
         defaultValue: DataTypes.NOW
       },
     },{
-      sequelize,
-      modelName: 'core_Users',
+      ...options,
       paranoid: true, // recoverable delete
       hooks: {
-        afterSync: (options):HookReturn =>{
-          return cleanUpUniqueIndex(
-            sequelize.getQueryInterface(), User, options);
-        },
         async afterCreate(user: User, options: CreateOptions<any>) {
           // create a default role for new users
           const defaultŔole = Role.build({
@@ -148,7 +142,7 @@ export class User extends Model {
     });
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {
+  static async bootstrapAfterHook(sequelize: Sequelize) {
     // set constraints
 
     const pictureModel = sequelize.models.core_Pictures,
@@ -169,3 +163,5 @@ export class User extends Model {
     })
   }
 }
+
+registerDbModel(User, 'Core');

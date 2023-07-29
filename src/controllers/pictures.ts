@@ -4,7 +4,7 @@ import {
   NextFunction,
   RequestHandler
 } from "express";
-import { Picture } from "../models/picture";
+import { Picture } from "../models/core_picture";
 
 interface IPicturesController {
   getPicture: RequestHandler

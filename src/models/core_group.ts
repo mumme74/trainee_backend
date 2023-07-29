@@ -1,4 +1,5 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
+import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
+import { registerDbModel } from "./index";
 
 /// stores a group such as a class
 
@@ -12,7 +13,7 @@ export class Group extends Model {
   declare updatedAt: Date;
 
   // run once
-  static bootstrap(sequelize: Sequelize) {
+  static async bootstrap(options: InitOptions) {
 
     const roleModel = Group.init({
       id: {
@@ -39,13 +40,10 @@ export class Group extends Model {
       updatedBy: {
         type: DataTypes.INTEGER
       }
-    }, {
-      modelName: 'core_Groups',
-      sequelize
-    });
+    }, options);
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {
+  static async bootstrapAfterHook(sequelize: Sequelize) {
     const groupModel = sequelize.models.core_Groups,
           userModel  = sequelize.models.core_Users;
 
@@ -55,3 +53,5 @@ export class Group extends Model {
     });
   }
 }
+
+registerDbModel(Group, 'Core');

@@ -1,4 +1,5 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
+import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
+import { registerDbModel } from "./index";
 
 export class Picture extends Model {
   declare id: number;
@@ -9,7 +10,7 @@ export class Picture extends Model {
   declare createdAt: Date;
 
   // run once
-  static bootstrap(sequelize: Sequelize) {
+  static async bootstrap(options: InitOptions) {
     const pictureModel = Picture.init({
       id: {
         type: DataTypes.INTEGER,
@@ -33,15 +34,14 @@ export class Picture extends Model {
         type: DataTypes.STRING
       }
     },{
-      sequelize,
-      modelName:"core_Pictures",
+      ...options,
       timestamps: true,
       updatedAt: false
     });
 
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {
+  static async bootstrapAfterHook(sequelize: Sequelize) {
     const userModel = sequelize.models.core_Users,
           pictureModel =sequelize.models.core_Pictures;
 
@@ -53,3 +53,5 @@ export class Picture extends Model {
     });
   }
 }
+
+registerDbModel(Picture, 'Core');

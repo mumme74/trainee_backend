@@ -5,7 +5,7 @@ import { composeErrorResponse, rolesFilter, tryCatch } from "../helpers";
 import { isAdmin, isSuperAdmin } from "../../helpers/userHelpers";
 
 import { transformUser, userLoader } from "./resolvers.common";
-import { Group } from "../../models/group";
+import { Group } from "../../models/core_group";
 import { UserError } from "../../helpers/errorHelpers";
 import {
   IGraphQl_GroupType,
@@ -14,10 +14,10 @@ import {
 import type { IGraphQl_MutationResponse } from "../schema";
 import { AuthRequest } from "../../types";
 import type { IGraphQl_UserType } from "../schema/users";
-import { GroupTeacher } from "../../models/groupTeacher";
-import { User } from "../../models/user";
-import { GroupStudent } from "../../models/groupStudent";
-import { eRolesAvailable } from "../../models/role";
+import { GroupTeacher } from "../../models/core_group_teacher";
+import { User } from "../../models/core_user";
+import { GroupStudent } from "../../models/core_group_student";
+import { eRolesAvailable } from "../../models/core_role";
 import { boolean, number, string } from "joi";
 import { groupTeacherLoader } from "./groupTeachers";
 import { groupStudentLoader } from "./groupStudents";

@@ -1,5 +1,5 @@
-import { Organization } from "../models/organization";
-import { User } from "../models/user";
+import { Organization } from "../models/core_organization";
+import { User } from "../models/core_user";
 
 export const passAsTeacher = async (user: User):
   Promise<boolean> =>

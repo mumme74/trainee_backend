@@ -1,5 +1,5 @@
 import ModelDataLoader from "../modelDataLoader";
-import { GroupStudent } from "../../models/groupStudent";
+import { GroupStudent } from "../../models/core_group_student";
 
 
 export const groupStudentLoader =

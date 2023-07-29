@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import { UserError } from "../../helpers/errorHelpers";
 
 // import and re-export
-import { eRolesAvailable, rolesAvailableKeys } from "../role";
+import { eRolesAvailable, rolesAvailableKeys } from "../core_role";
 export { eRolesAvailable, rolesAvailableKeys };
 
 //export const rolesAvailableKeyValue = Object.entries(rolesAvailableKeys);

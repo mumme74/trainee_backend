@@ -1,10 +1,10 @@
-import { User } from "../../src/models/user";
+import { User } from "../../src/models/core_user";
 import { comparePasswordHash} from "../../src/helpers/password";
 import {
   Role,
   rolesAvailableKeys,
   eRolesAvailable,
-} from "../../src/models/role";
+} from "../../src/models/core_role";
 import { initTestDb, closeTestDb } from "../testingDatabase";
 import {
   createTestUser,

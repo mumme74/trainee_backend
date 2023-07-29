@@ -13,8 +13,8 @@ import {
 } from "../../testHelpers";
 
 import graphqlRoute from "../../../src/graphql";
-import { User } from "../../../src/models/user";
-import { eRolesAvailable } from "../../../src/models/role";
+import { User } from "../../../src/models/core_user";
+import { eRolesAvailable } from "../../../src/models/core_role";
 import { closeTestDb, initTestDb } from "../../testingDatabase";
 import UsersController from "../../../src/controllers/users";
 import { userLoader } from "../../../src/graphql/resolvers/users";

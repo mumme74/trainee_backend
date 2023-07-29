@@ -1,7 +1,6 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
-import { Picture } from "./picture";
-import { HookReturn } from "sequelize/types/hooks";
-import { cleanUpUniqueIndex } from "./helpers";
+import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
+import { Picture } from "./core_picture";
+import { registerDbModel } from "./index";
 
 export class Organization extends Model {
   declare id: number;
@@ -17,7 +16,7 @@ export class Organization extends Model {
   declare getPicture: ()=>Promise<Picture>;
 
   // run once
-  static bootstrap(sequelize: Sequelize) {
+  static async bootstrap(options: InitOptions) {
 
     const roleModel = Organization.init({
       id: {
@@ -59,18 +58,12 @@ export class Organization extends Model {
         type: DataTypes.INTEGER
       }
     },{
-      modelName: 'core_Organizations',
+      ...options,
       paranoid: true,
-      hooks: {
-        afterSync: (options):HookReturn =>{
-          return cleanUpUniqueIndex(sequelize.getQueryInterface(), Organization, options);
-        }
-      },
-      sequelize
     });
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {
+  static async bootstrapAfterHook(sequelize: Sequelize) {
     const organizationModel = sequelize.models.core_Organizations,
           pictureModel = sequelize.models.core_Pictures,
           userModel = sequelize.models.core_Users;
@@ -91,3 +84,5 @@ export const fetchOrganizationNr = async (domain:string) => {
   const org = await Organization.findOne({where:{domain}});
   return org?.id;
 }
+
+registerDbModel(Organization, 'Core');

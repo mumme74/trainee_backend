@@ -14,7 +14,7 @@ import {
 } from "../testHelpers";
 
 import graphqlRoute from "../../src/graphql";
-import { User } from "../../src/models/user";
+import { User } from "../../src/models/core_user";
 import { closeTestDb, initTestDb } from "../testingDatabase";
 
 import request from "supertest";

@@ -1,9 +1,9 @@
 import * as core from "express-serve-static-core";
 import express from "express";
-import { User } from "./models/user";
-import { OAuth } from "./models/oauth";
-import { Picture } from "./models/picture";
-import { eRolesAvailable } from "./models/role";
+import { User } from "./models/core_user";
+import { OAuth } from "./models/core_oauth";
+import { Picture } from "./models/core_picture";
+import { eRolesAvailable } from "./models/core_role";
 
 /**
  * Response to client, current user's info

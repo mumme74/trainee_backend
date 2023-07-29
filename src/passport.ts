@@ -8,17 +8,17 @@ import { Strategy as LocalStrategy} from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-verify-token";
 import { VerifiedCallback } from "passport-jwt";
 
-import { User } from "./models/user";
-import { eRolesAvailable } from "./models/role";
+import { User } from "./models/core_user";
+import { eRolesAvailable } from "./models/core_role";
 import { AuthRequest } from "./types";
 import { passAsSuperAdmin, passAsTeacher } from "./helpers/escalateRoles";
 import { UserError } from "./helpers/errorHelpers";
 import { errorResponse } from "./helpers/errorHelpers";
 import { Op } from "sequelize";
-import { Role } from "./models/role";
-import { OAuth } from "./models/oauth";
-import { Organization } from "./models/organization";
-import { Picture } from "./models/picture";
+import { Role } from "./models/core_role";
+import { OAuth } from "./models/core_oauth";
+import { Organization } from "./models/core_organization";
+import { Picture } from "./models/core_picture";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 

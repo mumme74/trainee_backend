@@ -1,5 +1,6 @@
 import DataLoader from "dataloader";
 import { Op, ModelStatic } from "sequelize";
+import { getClassName } from "../helpers/common";
 
 /**
  * Custom DataLoader class, less boilarplate and have loadAll method
@@ -51,7 +52,7 @@ export default class ModelDataLoader<V, K = number, C = K>
         return ids.map((id:K)=>{
           return res.find(r=>r.id === id) ||
             new Error(`model ${
-              model.toString().match(/^class\s+([a-z_0-9]+)/i)?.at(1)
+              getClassName(model)
             }.id=${id} not found`)
         });
       })

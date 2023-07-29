@@ -1,4 +1,5 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
+import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
+import { registerDbModel } from "./index";
 
 /**
  * @brief these are the 4 different roles a user can have
@@ -28,7 +29,7 @@ export class Role extends Model {
 
 
   // run once
-  static bootstrap(sequelize: Sequelize) {
+  static async bootstrap(options: InitOptions) {
 
     const roleModel = Role.init({
       id: {
@@ -48,14 +49,13 @@ export class Role extends Model {
         }
       }
     },{
-      sequelize,
-      modelName: "core_Roles",
+      ...options,
       timestamps: true,
       updatedAt: false
     });
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {
+  static async bootstrapAfterHook(sequelize: Sequelize) {
     const userModel = sequelize.models.core_Users,
           roleModel = sequelize.models.core_Roles;
 
@@ -67,3 +67,5 @@ export class Role extends Model {
     });
   }
 }
+
+registerDbModel(Role, 'Core');

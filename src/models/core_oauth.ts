@@ -1,4 +1,5 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
+import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
+import { registerDbModel } from "./index";
 
 /// stores oath login specific stuff
 
@@ -11,7 +12,7 @@ export class OAuth extends Model {
   declare updatedAt: Date;
 
   // run once
-  static bootstrap(sequelize: Sequelize) {
+  static async bootstrap(options: InitOptions) {
 
     const roleModel = OAuth.init({
       id: {
@@ -31,13 +32,10 @@ export class OAuth extends Model {
         type: DataTypes.STRING,
         allowNull: false,
       }
-    },{
-      modelName:'core_OAuths',
-      sequelize,
-    });
+    }, options);
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {
+  static async bootstrapAfterHook(sequelize: Sequelize) {
     const userModel = sequelize.models.core_Users;
 
     OAuth.belongsTo(userModel, {
@@ -47,3 +45,5 @@ export class OAuth extends Model {
     });
   }
 }
+
+registerDbModel(OAuth, 'Core');

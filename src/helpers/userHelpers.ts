@@ -1,8 +1,8 @@
 import { Request } from "express";
 
-import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../models/role";
+import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../models/core_role";
 import type { AuthRequest } from "../types";
-import type { User } from "../models/user";
+import type { User } from "../models/core_user";
 import { isNumberObject, isStringObject } from "util/types";
 
 const rolesFromReq = async (req: AuthRequest):

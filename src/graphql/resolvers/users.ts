@@ -9,13 +9,13 @@ import { IGraphQl_MutationResponse } from "../schema/index";
 import { AuthRequest } from "../../types";
 import { composeErrorResponse, rolesFilter } from "../helpers";
 import { UserError } from "../../helpers/errorHelpers";
-import { User } from "../../models/user";
+import { User } from "../../models/core_user";
 import { Op, Sequelize } from "sequelize";
-import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../../models/role";
+import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../../models/core_role";
 import { organizationLoader, transformOrganization } from "./organizations";
-import { Organization, fetchOrganizationNr } from "../../models/organization";
-import { Picture } from "../../models/picture";
-import { OAuth } from "../../models/oauth";
+import { Organization, fetchOrganizationNr } from "../../models/core_organization";
+import { Picture } from "../../models/core_picture";
+import { OAuth } from "../../models/core_oauth";
 
 export const userLoader = new ModelDataLoader<User>(User);
 

@@ -7,8 +7,8 @@ import type { CallbackHandler } from "supertest";
 import "../testProcess.env";
 
 import type { IUsersController } from "../../src/controllers/users";
-import { User } from "../../src/models/user";
-import { Role, eRolesAvailable } from "../../src/models/role";
+import { User } from "../../src/models/core_user";
+import { Role, eRolesAvailable } from "../../src/models/core_role";
 import userRoutes from "../../src/routes/users";
 import { initTestDb, closeTestDb } from "../testingDatabase";
 import {

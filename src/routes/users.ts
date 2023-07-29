@@ -17,7 +17,7 @@ import {
   schemas,
   hasRoles
 } from "../helpers/routeHelpers";
-import { eRolesAvailable } from "../models/role";
+import { eRolesAvailable } from "../models/core_role";
 
 function userRoutes(
   router: Router,

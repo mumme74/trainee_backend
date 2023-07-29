@@ -1,5 +1,5 @@
 import ModelDataLoader from "../modelDataLoader";
-import { Picture } from "../../models/picture";
+import { Picture } from "../../models/core_picture";
 import { Op } from "sequelize";
 import { IGraphQl_PictureType } from "../schema/pictures";
 import { transformUser, userLoader } from "./users";

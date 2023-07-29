@@ -2,8 +2,8 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 
 import { meetRoles, isAdmin } from "../../src/helpers/userHelpers";
 import { AuthRequest } from "../../src/types";
-import { Role, eRolesAvailable } from "../../src/models/role";
-import { User } from "../../src/models/user";
+import { Role, eRolesAvailable } from "../../src/models/core_role";
+import { User } from "../../src/models/core_user";
 import { closeTestDb, initTestDb } from "../testingDatabase";
 
 const { res, next, clearMockRes } = getMockRes();

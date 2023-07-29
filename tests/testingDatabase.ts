@@ -8,7 +8,10 @@ let sequelize: Sequelize | undefined;
 
 export async function initTestDb() {
   if (connections++ === 0) {
-    sequelize = await defineDb("sqlite::memory",{logging:false});
+    sequelize = await defineDb("sqlite::memory", {
+      logging:false,
+      sync:{force:true, alter:false}
+    });
   }
 }
 

@@ -2,8 +2,8 @@ import { getMockReq, getMockRes } from "@jest-mock/express";
 import type { Request, Response } from "express-serve-static-core";
 
 import "../../testProcess.env";
-import { User } from "../../../src/models/user";
-import { Role, eRolesAvailable } from "../../../src/models/role";
+import { User } from "../../../src/models/core_user";
+import { Role, eRolesAvailable } from "../../../src/models/core_role";
 import type { AuthRequest } from "../../../src/types";
 import { initTestDb, closeTestDb } from "../../testingDatabase";
 import {

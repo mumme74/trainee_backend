@@ -1,4 +1,5 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
+import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
+import { registerDbModel } from "./index";
 
 /**
  * Stores teachers connected to a group (group such as a class)
@@ -12,7 +13,7 @@ export class GroupTeacher extends Model {
   declare createdAt: Date;
 
   // run once
-  static bootstrap(sequelize: Sequelize) {
+  static async bootstrap(options: InitOptions) {
 
     const roleModel = GroupTeacher.init({
       id: {
@@ -33,14 +34,13 @@ export class GroupTeacher extends Model {
         allowNull: false,
       },
     }, {
-      modelName: 'core_GroupTeachers',
-      sequelize,
+      ...options,
       timestamps: true,
       updatedAt: false, createdAt: true
     });
   }
 
-  static bootstrapAfterHook(sequelize: Sequelize) {
+  static async bootstrapAfterHook(sequelize: Sequelize) {
     const groupModel = sequelize.models.core_Groups,
           userModel  = sequelize.models.core_Users,
           teacherModel = sequelize.models.core_GroupTeachers;
@@ -61,3 +61,5 @@ export class GroupTeacher extends Model {
     })
   }
 }
+
+registerDbModel(GroupTeacher, 'Core');

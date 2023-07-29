@@ -1,5 +1,5 @@
 import ModelDataLoader from "../modelDataLoader";
-import { Organization } from "../../models/organization";
+import { Organization } from "../../models/core_organization";
 import { Op } from "sequelize";
 import { IGraphQL_OrganizationType } from "../schema/organizations";
 import { pictureLoader, transformPicture } from "./pictures";

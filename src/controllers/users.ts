@@ -13,8 +13,8 @@ import {
   Role,
   eRolesAvailable,
   rolesAvailableKeys
-} from "../models/role";
-import { User } from "../models/user";
+} from "../models/core_role";
+import { User } from "../models/core_user";
 import { Op } from "sequelize";
 
 import type { IUserInfoResponse, AuthRequest } from "../types";
