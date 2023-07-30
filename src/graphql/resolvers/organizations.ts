@@ -5,6 +5,12 @@ import { IGraphQL_OrganizationType } from "../schema/organizations";
 import { pictureLoader, transformPicture } from "./pictures";
 import { transformUser, userLoader } from "./users";
 
+// -------------------------------------------------------------
+// controller functions
+
+
+// -------------------------------------------------------------
+// exported stuff here
 export const organizationLoader =
   new ModelDataLoader<Organization>(Organization);
 
@@ -30,3 +36,6 @@ export const transformOrganization = (org: Organization):
     updatedAt: org.updatedAt,
   }
 }
+
+// -------------------------------------------------------------
+// private stuff for this module here

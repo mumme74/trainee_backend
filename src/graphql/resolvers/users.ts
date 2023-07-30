@@ -17,44 +17,12 @@ import { Organization, fetchOrganizationNr } from "../../models/core_organizatio
 import { Picture } from "../../models/core_picture";
 import { OAuth } from "../../models/core_oauth";
 
-export const userLoader = new ModelDataLoader<User>(User);
 
-export const transformUser = (user: User):
-  IGraphQl_UserType =>
-{
-  return {
-    id: user.id,
-    fullName: user.fullName(),
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    picture: async () => {
-      if (!user.pictureId) return;
-      const pic = await pictureLoader.load(user.pictureId);
-      return transformPicture(pic);
-    },
-    organization: async ()=>{
-      if (!user.organizationId) return;
-      const org = await organizationLoader.load(user.organizationId);
-      return transformOrganization(org);
-    },
-    roles: async ()=> {
-      return await user.roles();
-    },
-    updatedAt: user.updatedAt,
-    createdAt: user.createdAt,
-    lastLogin: user.lastLogin,
-    updater: async () => {
-      if (!user.updatedBy) return;
-      const u = await userLoader.load(user.updatedBy);
-      return transformUser(u);
-    },
-  };
-};
-
+// -------------------------------------------------------------------------
+// controllers
 export default {
   // queries
-  user_Users: rolesFilter(
+  core_user_Users: rolesFilter(
     {
       anyOf: [
         eRolesAvailable.admin,
@@ -87,12 +55,12 @@ export default {
     },
   ),
 
-  user_AvailableRoles: (): string[] => {
+  core_user_AvailableRoles: (): string[] => {
     return rolesAvailableKeys;
   },
 
   // mutations
-  user_CreateStudents: rolesFilter({
+  core_user_CreateStudents: rolesFilter({
     anyOf: [
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
@@ -132,7 +100,7 @@ export default {
     },
   ),
 
-  user_ChangeRoles: rolesFilter(
+  core_user_ChangeRoles: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id, roles }: { id: number; roles: string[] },
@@ -180,7 +148,7 @@ export default {
     },
   ),
 
-  user_MoveToDomain: rolesFilter(
+  core_user_MoveToDomain: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id, domain }: { id: number; domain?: string },
@@ -226,7 +194,7 @@ export default {
     },
   ),
 
-  user_SetSuperUser: rolesFilter(
+  core_user_SetSuperUser: rolesFilter(
     { anyOf: eRolesAvailable.super },
     async ({ id }: { id: number }):
       Promise<IGraphQl_MutationResponse> =>
@@ -252,7 +220,7 @@ export default {
     },
   ),
 
-  user_DeleteUser: rolesFilter(
+  core_user_DeleteUser: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id }: { id: number },
@@ -281,6 +249,47 @@ export default {
     },
   ),
 };
+
+// --------------------------------------------------------------------
+// exported stuff here
+export const userLoader = new ModelDataLoader<User>(User);
+
+export const transformUser = (user: User):
+  IGraphQl_UserType =>
+{
+  return {
+    id: user.id,
+    fullName: user.fullName(),
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    picture: async () => {
+      if (!user.pictureId) return;
+      const pic = await pictureLoader.load(user.pictureId);
+      return transformPicture(pic);
+    },
+    organization: async ()=>{
+      if (!user.organizationId) return;
+      const org = await organizationLoader.load(user.organizationId);
+      return transformOrganization(org);
+    },
+    roles: async ()=> {
+      return await user.roles();
+    },
+    updatedAt: user.updatedAt,
+    createdAt: user.createdAt,
+    lastLogin: user.lastLogin,
+    updater: async () => {
+      if (!user.updatedBy) return;
+      const u = await userLoader.load(user.updatedBy);
+      return transformUser(u);
+    },
+  };
+};
+
+// -------------------------------------------------------------
+// private stuff for this module here
+
 
 const createUserAndRoles = async (
   newUser: IGraphQl_UserCreateType,

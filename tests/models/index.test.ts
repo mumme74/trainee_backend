@@ -32,7 +32,7 @@ class TestMdlBase extends Model {
 }
 
 describe('Test registerDbPlugin', ()=>{
-  it('Should register without descrition', ()=>{
+  it('Should register without description', ()=>{
     registerDbPlugin('Test 1', "t1", __dirname);
     const plug = findDbPlugin('Test 1') || {};
     expect(plug.name).toBe('Test 1');
@@ -40,8 +40,8 @@ describe('Test registerDbPlugin', ()=>{
     expect(plug.description).toBe(undefined);
     expect(plug.closed).toBeFalsy()
   })
-  it('Should register with descrition', ()=>{
-    registerDbPlugin('Test 2', "t2", 'desc t2');
+  it('Should register with description', ()=>{
+    registerDbPlugin('Test 2', "t2", __dirname, 'desc t2');
     const plug = findDbPlugin('Test 2') || {};
     expect(plug.name).toBe('Test 2');
     expect(plug.modelPrefix).toBe('t2');

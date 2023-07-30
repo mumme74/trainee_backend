@@ -23,6 +23,181 @@ import { groupTeacherByGroupLoader, groupTeacherLoader } from "./groupTeachers";
 import { groupStudentByGroupLoader, groupStudentLoader } from "./groupStudents";
 import { organizationLoader } from "./organizations";
 
+
+// ----------------------------------------------------------------
+// our controller functions
+
+// queries
+export default {
+  // queries
+  //groups(ids: [ID!]!): [GroupType]!
+  core_group_Groups: tryCatch('groups',
+    async ({ ids }: { ids: number[] }): Promise<IGraphQl_GroupType[]> =>
+    {
+      const groups = (await groupLoader.loadMany(ids))
+                       .filter(g=>g instanceof Group) as Group[];
+      if (!groups) throw new UserError("Group[s] not found!");
+      return groups.map(grp=>transformGroup(grp));
+    }
+  ),
+
+  //groupsForTeacher(teacherId: ID! nameFilter: string desc: boolean): [GroupType]!
+  core_group_GroupsForTeacher: tryCatch('groupsForTeacher', rolesFilter({anyOf:[
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
+    async ({
+      teacherId,
+      nameFilter,
+      desc
+    }: {
+      teacherId: number;
+      nameFilter?: string;
+      desc?: boolean
+    }): Promise<IGraphQl_GroupType[]> => {
+      return await groupsFor(teacherId, nameFilter, true, desc);
+    },
+  )),
+
+  //groupsForStudent(studentId: ID! nameFilter: string): [GroupType]!
+  core_group_GroupsForStudent: tryCatch('groupsForStudent', async ({
+    studentId,
+    nameFilter = "",
+    desc = false
+  }: {
+    studentId: number;
+    nameFilter?: string;
+    desc?: boolean
+  }): Promise<IGraphQl_GroupType[]> => {
+    return await groupsFor(studentId, nameFilter, false, desc);
+  }),
+
+  core_group_GroupsForOwner: tryCatch('groupsForOwner', async ({
+    ownerId,
+    filter = "",
+    desc = false
+  }: {
+    ownerId: number,
+    filter?: string,
+    desc?: boolean
+  }): Promise<IGraphQl_GroupType[]> => {
+    const where = filter.length > 2 ? {
+      [Op.and]:[
+        {ownerId},
+        {name:{[Op.like]:`${filter}%`}}
+      ]
+    } : {ownerId}
+
+    const groups = await Group.findAll({where});
+    return groups.map(g=>transformGroup(g));
+  }),
+
+  // groupCreate(newGroup: GroupCreateInput): MutationResponse
+  core_group_Create: tryCatch('groupCreate', rolesFilter({anyOf:[
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
+    async ({
+        newGroup,
+      }: {
+        newGroup: IGraphQl_GroupCreateInput;
+      },
+      req: AuthRequest,
+    ): Promise<IGraphQl_MutationResponse> => {
+      return createGroup(newGroup, req);
+    }
+  )),
+
+  // groupDelete(id: ID!): MutationResponse
+  core_group_Delete: tryCatch('groupDelete', rolesFilter({anyOf:[
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
+    async (
+      { id }: { id: number },
+      req: AuthRequest,
+    ): Promise<IGraphQl_MutationResponse> => {
+      return deleteGroup(id, req);
+    },
+  )),
+
+  // groupTransferOwnership(id: Int! newOwnerId: Int!): MutationResponse!
+  core_group_TransferOwnership: tryCatch('groupTransferOwnership',
+    rolesFilter({anyOf:[
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
+    async ({id, newOwnerId}: {id: number; newOwnerId: number}, req: AuthRequest):
+      Promise<IGraphQl_MutationResponse> =>
+    {
+      return transferOwnership(id, newOwnerId, req);
+    }
+  )),
+
+  // groupUpdateString(id: ID! field: GroupStringField name: String!): MutationResponse
+  core_group_UpdateString: tryCatch('groupUpdateString',
+    rolesFilter({anyOf:[
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
+    async (
+      {
+        id, field, newStr
+      }: {
+         id: number; field: string; newStr: string;
+      },
+      req: AuthRequest,
+    ): Promise<IGraphQl_MutationResponse> => {
+      return updateStr(id, field, newStr, req);
+    },
+  )),
+
+  // groupAddStudents(id: ID! peopleType: GroupPeopleType! userIds: [ID!]!): MutationResponse
+  core_group_AddPeople: tryCatch('groupAddPeople',
+    rolesFilter({anyOf:[
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
+    async (
+      {
+        id, peopleType, userIds
+      }: {
+        id: number; peopleType: string; userIds: number[]
+      },
+      req: AuthRequest,
+    ): Promise<IGraphQl_MutationResponse> => {
+      return addPeople(id, peopleType, userIds, req);
+    },
+  )),
+
+  // groupRemovePeople(id: ID! peopleType: GroupPeopleType!  studentId: [ID!]!): MutationResponse
+  core_group_RemovePeople: tryCatch('groupRemovePeople',
+    rolesFilter({anyOf:[
+      eRolesAvailable.teacher,
+      eRolesAvailable.admin,
+      eRolesAvailable.super
+    ]},
+    async ({
+        id, peopleType, userIds
+      }: {
+        id: number; peopleType: string; userIds: number[]
+      },
+      req: AuthRequest,
+    ): Promise<IGraphQl_MutationResponse> => {
+      return removePeople(id, peopleType, userIds, req);
+    },
+  )),
+};
+
+// ------------------------------------------------------
+// exported stuff here
+
 export const groupLoader = new ModelDataLoader<Group>(Group);
 
 export const transformGroup = (group: Group):
@@ -62,6 +237,9 @@ export const transformGroup = (group: Group):
     }
   };
 };
+
+// -------------------------------------------------
+// module private stuff below here
 
 // helper functions
 /**
@@ -388,173 +566,3 @@ const removePeople = async (
     __typename: 'OkResponse'
   }
 }
-
-//------------------------------------------
-
-// queries
-export default {
-  // queries
-  //groups(ids: [ID!]!): [GroupType]!
-  group_Groups: tryCatch('groups',
-    async ({ ids }: { ids: number[] }): Promise<IGraphQl_GroupType[]> =>
-    {
-      const groups = (await groupLoader.loadMany(ids))
-                       .filter(g=>g instanceof Group) as Group[];
-      if (!groups) throw new UserError("Group[s] not found!");
-      return groups.map(grp=>transformGroup(grp));
-    }
-  ),
-
-  //groupsForTeacher(teacherId: ID! nameFilter: string desc: boolean): [GroupType]!
-  group_GroupsForTeacher: tryCatch('groupsForTeacher', rolesFilter({anyOf:[
-      eRolesAvailable.teacher,
-      eRolesAvailable.admin,
-      eRolesAvailable.super
-    ]},
-    async ({
-      teacherId,
-      nameFilter,
-      desc
-    }: {
-      teacherId: number;
-      nameFilter?: string;
-      desc?: boolean
-    }): Promise<IGraphQl_GroupType[]> => {
-      return await groupsFor(teacherId, nameFilter, true, desc);
-    },
-  )),
-
-  //groupsForStudent(studentId: ID! nameFilter: string): [GroupType]!
-  group_GroupsForStudent: tryCatch('groupsForStudent', async ({
-    studentId,
-    nameFilter = "",
-    desc = false
-  }: {
-    studentId: number;
-    nameFilter?: string;
-    desc?: boolean
-  }): Promise<IGraphQl_GroupType[]> => {
-    return await groupsFor(studentId, nameFilter, false, desc);
-  }),
-
-  group_GroupsForOwner: tryCatch('groupsForOwner', async ({
-    ownerId,
-    filter = "",
-    desc = false
-  }: {
-    ownerId: number,
-    filter?: string,
-    desc?: boolean
-  }): Promise<IGraphQl_GroupType[]> => {
-    const where = filter.length > 2 ? {
-      [Op.and]:[
-        {ownerId},
-        {name:{[Op.like]:`${filter}%`}}
-      ]
-    } : {ownerId}
-
-    const groups = await Group.findAll({where});
-    return groups.map(g=>transformGroup(g));
-  }),
-
-  // groupCreate(newGroup: GroupCreateInput): MutationResponse
-  group_Create: tryCatch('groupCreate', rolesFilter({anyOf:[
-      eRolesAvailable.teacher,
-      eRolesAvailable.admin,
-      eRolesAvailable.super
-    ]},
-    async ({
-        newGroup,
-      }: {
-        newGroup: IGraphQl_GroupCreateInput;
-      },
-      req: AuthRequest,
-    ): Promise<IGraphQl_MutationResponse> => {
-      return createGroup(newGroup, req);
-    }
-  )),
-
-  // groupDelete(id: ID!): MutationResponse
-  group_Delete: tryCatch('groupDelete', rolesFilter({anyOf:[
-      eRolesAvailable.teacher,
-      eRolesAvailable.admin,
-      eRolesAvailable.super
-    ]},
-    async (
-      { id }: { id: number },
-      req: AuthRequest,
-    ): Promise<IGraphQl_MutationResponse> => {
-      return deleteGroup(id, req);
-    },
-  )),
-
-  // groupTransferOwnership(id: Int! newOwnerId: Int!): MutationResponse!
-  group_TransferOwnership: tryCatch('groupTransferOwnership',
-    rolesFilter({anyOf:[
-      eRolesAvailable.teacher,
-      eRolesAvailable.admin,
-      eRolesAvailable.super
-    ]},
-    async ({id, newOwnerId}: {id: number; newOwnerId: number}, req: AuthRequest):
-      Promise<IGraphQl_MutationResponse> =>
-    {
-      return transferOwnership(id, newOwnerId, req);
-    }
-  )),
-
-  // groupUpdateString(id: ID! field: GroupStringField name: String!): MutationResponse
-  group_UpdateString: tryCatch('groupUpdateString',
-    rolesFilter({anyOf:[
-      eRolesAvailable.teacher,
-      eRolesAvailable.admin,
-      eRolesAvailable.super
-    ]},
-    async (
-      {
-        id, field, newStr
-      }: {
-         id: number; field: string; newStr: string;
-      },
-      req: AuthRequest,
-    ): Promise<IGraphQl_MutationResponse> => {
-      return updateStr(id, field, newStr, req);
-    },
-  )),
-
-  // groupAddStudents(id: ID! peopleType: GroupPeopleType! userIds: [ID!]!): MutationResponse
-  group_AddPeople: tryCatch('groupAddPeople',
-    rolesFilter({anyOf:[
-      eRolesAvailable.teacher,
-      eRolesAvailable.admin,
-      eRolesAvailable.super
-    ]},
-    async (
-      {
-        id, peopleType, userIds
-      }: {
-        id: number; peopleType: string; userIds: number[]
-      },
-      req: AuthRequest,
-    ): Promise<IGraphQl_MutationResponse> => {
-      return addPeople(id, peopleType, userIds, req);
-    },
-  )),
-
-  // groupRemovePeople(id: ID! peopleType: GroupPeopleType!  studentId: [ID!]!): MutationResponse
-  group_RemovePeople: tryCatch('groupRemovePeople',
-    rolesFilter({anyOf:[
-      eRolesAvailable.teacher,
-      eRolesAvailable.admin,
-      eRolesAvailable.super
-    ]},
-    async ({
-        id, peopleType, userIds
-      }: {
-        id: number; peopleType: string; userIds: number[]
-      },
-      req: AuthRequest,
-    ): Promise<IGraphQl_MutationResponse> => {
-      return removePeople(id, peopleType, userIds, req);
-    },
-  )),
-};

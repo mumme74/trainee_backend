@@ -4,6 +4,12 @@ import { Op } from "sequelize";
 import { IGraphQl_PictureType } from "../schema/pictures";
 import { transformUser, userLoader } from "./users";
 
+// -------------------------------------------------------------
+// controller functions
+
+
+// -------------------------------------------------------------
+// exported stuff here
 export const pictureLoader = new ModelDataLoader<Picture>(Picture);
 
 export const transformPicture = (pic: Picture):
@@ -22,3 +28,6 @@ export const transformPicture = (pic: Picture):
     createdAt: pic.createdAt
   };
 }
+
+// -------------------------------------------------------------
+// private stuff for this module here

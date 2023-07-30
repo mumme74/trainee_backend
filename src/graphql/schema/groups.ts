@@ -21,24 +21,24 @@ export interface IGraphQl_GroupCreateInput {
 }
 
 export const groupsSchemaTypes = `
-enum group_StringField {
+enum core_group_StringField {
   NAME
   DESCRIPTION
 }
 
-enum group_PeopleType {
+enum core_group_PeopleType {
   STUDENT
   TEACHER
 }
 
-type group_Type {
+type core_group_Type {
   id: IntID!
-  teachers: [user_Type]!
-  students: [user_Type]!
+  teachers: [core_user_Type]!
+  students: [core_user_Type]!
   name: String!
   description: String
-  owner: user_Type!
-  updater: user_Type
+  owner: core_user_Type!
+  updater: core_user_Type
   updatedAt: Date!
   createdAt: Date!
 }
@@ -46,7 +46,7 @@ type group_Type {
 
 export const groupsSchemaInputs = `
 # used by a teacher or admin to add a new group
-input group_CreateInput {
+input core_group_CreateInput {
     teacherIds: [IntID]
     studentIds: [IntID]
     name: String!
@@ -55,53 +55,53 @@ input group_CreateInput {
 `;
 
 export const groupSchemaQueries = `
-    group_Groups(ids: [IntID!]): [group_Type]!
+    core_group_Groups(ids: [IntID!]): [core_group_Type]!
 
-    group_GroupsForTeacher(
+    core_group_GroupsForTeacher(
       teacherId: IntID!
       nameFilter: String
       desc: Boolean
-    ): [group_Type]!
+    ): [core_group_Type]!
 
-    group_GroupsForStudent(
+    core_group_GroupsForStudent(
       studentId: IntID!
       nameFilter: String
       desc: Boolean
-    ): [group_Type]!
+    ): [core_group_Type]!
 
-    group_GroupsForOwner(
+    core_group_GroupsForOwner(
       ownerId: IntID!
       nameFilter: String
       desc: Boolean
-    ): [group_Type]!
+    ): [core_group_Type]!
 `;
 
 export const groupSchemaMutations = `
-    group_Create(
-      newGroup: group_CreateInput
+    core_group_Create(
+      newGroup: core_group_CreateInput
     ): MutationResponse!
 
-    group_Delete(id: IntID!): MutationResponse!
-    group_UpdateString(
+    core_group_Delete(id: IntID!): MutationResponse!
+    core_group_UpdateString(
       id: IntID!
-      field: group_StringField!
+      field: core_group_StringField!
       newStr: String!
     ): MutationResponse!
 
-    group_TransferOwnership(
+    core_group_TransferOwnership(
       id: IntID!
       newOwnerId: IntID!
     ): MutationResponse!
 
-    group_AddPeople(
+    core_group_AddPeople(
       id: IntID!
-      peopleType: group_PeopleType!
+      peopleType: core_group_PeopleType!
       userIds: [IntID!]!
     ): MutationResponse!
 
-    group_RemovePeople(
+    core_group_RemovePeople(
       id: IntID!
-      peopleType: group_PeopleType!
+      peopleType: core_group_PeopleType!
       userIds: [IntID!]!
     ): MutationResponse!
 `;
