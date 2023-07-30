@@ -33,7 +33,7 @@ class TestMdlBase extends Model {
 
 describe('Test registerDbPlugin', ()=>{
   it('Should register without descrition', ()=>{
-    registerDbPlugin('Test 1', "t1");
+    registerDbPlugin('Test 1', "t1", __dirname);
     const plug = findDbPlugin('Test 1') || {};
     expect(plug.name).toBe('Test 1');
     expect(plug.modelPrefix).toBe('t1');
@@ -48,9 +48,9 @@ describe('Test registerDbPlugin', ()=>{
     expect(plug.description).toBe('desc t2');
   })
   it('Should throw register twice', ()=>{
-    registerDbPlugin('Test 3', "t3");
+    registerDbPlugin('Test 3', "t3", __dirname);
     expect(()=>{
-      registerDbPlugin('Test 3', "t_3");
+      registerDbPlugin('Test 3', "t_3", __dirname);
     }).toThrow()
   });
 });
@@ -59,7 +59,7 @@ describe("Test registerDbModel", ()=>{
 
   it("Should register with name from Declaration", ()=>{
     class TestCls1 extends TestMdlBase {}
-    registerDbPlugin('testMdl1', 'tst1')
+    registerDbPlugin('testMdl1', 'tst1', __dirname)
     registerDbModel(TestCls1, 'testMdl1');
     const mdl = findDbModelEntry(TestCls1, 'testMdl1');
     expect(mdl?.model).toBe(TestCls1);
@@ -68,7 +68,7 @@ describe("Test registerDbModel", ()=>{
   });
   it("Should register with custom name", ()=>{
     class TestCls2 extends TestMdlBase {}
-    registerDbPlugin('testMdl2', 'tst2')
+    registerDbPlugin('testMdl2', 'tst2', __dirname)
     registerDbModel(TestCls2, 'testMdl2', 'customName');
     const mdl = findDbModelEntry(TestCls2, 'testMdl2');
     expect(mdl?.model).toBe(TestCls2);
@@ -83,7 +83,7 @@ describe("Test registerDbModel", ()=>{
   });
   it("Should fail to register twice to same plugin", ()=>{
     class TestCls4 extends TestMdlBase {}
-    registerDbPlugin('testMdl4','tst4');
+    registerDbPlugin('testMdl4','tst4', __dirname);
     registerDbModel(TestCls4, 'testMdl4');
     expect(()=>{
       registerDbModel(TestCls4, 'testMdl4')
@@ -91,8 +91,8 @@ describe("Test registerDbModel", ()=>{
   });
   it("Should fail to register twice to separate plugins", ()=>{
     class TestCls5 extends TestMdlBase {}
-    registerDbPlugin('testMdl5','tst5');
-    registerDbPlugin('testPlug5', 'tst5')
+    registerDbPlugin('testMdl5','tst5', __dirname);
+    registerDbPlugin('testPlug5', 'tst5', __dirname)
     registerDbModel(TestCls5, 'testMdl5');
     expect(()=>{
       registerDbModel(TestCls5, 'testPlug5')
@@ -100,7 +100,7 @@ describe("Test registerDbModel", ()=>{
   });
   it("Should fail to register to closed plugin", ()=>{
     class TestCls6 extends TestMdlBase {}
-    registerDbPlugin('testMdl6','tst6');
+    registerDbPlugin('testMdl6','tst6', __dirname);
     closeDbPlugin('testMdl5');
     expect(()=>{
       registerDbModel(TestCls6, 'testMdl5')
@@ -108,8 +108,8 @@ describe("Test registerDbModel", ()=>{
   });
   it("Should succed to register to another unclosed plugin", ()=>{
     class TestCls7 extends TestMdlBase {}
-    registerDbPlugin('testMdl7','tst7');
-    registerDbPlugin('testPlug7', 'tst7');
+    registerDbPlugin('testMdl7','tst7', __dirname);
+    registerDbPlugin('testPlug7', 'tst7', __dirname);
     closeDbPlugin('testMdl7')
     expect(()=>{
       registerDbModel(TestCls7, 'testPlug7')
@@ -132,7 +132,7 @@ describe("Test bootstrap mehods called", ()=>{
 
   it("Should call bootstrap", async ()=>{
     class TestB1 extends TestMdlBase {}
-    registerDbPlugin('testB1', 'b1');
+    registerDbPlugin('testB1', 'b1', __dirname);
     registerDbModel(TestB1, 'testB1');
     await runDefineDb();
     expect(bootstrapCalled).toBe(true);
@@ -141,17 +141,17 @@ describe("Test bootstrap mehods called", ()=>{
   });
   it("Should throw registerPlugin after definedb called", async ()=>{
     if (!sequelize) {
-      registerDbPlugin('testB2', 'b2');
+      registerDbPlugin('testB2', 'b2', __dirname);
       await runDefineDb();
     }
     expect(()=>{
-      registerDbPlugin('testB3', 'b3');
+      registerDbPlugin('testB3', 'b3', __dirname);
     }).toThrow()
   });
   it("Should throw registerModel after definedb called", async ()=>{
     class TestB4 extends TestMdlBase {}
     if (!sequelize) {
-      registerDbPlugin('testB4', 'b4');
+      registerDbPlugin('testB4', 'b4', __dirname);
       await runDefineDb();
     }
     expect(()=>{

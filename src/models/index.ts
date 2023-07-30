@@ -5,9 +5,11 @@ import {
   SyncOptions,
   QueryInterface
 } from "sequelize";
-import fs from "fs";
+import * as fsAwait from "node:fs/promises";
+import fs from 'node:fs';
 
-import { getClassName } from "../helpers/common";
+import { getClassName, getUserSetting, setUserSetting } from "../helpers/common";
+import path from "node:path";
 
 /**
  * All DB models plugins should use must implement this
@@ -20,6 +22,7 @@ export interface DbModel extends ModelStatic<any> {
 export declare type dbPlugin = {
   name: string,
   modelPrefix: string,
+  dirPath: string,
   description?: string,
   closed?: boolean
 }
@@ -66,12 +69,14 @@ export const findDbModelEntry = (model: DbModel, plugin: string) => {
  *
  * @param {string} name The name of the plugin
  * @param {string} modelPrefix Prefix with this
+ * @param {string} dirPath The dir where all of this plugins model files are located
  * @param {string} [description] Optional description for plugin
  * @returns {dbPlugin} The plugin thats been created
  */
 export function registerDbPlugin(
   name:string,
   modelPrefix: string,
+  dirPath: string,
   description?:string
 ): void {
   if (isDefined)
@@ -80,7 +85,7 @@ export function registerDbPlugin(
   const exists = dbPlugins.find(p=>p.name === name);
   if (exists)
       throw new Error(`Plugin ${name} already registered`);
-  const plug = {name,modelPrefix,description}
+  const plug = {name,modelPrefix,dirPath,description}
   dbPlugins.push(plug);
 }
 
@@ -199,7 +204,7 @@ export async function defineDb(
     opt.sync.force : false,
   // if true if alters (recreates the database on startup)
   alter = typeof opt.sync?.alter !== 'undefined' ?
-    opt.sync.alter : true;
+    opt.sync.alter : await shouldAlterDb();
 
   const sequelize = new Sequelize(connectionString, opt);
 
@@ -212,15 +217,35 @@ export async function defineDb(
   for (const mdlEntry of modelClasses)
     await mdlEntry.model.bootstrapAfterHook(sequelize);
 
-  await sequelize.sync({
-    force, alter,
-    hooks: alter
-  });
+  if (alter || force) {
+    await sequelize.sync({
+      force, alter,
+      hooks: alter
+    });
+    setUserSetting('lastDbAlter', new Date().getTime());
+  }
 
   isDefined = true;
 
   console.log('Started database');
   return sequelize
+}
+
+const shouldAlterDb = async ()=>{
+  let lastDbAlter = await getUserSetting('lastDbAlter') || 0,
+      lastModifiedMs = lastDbAlter;
+
+  for (const plug of dbPlugins) {
+    const files = await fsAwait.readdir(plug.dirPath)
+    for (const file of files.filter(
+      f=>f.startsWith(plug.modelPrefix) && !f.endsWith('.map')))
+    {
+      const stat = await fsAwait.stat(path.join(plug.dirPath, file));
+      lastModifiedMs = Math.max(lastModifiedMs, stat.mtimeMs);
+    }
+  }
+
+  return lastDbAlter < lastModifiedMs;
 }
 
 const genModelName = (entry: mdlEntry) => {
@@ -251,12 +276,14 @@ const genInitOptions = (
   registerDbPlugin(
     "Core",
     "core",
+    __dirname,
     `All models for the core system`);
 
   // read sync to make sure core is initialized before any plugins
-  const files = fs.readdirSync(__dirname);
+  const plug = findDbPlugin('Core');
+  const files = fs.readdirSync(plug.dirPath);
   files
-    .filter(f=>f.startsWith('core_') && !f.endsWith('.map'))
+    .filter(f=>f.startsWith(plug.modelPrefix) && !f.endsWith('.map'))
     .forEach(mdlFile=>{
       //console.log(`init core model ${mdlFile}`)
       require(`./${mdlFile.replace(/\.[jt]s?$/, "")}`);

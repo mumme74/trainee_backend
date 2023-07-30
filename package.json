@@ -4,8 +4,8 @@
   "description": "Backend to Trainee system. It's a system that trains students.",
   "main": "server/index.js",
   "scripts": {
-    "test": "NODE_ENV=test && node_modules/jest/bin/jest.js $INIT_CWD/src",
-    "build": "tsc --build",
+    "test": "NODE_ENV=test && npm run build && node_modules/jest/bin/jest.js $INIT_CWD/src",
+    "build": "tsc --build --incremental",
     "postbuild": "npm run copyFiles",
     "copyFiles": "copyfiles --error --up 1 src/views/*.* build",
     "start-dev": "NODE_ENV=development nodemon -e ts,js --watch src/ --exec \"npm run build && node build/src/index.js --harmony\"",
