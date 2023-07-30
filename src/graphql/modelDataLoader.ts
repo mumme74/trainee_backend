@@ -49,12 +49,17 @@ export default class ModelDataLoader<V, K = number, C = K>
       return model.findAll({
         where: {[field]: {[Op.in]: ids}}
       }).then((res: any[])=>{
+        if (res.length === ids.length) return res;
+        // where in(...) might not load all ids
+        // scan for ids to make sure
         return ids.map((id:K)=>{
-          return res.find(r=>r.id === id) ||
+          return res.find(r=>r[field] === id) ||
             new Error(`model ${
               getClassName(model)
-            }.id=${id} not found`)
+            }.${field}=${id} not found`)
         });
+      }, reason=>{
+        return [reason instanceof Error ? reason : new Error(reason)];
       })
     }
   }

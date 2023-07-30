@@ -1,5 +1,5 @@
 import ModelDataLoader from "../modelDataLoader";
-import { Sequelize, Op, QueryTypes, Model } from "sequelize";
+import { Sequelize, Op, QueryTypes, Model, Transaction, ModelStatic } from "sequelize";
 
 import { composeErrorResponse, rolesFilter, tryCatch } from "../helpers";
 import { isAdmin, isSuperAdmin } from "../../helpers/userHelpers";
@@ -19,8 +19,9 @@ import { User } from "../../models/core_user";
 import { GroupStudent } from "../../models/core_group_student";
 import { eRolesAvailable } from "../../models/core_role";
 import { boolean, number, string } from "joi";
-import { groupTeacherLoader } from "./groupTeachers";
-import { groupStudentLoader } from "./groupStudents";
+import { groupTeacherByGroupLoader, groupTeacherLoader } from "./groupTeachers";
+import { groupStudentByGroupLoader, groupStudentLoader } from "./groupStudents";
+import { organizationLoader } from "./organizations";
 
 export const groupLoader = new ModelDataLoader<Group>(Group);
 
@@ -32,8 +33,7 @@ export const transformGroup = (group: Group):
     teachers: async () => {
       const ids = (await GroupTeacher.findAll({
         where: {groupId:group.id},
-        attributes:["id"]
-      })).map(t=>t.id);
+      })).map(t=>t.teacherId);
       const users = (await userLoader.loadMany(ids))
                       .filter(u=>u instanceof User) as User[];
       return users.map(u=>transformUser(u));
@@ -41,8 +41,7 @@ export const transformGroup = (group: Group):
     students: async () => {
       const ids = (await GroupStudent.findAll({
         where: {groupId:group.id},
-        attributes:["id"]
-      })).map(t=>t.id);
+      })).map(t=>t.studentId);
       const users = (await userLoader.loadMany(ids))
                       .filter(u=>u instanceof User) as User[];
       return users.map(u=>transformUser(u));
@@ -56,6 +55,11 @@ export const transformGroup = (group: Group):
       const user = await userLoader.load(group.updatedBy);
       return transformUser(user);
     },
+    owner: async ()=> {
+      if (!group.ownerId) return;
+      const user = await userLoader.load(group.ownerId);
+      return transformUser(user);
+    }
   };
 };
 
@@ -77,19 +81,21 @@ const groupsFor = async (
 
   const replacements: (number|string)[] = [userId];
   const t2name = lookInTeacher ? 'Teachers' : 'Students';
+  const fld = lookInTeacher ? 'teacherId' : 'studentId';
   if (filter.length > 2) replacements.push(filter)
-  const groupIds = (await (Group.sequelize as Sequelize).query(`
+  const grps = (await (Group.sequelize as Sequelize).query(`
     SELECT grp.id FROM core_Groups as grp
     INNER JOIN core_Group${t2name} as t2
     ON grp.id=t2.groupId
-    WHERE t2.userId=?
+    WHERE t2.${fld}=?
     ${filter.length>2 ? " AND grp.name LIKE '?%'" : "" }
     ORDER BY grp.name ${descending ? "DESC" : "ASC"} `,
   {
     replacements,
     type: QueryTypes.SELECT
-  })).map(g=>+g);
+  })) as {id:number}[];
 
+  const groupIds = grps.map(g=>g.id);
   const groups = (await groupLoader.loadMany(groupIds))
                   .filter(g=>g instanceof Group) as Group[];
 
@@ -129,34 +135,109 @@ const updateStr = async (
   };
 };
 
+const createGroup = async (
+  newGroup: IGraphQl_GroupCreateInput,
+  req: AuthRequest
+):
+  Promise<IGraphQl_MutationResponse> =>
+{
+  const user = req.user.user;
+  const {
+    teacherIds = [], studentIds = [],
+    name, description
+  } = newGroup;
+
+  if (!await isAdmin(req)) {
+    if (teacherIds.find((id) => id !== user.id))
+      throw new UserError(
+        "A Teacher can't set other teachers to this group!\n Must have admin role for that!",
+      );
+  }
+
+  if (req.user.roles.indexOf(eRolesAvailable.teacher)>-1 &&
+      (!teacherIds.find((id) => id === user.id)))
+  {
+    teacherIds.push(user.id);
+  }
+
+  const group = await (Group.sequelize as Sequelize).transaction(
+    async (transaction: Transaction)=>
+    {
+      const group = await Group.create({
+        name, description, ownerId:user.id
+      }, {transaction});
+      if (!group) throw new Error('Could not create new group, database error')
+
+      for (const teacherId of teacherIds) {
+        const person = await GroupTeacher.create({
+          teacherId, groupId: group.id, createdBy: user.id,
+        }, {transaction});
+        if (!person) throw new Error('Could not add teacher to new group');
+      }
+
+      for (const studentId of studentIds) {
+        const person = await GroupStudent.create({
+          studentId, groupId: group.id, createdBy: user.id,
+        }, {transaction});
+        if (!person) throw new Error('Could not add student to new group');
+      }
+
+      return group;
+    }
+  );
+
+  return {
+    success: true,
+    nrAffected: 1,
+    ids: [group.id],
+    __typename: "OkResponse",
+  };
+}
+
 const deleteGroup = async (id: number, req: AuthRequest):
   Promise<IGraphQl_MutationResponse> =>
 {
   const user = req.user.user,
         group = await groupLoader.load(id);
   if (!group) throw new UserError("Group not found!");
-  if (!await isAdmin(req)) {
-    if (group.ownerId !== user.id)
-      throw new UserError("You can't delete a group you don't own")
+  do {
+    if (await isSuperAdmin(req)) break;
+    if (await isAdmin(req)) {
+      if (group.ownerId === null) break;
+      const owner = await userLoader.load(group.ownerId);
 
-    // can only delete a class where we are the sole teacher attched to the group
-    const res = await GroupTeacher.findAll({
-      where:{
-        [Op.and]:[
-          {groupId:id},
-          {userId:{[Op.not]:user.id}}
-        ]
-      }
-    });
+      if (owner.organizationId !== user.organizationId)
+        throw new UserError(
+          "You can't delete a group from another organization");
 
-    if (!res) throw new UserError(
+    } else if (req.user.roles.indexOf(eRolesAvailable.teacher)) {
+      if (group.ownerId !== user.id)
+        throw new UserError("You can't delete a group you don't own")
+
+      // can only delete a class where we are the sole teacher attched to the group
+      const res = await GroupTeacher.findAll({
+        where:{
+          [Op.and]:[
+            {groupId:id},
+            {userId:{[Op.not]:user.id}}
+          ]
+        }
+      });
+
+      if (!res) throw new UserError(
         "You can only delete a group you alone handle as a teacher!");
-  }
 
-  group.destroy();
-  const res = group.save();
+    } else
+      throw new UserError("You can't delete a group as student");
+
+  } while(false);
+
+  await group.destroy();
+  const res = await group.save();
   if (!res)
     throw new UserError(`Could not delete group ${group.name}`);
+
+  groupLoader.clear(group.id);
 
   return {
     __typename: "OkResponse",
@@ -241,23 +322,35 @@ const addPeople = async (
 {
   // validate throws if invalid
   const isTeacher =
-    await addRemovePeopleValidate(id, req,peopleType);
+    await addRemovePeopleValidate(id, req, peopleType);
 
-  // Load all or fail
+  const user = req.user.user,
+        fld = isTeacher ? 'teacherId' : 'studentId',
+        model = isTeacher ? GroupTeacher : GroupStudent;
+
+  // don't add twice
+  const prev = (await (model as ModelStatic<any>).findAll({
+    where:{[Op.and]:{
+      [fld]:{[Op.in]:userIds}},
+      groupId:id
+    }
+  })).map(p=>p[fld]);
+  userIds = userIds.filter(u=>prev.indexOf(u)===-1);
+
+  // Load all or fail (throws)
   const users = await userLoader.loadAll(userIds);
 
-  const t = await (Group.sequelize as Sequelize).transaction()
-  for (const person of users) {
-    const obj = { userId:person.id, groupId: id }
-    const instans = await (isTeacher ?
-                            GroupTeacher.create(obj) :
-                              GroupStudent.create(obj));
-    if (!instans) {
-      t.rollback();
-      throw new Error(`Failed to save person ${person.fullName}`)
+  await (Group.sequelize as Sequelize).transaction(
+    async (transaction: Transaction) => {
+      for (const u of users) {
+        const res = await (model as ModelStatic<any>).create(
+          {[fld]:u.id, groupId:id, createdBy:user.id },
+          {transaction}
+        )
+        if (!res)
+          throw new Error(`Failed to save person ${u.fullName}`);
     }
-  }
-  await t.commit();
+  });
 
   return {
     nrAffected: users.length,
@@ -277,23 +370,19 @@ const removePeople = async (
     await addRemovePeopleValidate(id, req,peopleType);
 
   // Promise to remove people from group
-  const loader = isTeacher ?
-    groupTeacherLoader : groupStudentLoader;
-  const people = await loader.loadAll(userIds);
-
-  const t = await (Group.sequelize as Sequelize).transaction()
-  for (const person of people) {
-    try {
-      await person.destroy();
-    } catch(err) {
-      await t.rollback();
-      throw err;
+  const model = isTeacher ? GroupTeacher : GroupStudent,
+        field = isTeacher ? 'teacherId' : 'studentId';
+  const nr = await (Group.sequelize as Sequelize).transaction(
+    async (t:Transaction)=>{
+      return await (model as ModelStatic<any>).destroy({
+        where: {[field]:{[Op.in]:userIds}},
+        transaction:t
+      });
     }
-  }
-  await t.commit();
+  );
 
   return {
-    nrAffected: people.length,
+    nrAffected: nr,
     success: true,
     ids: userIds,
     __typename: 'OkResponse'
@@ -306,20 +395,18 @@ const removePeople = async (
 export default {
   // queries
   //groups(ids: [ID!]!): [GroupType]!
-  groups: tryCatch('groups', async ({ ids }: { ids: number[] }): Promise<IGraphQl_GroupType[]> => {
-    try {
+  group_Groups: tryCatch('groups',
+    async ({ ids }: { ids: number[] }): Promise<IGraphQl_GroupType[]> =>
+    {
       const groups = (await groupLoader.loadMany(ids))
-                      .filter(g=>g instanceof Group) as Group[];
+                       .filter(g=>g instanceof Group) as Group[];
       if (!groups) throw new UserError("Group[s] not found!");
       return groups.map(grp=>transformGroup(grp));
-
-    } catch (err) {
-      throw err;
     }
-  }),
+  ),
 
   //groupsForTeacher(teacherId: ID! nameFilter: string desc: boolean): [GroupType]!
-  groupsForTeacher: tryCatch('groupsForTeacher', rolesFilter({anyOf:[
+  group_GroupsForTeacher: tryCatch('groupsForTeacher', rolesFilter({anyOf:[
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
       eRolesAvailable.super
@@ -338,7 +425,7 @@ export default {
   )),
 
   //groupsForStudent(studentId: ID! nameFilter: string): [GroupType]!
-  groupsForStudent: tryCatch('groupsFroStudent', async ({
+  group_GroupsForStudent: tryCatch('groupsForStudent', async ({
     studentId,
     nameFilter = "",
     desc = false
@@ -350,7 +437,7 @@ export default {
     return await groupsFor(studentId, nameFilter, false, desc);
   }),
 
-  groupsAsOwner: tryCatch('groupsAsOwner', async ({
+  group_GroupsForOwner: tryCatch('groupsForOwner', async ({
     ownerId,
     filter = "",
     desc = false
@@ -359,24 +446,19 @@ export default {
     filter?: string,
     desc?: boolean
   }): Promise<IGraphQl_GroupType[]> => {
-    try {
-      const where = filter.length > 2 ? {
-        [Op.and]:[
-          {ownerId},
-          {name:{[Op.like]:`${filter}%`}}
-        ]
-      } : {ownerId}
+    const where = filter.length > 2 ? {
+      [Op.and]:[
+        {ownerId},
+        {name:{[Op.like]:`${filter}%`}}
+      ]
+    } : {ownerId}
 
-      const groups = await Group.findAll({where});
-      return groups.map(g=>transformGroup(g));
-
-    } catch (err) {
-      throw err;
-    }
+    const groups = await Group.findAll({where});
+    return groups.map(g=>transformGroup(g));
   }),
 
   // groupCreate(newGroup: GroupCreateInput): MutationResponse
-  groupCreate: tryCatch('groupCreate', rolesFilter({anyOf:[
+  group_Create: tryCatch('groupCreate', rolesFilter({anyOf:[
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
       eRolesAvailable.super
@@ -388,64 +470,12 @@ export default {
       },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
-      const user = req.user.user;
-      const {
-        teacherIds = [], studentIds = [],
-        name, description
-      } = newGroup;
-
-      if (!await isAdmin(req)) {
-        if (teacherIds.find((id) => id !== user.id))
-          throw new UserError(
-            "A Teacher can't set other teachers to this group!\n Must have admin role for that!",
-          );
-      }
-
-      if (req.user.roles.indexOf(eRolesAvailable.teacher)>-1 &&
-          (!teacherIds.find((id) => id === user.id)))
-      {
-        teacherIds.push(user.id);
-      }
-
-      let group;
-      const t = await (Group.sequelize as Sequelize).transaction();
-      try {
-        group = await Group.create({
-          name, description, ownerId:user.id
-        });
-        if (!group) throw new Error('Could not create new group, database error')
-
-        for (const userId of teacherIds) {
-          const person = GroupTeacher.create({
-            userId, groupId: group.id
-          });
-          if (!person) throw new Error('Could not add teacher to new group');
-        }
-
-        for (const userId of studentIds) {
-          const person = GroupStudent.create({
-            userId, groupId: group.id
-          });
-          if (!person) throw new Error('Could not add student to new group');
-        }
-      } catch(err) {
-        await t.rollback();
-        throw err;
-      }
-
-      await t.commit();
-
-      return {
-        success: true,
-        nrAffected: 1,
-        ids: [group.id],
-        __typename: "OkResponse",
-      };
-    },
+      return createGroup(newGroup, req);
+    }
   )),
 
   // groupDelete(id: ID!): MutationResponse
-  groupDelete: tryCatch('groupDelete', rolesFilter({anyOf:[
+  group_Delete: tryCatch('groupDelete', rolesFilter({anyOf:[
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
       eRolesAvailable.super
@@ -459,7 +489,7 @@ export default {
   )),
 
   // groupTransferOwnership(id: Int! newOwnerId: Int!): MutationResponse!
-  groupTransferOwnership: tryCatch('groupTransferOwnership',
+  group_TransferOwnership: tryCatch('groupTransferOwnership',
     rolesFilter({anyOf:[
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
@@ -473,7 +503,7 @@ export default {
   )),
 
   // groupUpdateString(id: ID! field: GroupStringField name: String!): MutationResponse
-  groupUpdateString: tryCatch('groupUpdateString',
+  group_UpdateString: tryCatch('groupUpdateString',
     rolesFilter({anyOf:[
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
@@ -492,7 +522,7 @@ export default {
   )),
 
   // groupAddStudents(id: ID! peopleType: GroupPeopleType! userIds: [ID!]!): MutationResponse
-  groupAddPeople: tryCatch('groupAddPeople',
+  group_AddPeople: tryCatch('groupAddPeople',
     rolesFilter({anyOf:[
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
@@ -511,7 +541,7 @@ export default {
   )),
 
   // groupRemovePeople(id: ID! peopleType: GroupPeopleType!  studentId: [ID!]!): MutationResponse
-  groupRemovePeople: tryCatch('groupRemovePeople',
+  group_RemovePeople: tryCatch('groupRemovePeople',
     rolesFilter({anyOf:[
       eRolesAvailable.teacher,
       eRolesAvailable.admin,

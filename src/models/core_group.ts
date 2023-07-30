@@ -29,7 +29,7 @@ export class Group extends Model {
         allowNull: false,
         validate: {
           is: {
-            args: /^[^\s\d]\S+$/,
+            args: /^[^\s\d][\S ]+$/,
             msg: 'Not a valid name'
           }
         }

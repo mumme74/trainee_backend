@@ -10,9 +10,9 @@ export interface IGraphQl_PictureType {
 };
 
 export const picturesSchemaTypes = `
-type PictureType {
+type picture_Type {
   id: IntID!
-  owner: UserType
+  owner: user_Type
   blob: Blob!
   title: String
   mime: String!

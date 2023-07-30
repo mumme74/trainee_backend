@@ -10,7 +10,7 @@ import { AuthRequest } from "../../types";
 import { composeErrorResponse, rolesFilter } from "../helpers";
 import { UserError } from "../../helpers/errorHelpers";
 import { User } from "../../models/core_user";
-import { Op, Sequelize } from "sequelize";
+import { Op, Sequelize, Transaction } from "sequelize";
 import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../../models/core_role";
 import { organizationLoader, transformOrganization } from "./organizations";
 import { Organization, fetchOrganizationNr } from "../../models/core_organization";
@@ -54,7 +54,7 @@ export const transformUser = (user: User):
 
 export default {
   // queries
-  users: rolesFilter(
+  user_Users: rolesFilter(
     {
       anyOf: [
         eRolesAvailable.admin,
@@ -87,50 +87,52 @@ export default {
     },
   ),
 
-  userAvailableRoles: (): string[] => {
+  user_AvailableRoles: (): string[] => {
     return rolesAvailableKeys;
   },
 
   // mutations
-  userCreateStudents: rolesFilter({
+  user_CreateStudents: rolesFilter({
     anyOf: [
       eRolesAvailable.teacher,
       eRolesAvailable.admin,
       eRolesAvailable.super
     ]},
     async (
-      { input }: { input: IGraphQl_UserCreateUsersInput },
+      { bulkUsers }: { bulkUsers: IGraphQl_UserCreateUsersInput },
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
-      const t = await (User.sequelize as Sequelize).transaction();
       try {
-        // find optional organization from input.domain
-        const orgId = input.domain ?
-          fetchOrganizationNr(input.domain) : undefined;
+        return await (User.sequelize as Sequelize).transaction(
+          async (transaction: Transaction)=>{
+            // find optional organization from input.domain
+            const orgId = bulkUsers.domain ?
+              fetchOrganizationNr(bulkUsers.domain) : undefined;
 
-        const ids = [];
-        for (const newUser of input.users) {
-          const user = await createUserAndRoles(newUser, req);
-          createUserAvatar(user, newUser);
-          createOAuthEntry(user, newUser);
-          ids.push(user.id);
-        }
-        await t.commit();
+            const ids = [];
+            for (const newUser of bulkUsers.users) {
+              const user = await createUserAndRoles(
+                newUser, req, transaction);
+              createUserAvatar(user, newUser, transaction);
+              createOAuthEntry(user, newUser, transaction);
+              ids.push(user.id);
+            }
 
-        return {
-          success: true,
-          nrAffected: ids.length,
-          ids,
-          __typename: "OkResponse",
-        };
+            return {
+              success: true,
+              nrAffected: ids.length,
+              ids,
+              __typename: "OkResponse",
+            };
+          }
+        );
       } catch (err: any) {
-        t.rollback();
         return composeErrorResponse(err);
       }
     },
   ),
 
-  userChangeRoles: rolesFilter(
+  user_ChangeRoles: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id, roles }: { id: number; roles: string[] },
@@ -178,7 +180,7 @@ export default {
     },
   ),
 
-  userMoveToDomain: rolesFilter(
+  user_MoveToDomain: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id, domain }: { id: number; domain?: string },
@@ -224,7 +226,7 @@ export default {
     },
   ),
 
-  userSetSuperUser: rolesFilter(
+  user_SetSuperUser: rolesFilter(
     { anyOf: eRolesAvailable.super },
     async ({ id }: { id: number }):
       Promise<IGraphQl_MutationResponse> =>
@@ -234,7 +236,8 @@ export default {
         if (!user) throw new UserError("User not found!");
 
         const [role, created] = await Role.findOrCreate({
-          where:{[Op.and]:[{userId:id},{role:eRolesAvailable.super}]}
+          where:{[Op.and]:[{userId:id},{role:eRolesAvailable.super}]},
+          defaults:{userId:user.id, role:eRolesAvailable.super}
         });
 
         return {
@@ -249,7 +252,7 @@ export default {
     },
   ),
 
-  userDeleteUser: rolesFilter(
+  user_DeleteUser: rolesFilter(
     { anyOf: [eRolesAvailable.admin, eRolesAvailable.super] },
     async (
       { id }: { id: number },
@@ -261,7 +264,7 @@ export default {
         const where = req.user.roles.indexOf(eRolesAvailable.super)<0 ?
             { where: {[Op.and]:[{id},{organizationId}]}} :
               { where: {id} };
-        const res = await User.destroy({where});
+        const res = await User.destroy(where);
 
         if (!res)
           throw new UserError("User not found, could not delete.");
@@ -282,14 +285,19 @@ export default {
 const createUserAndRoles = async (
   newUser: IGraphQl_UserCreateType,
   req: AuthRequest,
+  transaction: Transaction
 ): Promise<User> => {
+  console.log('createUserAndRoles', 'before User.create')
   const user = await User.create({
     userName: newUser.userName,
     firstName: newUser.firstName,
     lastName: newUser.lastName,
     email: newUser.email,
     updatedBy: req.user.user.id,
-  });
+  },{transaction});
+
+  console.log('createUserAndRoles', 'after User.create')
+
   if (!user)
     throw new UserError(`Failed to create ${newUser.userName}`);
 
@@ -298,12 +306,14 @@ const createUserAndRoles = async (
                         .map(r=>r.role)
                         .reduce((p, v)=>(p<v?v:p))
   for (const roleStr of (newUser?.roles || [])) {
-    const roleNr = rolesAvailableNrs[roleStr as any];
+    const roleNr = +eRolesAvailable[roleStr as any];
 
-    // make sure we only add with lower privs them ourselfs
+    // make sure we only add with lower privs than ourselfs
     if (roleNr >= highestRole) continue;
 
-    const r = await Role.create({userId: user.id, roleNr});
+    const r = await Role.create({
+      userId: user.id, role:roleNr
+    },{transaction});
     if (!r) throw new UserError(
               `Failed to create roles for ${newUser.userName}`);
   }
@@ -316,14 +326,15 @@ const createUserAndRoles = async (
  */
 const createUserAvatar = async (
   user: User,
-  newUser: IGraphQl_UserCreateType
+  newUser: IGraphQl_UserCreateType,
+  transaction: Transaction
 ) => {
   if (newUser.picture) {
     let pic = await Picture.create({
       userId: user.id,
       blob: Buffer.from(newUser.picture),
       mime: "remote"
-    });
+    },{transaction});
 
     const err = new UserError(
       `Failed to create user avatar picture for ${newUser.userName}`);
@@ -340,14 +351,15 @@ const createUserAvatar = async (
  */
 const createOAuthEntry = async (
   user: User,
-  newUser: IGraphQl_UserCreateType
+  newUser: IGraphQl_UserCreateType,
+  transaction: Transaction
 ) => {
   if (newUser.oauthId && newUser.oauthProvider) {
     const oauth = await OAuth.create({
       userId: user.id,
       provider: newUser.oauthProvider,
       idString: newUser.oauthId
-    });
+    },{transaction});
     if (!oauth)
       throw new UserError(
         `Failed to create OAuth entry for ${newUser.userName}`);

@@ -13,13 +13,13 @@ export interface IGraphQL_OrganizationType {
 };
 
 export const organizationSchemaTypes = `
-type OrganizationType {
+type organization_Type {
   id: IntID!
   name: String!
   domain: String!
-  picture: PictureType
+  picture: picture_Type
   description: String!
-  updatedBy: UserType
+  updatedBy: user_Type
   createdAt: Date!
   updataedAt: Date!
 }

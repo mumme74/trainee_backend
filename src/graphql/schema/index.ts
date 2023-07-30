@@ -101,7 +101,7 @@ const schemaStr = `
         mutation: RootMutation
     }
 `;
-//console.log(schemaStr)
+// console.log(schemaStr)
 
 const graphQlSchema = buildSchema(schemaStr);
 export default graphQlSchema;

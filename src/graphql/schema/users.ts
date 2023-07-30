@@ -40,21 +40,21 @@ enum Roles {
   ${rolesAvailableKeys.join('\n  ')}
 }
 
-type UserType {
+type user_Type {
     id: IntID!
     fullName: String!
     firstName: String!
     lastName: String!
     email: String!
-    picture: PictureType
-    organization: OrganizationType!
+    picture: picture_Type
+    organization: organization_Type!
     roles: [Roles!]!
     updatedAt: Date!
     createdAt: Date!
-    updater: UserType
+    updater: user_Type
 }
 
-input UserCreateType {
+input user_UserCreateType {
   firstName: String!
   lastName: String!
   userName: String!
@@ -69,33 +69,44 @@ input UserCreateType {
 
 export const usersSchemaInputs = `
 # Used by teacher to create a student
-input UserCreateUsersInput {
+input user_CreateUsersInput {
   domain: String
-  users: [UserCreateType!]!
+  users: [user_UserCreateType!]!
 }
 `;
 
 export const usersSchemaQueries = `
-    users(ids: [IntID!]!): [UserType!]!
-    userAvailableRoles: [String!]!
+    user_Users(ids: [IntID!]!): [user_Type!]!
+    user_AvailableRoles: [Roles!]!
 `;
 
 export const usersSchemaMutations = `
-    # Used by teacher to create a student, must have teacher role to do this
-    userCreateStudent(newUser: UserCreateUsersInput): MutationResponse
+    # Used by teacher to create a student,
+    # must have teacher role to do this
+    user_CreateStudents(
+      bulkUsers: user_CreateUsersInput!
+    ): MutationResponse
 
-    # must have admin roles to change this, cant set user to super admin
-    userChangeRoles(id: IntID!, roles: [String!]!): MutationResponse
+    # must have admin roles to change this,
+    # cant set user to super admin
+    user_ChangeRoles(
+      id: IntID!,
+      roles: [Roles!]!
+    ): MutationResponse
 
-    # move user to domain, must have admin priviledges to move anyone to our domain
-    # and then a admin can only move users which have empty domain
+    # move user to domain, must have admin priviledges
+    #  to move anyone to our domain
+    # and then a admin can only move users which have
+    # empty domain.
     # super users can do anything
-    userMoveToDomain(id: IntID! domain: String): MutationResponse
+    user_MoveToDomain(
+      id: IntID!
+      domain: String
+      ): MutationResponse
 
     # must have super admin role to set a user to this priviledge
-    userSetSuperUser(id: IntID!): MutationResponse
+    user_SetSuperUser(id: IntID!): MutationResponse
 
     # must be admin to delete a user in same domain, super user to delete any users
-    userDeleteUser(id: IntID!): MutationResponse
-
+    user_DeleteUser(id: IntID!): MutationResponse
 `;

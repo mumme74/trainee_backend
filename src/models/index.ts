@@ -185,7 +185,8 @@ export async function initDb() {
 
   const connectionString = `mysql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}`;
   return await defineDb(connectionString, {
-    logging: process.env.NODE_ENV !== 'production'
+    logging: process.env.NODE_ENV !== 'production' ?
+      console.log : console.log
   });
 }
 

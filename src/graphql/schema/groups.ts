@@ -10,6 +10,7 @@ export interface IGraphQl_GroupType {
   updatedAt: Date;
   createdAt: Date;
   updater?: () => Promise<IGraphQl_UserType | undefined>;
+  owner?: () => Promise<IGraphQl_UserType | undefined>;
 }
 
 export interface IGraphQl_GroupCreateInput {
@@ -20,23 +21,24 @@ export interface IGraphQl_GroupCreateInput {
 }
 
 export const groupsSchemaTypes = `
-enum GroupStringField {
+enum group_StringField {
   NAME
   DESCRIPTION
 }
 
-enum GroupPeopleType {
+enum group_PeopleType {
   STUDENT
   TEACHER
 }
 
-type GroupType {
+type group_Type {
   id: IntID!
-  teachers: [UserType]!
-  students: [UserType]!
+  teachers: [user_Type]!
+  students: [user_Type]!
   name: String!
   description: String
-  updater: UserType!
+  owner: user_Type!
+  updater: user_Type
   updatedAt: Date!
   createdAt: Date!
 }
@@ -44,7 +46,7 @@ type GroupType {
 
 export const groupsSchemaInputs = `
 # used by a teacher or admin to add a new group
-input GroupCreateInput {
+input group_CreateInput {
     teacherIds: [IntID]
     studentIds: [IntID]
     name: String!
@@ -53,46 +55,53 @@ input GroupCreateInput {
 `;
 
 export const groupSchemaQueries = `
-    groups(ids: [IntID!]!): [GroupType]!
-    groupsForTeacher(
+    group_Groups(ids: [IntID!]): [group_Type]!
+
+    group_GroupsForTeacher(
       teacherId: IntID!
       nameFilter: String
       desc: Boolean
-    ): [GroupType]!
-    groupsForStudent(
+    ): [group_Type]!
+
+    group_GroupsForStudent(
       studentId: IntID!
       nameFilter: String
       desc: Boolean
-    ): [GroupType]!
-    groupsForOwner(
+    ): [group_Type]!
+
+    group_GroupsForOwner(
       ownerId: IntID!
       nameFilter: String
       desc: Boolean
-    ): [GroupType]!
+    ): [group_Type]!
 `;
 
 export const groupSchemaMutations = `
-    groupCreate(
-      newGroup: GroupCreateInput
+    group_Create(
+      newGroup: group_CreateInput
     ): MutationResponse!
-    groupDelete(id: IntID!): MutationResponse!
-    groupUpdateString(
+
+    group_Delete(id: IntID!): MutationResponse!
+    group_UpdateString(
       id: IntID!
-      field: GroupStringField!
+      field: group_StringField!
       newStr: String!
     ): MutationResponse!
-    groupTransferOwnership(
+
+    group_TransferOwnership(
       id: IntID!
       newOwnerId: IntID!
     ): MutationResponse!
-    groupAddPeople(
+
+    group_AddPeople(
       id: IntID!
-      peopleType: GroupPeopleType!
-      userIds: [Int!]!
+      peopleType: group_PeopleType!
+      userIds: [IntID!]!
     ): MutationResponse!
-    groupRemovePeople(
+
+    group_RemovePeople(
       id: IntID!
-      peopleType: GroupPeopleType!
+      peopleType: group_PeopleType!
       userIds: [IntID!]!
     ): MutationResponse!
 `;

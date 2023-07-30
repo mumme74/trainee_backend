@@ -12,9 +12,11 @@ import {
 } from "../helpers/password";
 import { Organization } from "./core_organization";
 
-const nameValidator = {
-  args: /^[^\s].*\S+$/,
-  msg: 'Not a valid name'
+const nameValidator = (fld?:string)=>{
+  return {
+    args: /^[^\s].*\S+$/,
+    msg: `Not a valid ${fld || "name"}`
+  }
 };
 
 export class User extends Model {
@@ -81,17 +83,17 @@ export class User extends Model {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
-        validate:{ is: nameValidator }
+        validate:{ is: nameValidator("userName") }
       },
       firstName:{
         type: DataTypes.STRING,
         allowNull: false,
-        validate: { is: nameValidator }
+        validate: { is: nameValidator("firstName") }
       },
       lastName:{
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {is: nameValidator }
+        validate: {is: nameValidator("lastName") }
       },
       email:{
         type: DataTypes.STRING,
@@ -131,14 +133,13 @@ export class User extends Model {
       paranoid: true, // recoverable delete
       hooks: {
         ...options.hooks,
-        async afterCreate(user: User, options: CreateOptions<any>) {
+        /*async afterCreate(user: User, options: CreateOptions<any>) {
           // create a default role for new users
-          const defaultŔole = Role.build({
+          await Role.create({
             userId: user.id,
             role: eRolesAvailable.student
-          });
-          await defaultŔole.save();
-        }
+          }, options);
+        }*/
       }
     });
   }

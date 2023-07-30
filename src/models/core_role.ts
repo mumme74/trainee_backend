@@ -18,8 +18,9 @@ Object.keys(eRolesAvailable).forEach((key) => {
     roleStrs.push(key) :
       roleNrs.push(+key);
 });
-export const rolesAvailableKeys = roleStrs;
-export const rolesAvailableNrs = roleNrs;
+const rolesAvailableKeys = roleStrs;
+const rolesAvailableNrs = roleNrs;
+export {rolesAvailableKeys, rolesAvailableNrs};
 
 export class Role extends Model {
   declare id: number;
