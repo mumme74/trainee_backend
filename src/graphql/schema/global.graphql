@@ -1,0 +1,58 @@
+# custom types
+scalar Date
+scalar Blob
+scalar IntID
+
+# the global Error type used across application
+type Error {
+  message: String!
+  stack: [String]
+  type: String
+}
+
+# global error response if anything goes wrong in server
+type ErrorResponse {
+  success: Boolean! # false
+  error: Error
+}
+
+# global ok reponse to mutation events
+type OkResponse {
+  success: Boolean! # true
+  nrAffected: Int!
+  ids: [IntID!]
+}
+
+type Ping {
+  ping: String
+}
+
+type Pong {
+  pong(er: Int): MutationResponse!
+}
+
+# standard response if anything goes ok or error
+union MutationResponse = OkResponse | ErrorResponse
+
+# global entry points for queries
+# might get extended by code loading plugins
+type Query {
+  ping: Ping
+  #${usersSchemaQueries}
+  #${groupSchemaQueries}
+  #${testingErrorResponseQueries}
+}
+
+# global entry point for mutations
+# might get extended by code loading plugins
+type Mutation {
+  pong: Pong
+  #${usersSchemaMutations}
+  #${groupSchemaMutations}
+}
+
+# Global entry point for application
+schema {
+  query: Query
+  mutation: Mutation
+}

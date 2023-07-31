@@ -1,0 +1,8 @@
+# should only be active when we run tests
+type core_test_Query {
+  testError: Error
+  testErrorResponse: ErrorResponse
+  testOkResponse: OkResponse
+  testMutationResponseErr: MutationResponse
+  testMutationResponseOk: MutationResponse
+}

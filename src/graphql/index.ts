@@ -5,32 +5,19 @@ import { createHandler } from 'graphql-http/lib/use/express';
 import { Request, Response, NextFunction } from "express";
 import { passportJWT } from "../passport";
 
-import graphQlSchema from "./schema";
+//import graphQlSchema from "./schema";
 import { graphQlResolvers } from "./resolvers";
 import {promises as fs}  from "fs";
 import path from "path";
 //import renderGraphiQLAuthToken from "./graphiqlWithToken";
 
 import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
+import { initGraphQlSchema } from "./schema";
 
-/**
- * Construct a GraphQL schema and define the necessary resolvers.
- *
- * type Query {
- *   hello: String
- * }
- */
-const schema = new GraphQLSchema({
-  query: new GraphQLObjectType({
-    name: 'Query',
-    fields: {
-      hello: {
-        type: GraphQLString,
-        resolve: () => 'world',
-      },
-    },
-  }),
-});
+
+const graphQlSchema = initGraphQlSchema();
+
+
 
 function graphqlRoute(app: Express) {
   const router = Router();
@@ -42,7 +29,7 @@ function graphqlRoute(app: Express) {
   if (useGraphiql) {
     //Overiding the default express-graphql middleware
     app.use("/graphiql", async (req, res) => {
-      const p = path.join(path.resolve('./build'), '/views/graphiql.html');
+      const p = path.join(path.resolve('./build'), 'src/views/graphiql.html');
       const html = await fs.readFile(p, 'utf-8');
       res.setHeader('Content-Type','text/html')
       res.status(200).send(html);

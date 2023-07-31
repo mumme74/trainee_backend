@@ -8,14 +8,3 @@ export interface IGraphQl_PictureType {
   title: string;
   createdAt: Date;
 };
-
-export const picturesSchemaTypes = `
-type core_picture_Type {
-  id: IntID!
-  owner: core_user_Type
-  blob: Blob!
-  title: String
-  mime: String!
-  createdAt: Date!
-}
-`;

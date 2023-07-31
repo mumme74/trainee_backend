@@ -7,7 +7,7 @@
     "test": "NODE_ENV=test && npm run build && node_modules/jest/bin/jest.js $INIT_CWD/src",
     "build": "tsc --build --incremental",
     "postbuild": "npm run copyFiles",
-    "copyFiles": "copyfiles --error --up 1 src/views/*.* build",
+    "copyFiles": "copyfiles --error src/views/*.* src/graphql/schema/*.graphql src/graphql/schema/core/*.graphql build",
     "start-dev": "NODE_ENV=development nodemon -e ts,js --watch src/ --exec \"npm run build && node build/src/index.js --harmony\"",
     "start": "NODE_ENV=production node build/src/index.js",
     "lint": "eslint 'src/**/*.{js,ts}' --quiet --fix"

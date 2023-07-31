@@ -11,16 +11,3 @@ export interface IGraphQL_OrganizationType {
   createdAt: Date;
   updatedAt: Date;
 };
-
-export const organizationSchemaTypes = `
-type core_organization_Type {
-  id: IntID!
-  name: String!
-  domain: String!
-  picture: core_picture_Type
-  description: String!
-  updatedBy: core_user_Type
-  createdAt: Date!
-  updataedAt: Date!
-}
-`;

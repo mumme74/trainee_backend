@@ -1,0 +1,72 @@
+enum core_user_Roles {
+  #${rolesAvailableKeys.join('\n  ')}
+  student
+  teacher
+  admin
+  super
+}
+
+type core_user_Type {
+  id: IntID!
+  fullName: String!
+  firstName: String!
+  lastName: String!
+  email: String!
+  picture: core_picture_Type
+  organization: core_organization_Type!
+  roles: [core_user_Roles!]!
+  updatedAt: Date!
+  createdAt: Date!
+  updater: core_user_Type
+}
+
+input core_user_UserCreateType {
+  firstName: String!
+  lastName: String!
+  userName: String!
+  email: String!
+  roles: [core_user_Roles!]
+  oauthId: String
+  oauthProvider: String
+  domain: String
+  picture: String
+}
+
+# Used by teacher to create a student
+input core_user_CreateUsersInput {
+  domain: String
+  users: [core_user_UserCreateType!]!
+}
+
+type core_user_Query {
+  core_user_Users(ids: [IntID!]!): [core_user_Type!]!
+  core_user_AvailableRoles: [core_user_Roles!]!
+}
+
+type core_user_Mutation {
+  # Used by teacher to create a student,
+  # must have teacher role to do this
+  core_user_CreateStudents(
+    bulkUsers: core_user_CreateUsersInput!
+  ): MutationResponse
+
+  # must have admin roles to change this,
+  # cant set user to super admin
+  core_user_ChangeRoles(
+    id: IntID!
+    roles: [core_user_Roles!]!
+  ): MutationResponse
+
+  # move user to domain, must have admin priviledges
+  #  to move anyone to our domain
+  # and then a admin can only move users which have
+  # empty domain.
+  # super users can do anything
+  core_user_MoveToDomain(id: IntID!, domain: String): MutationResponse
+
+  # must have super admin role to set a user to this priviledge
+  core_user_SetSuperUser(id: IntID!): MutationResponse
+
+  # must be admin to delete a user in same domain, super user to delete any users
+  core_user_DeleteUser(id: IntID!): MutationResponse
+}

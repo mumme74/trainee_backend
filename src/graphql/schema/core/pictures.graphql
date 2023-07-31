@@ -1,0 +1,8 @@
+type core_picture_Type {
+  id: IntID!
+  owner: core_user_Type
+  blob: Blob!
+  title: String
+  mime: String!
+  createdAt: Date!
+}
