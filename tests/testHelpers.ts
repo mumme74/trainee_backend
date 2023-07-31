@@ -11,6 +11,7 @@ import JWT from "jsonwebtoken";
 import { eRolesAvailable } from "../src/models/core_role";
 import { User } from "../src/models/core_user";
 import { Role } from "../src/models/core_role";
+import { initGraphQlSchema } from "../src/graphql/schema";
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;

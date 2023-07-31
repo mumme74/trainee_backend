@@ -16,6 +16,7 @@ import {
 import graphqlRoute from "../../src/graphql";
 import { User } from "../../src/models/core_user";
 import { closeTestDb, initTestDb } from "../testingDatabase";
+import { initGraphQlSchema } from "../../src/graphql/schema";
 
 import request from "supertest";
 import supertest from "supertest";
@@ -25,6 +26,8 @@ const processEnv = process.env;
 const app = jsonApp();
 graphqlRoute(app);
 app.finalize();
+
+const schema = initGraphQlSchema();
 
 const req = new JsonReq(app, "/graphql");
 

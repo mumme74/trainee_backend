@@ -2,6 +2,7 @@ import {
   DocumentNode,
   FieldDefinitionNode,
   GraphQLError,
+  GraphQLSchema,
   Kind,
   ObjectTypeDefinitionNode,
   buildASTSchema,
@@ -40,7 +41,10 @@ export type IGraphQl_MutationResponse =
 // --------------------------------------------------------
 // sdl plugin stuff and loading sdl files and merge them to one doc
 
-type SdlPluginType = {
+/**
+ * The type to add to registerSdlPlugin
+ */
+export type SdlPluginType = {
   name: string,
   description?: string,
   prefix: string,
@@ -54,17 +58,58 @@ type SdlDocObj = {
   plugin: SdlPluginType,
 }
 
+// global schema
+let schema: GraphQLSchema;
+
 // holds all SDL plugins registered to system
 const sdlPlugins: SdlPluginType[] = [];
 
+/**
+ * Registers a Sdl plugin to system
+ * Muust be called before initGraphQlSchema is called
+ * @param plugin
+ */
 export function registerSdlPlugin(plugin: SdlPluginType) {
-  if (!plugin.name) throw new Error('SdlPlug must have a name')
-  if (!plugin.rootDir) throw new Error('Sdlplugin must have a rootDir')
+  if (!plugin.name)
+    throw new Error('SdlPlug must have a name');
+  if (!plugin.rootDir)
+    throw new Error('Sdlplugin must have a rootDir');
+  if (schema)
+    throw new Error(
+      "Cant add SdlPlugin after initGraphqlSchema() is called ");
   if (!plugin.sdlFiles.length) {
     plugin.sdlFiles.push(
-      ...fs.readdirSync(plugin.rootDir).filter(f=>f.endsWith('.graphql')))
+      ...fs.readdirSync(plugin.rootDir).filter(f=>f.endsWith('.graphql')));
   }
   sdlPlugins.push(plugin);
+}
+
+/**
+ * Gets the GraphQlSchemas
+ * @returns {GraphQLSchema}
+ */
+export function getGraphQlSchema() {
+  return schema;
+}
+
+/**
+ * Initalizes GraphQlSchemas
+ * @returns {GraphQLSchema}
+ */
+export function initGraphQlSchema() {
+  if (schema) return schema;
+  const sdlFiles = sdlPlugins.map(
+    p=>p.sdlFiles.map(
+      f=>{return {file:path.join(p.rootDir, f), plugin:p}}
+    )
+  ).flat();
+
+  const docs = sdlFiles.map(f=>loadSdlFile(f));
+  const merged = mergeSdlDocs(docs);
+
+  schema = buildASTSchema(merged);
+
+  return schema;
 }
 
 // load a SDL file and parse it to a document
@@ -178,6 +223,15 @@ registerSdlPlugin(globalPlugin);
 // read core graphql files
 const coreSdlFiles = fs.readdirSync(path.join(__dirname, 'core'))
          .filter(f=>f.endsWith('.graphql'));
+if (['test', 'development'].indexOf(""+process.env.NODE_ENV) === -1) {
+  let idx: number;
+  while ((idx = coreSdlFiles.findIndex(p=>p.startsWith('testing')))
+         && idx > -1 )
+  {
+    if (idx ===undefined || idx < 0) break;
+    coreSdlFiles.splice(idx, 1);
+  }
+}
 const corePlugin: SdlPluginType = {
   name: 'Core',
   description: 'The core to the system, user, group handling and such',
@@ -186,19 +240,3 @@ const corePlugin: SdlPluginType = {
   sdlFiles: coreSdlFiles
 }
 registerSdlPlugin(corePlugin);
-
-
-export function initGraphQlSchema() {
-  const sdlFiles = sdlPlugins.map(
-    p=>p.sdlFiles.map(
-      f=>{return {file:path.join(p.rootDir, f), plugin:p}}
-    )
-  ).flat();
-
-  const docs = sdlFiles.map(f=>loadSdlFile(f));
-  const merged = mergeSdlDocs(docs);
-
-  const schema = buildASTSchema(merged);
-
-  return schema;
-}

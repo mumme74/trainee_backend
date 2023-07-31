@@ -5,18 +5,12 @@ import { createHandler } from 'graphql-http/lib/use/express';
 import { Request, Response, NextFunction } from "express";
 import { passportJWT } from "../passport";
 
-//import graphQlSchema from "./schema";
 import { graphQlResolvers } from "./resolvers";
 import {promises as fs}  from "fs";
 import path from "path";
-//import renderGraphiQLAuthToken from "./graphiqlWithToken";
 
 import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
 import { initGraphQlSchema } from "./schema";
-
-
-const graphQlSchema = initGraphQlSchema();
-
 
 
 function graphqlRoute(app: Express) {
@@ -27,7 +21,6 @@ function graphqlRoute(app: Express) {
   const useGraphiql = process.env.NODE_ENV === "development";
 
   if (useGraphiql) {
-    //Overiding the default express-graphql middleware
     app.use("/graphiql", async (req, res) => {
       const p = path.join(path.resolve('./build'), 'src/views/graphiql.html');
       const html = await fs.readFile(p, 'utf-8');
@@ -49,6 +42,8 @@ function graphqlRoute(app: Express) {
     }
     next();
   });
+
+  const graphQlSchema = initGraphQlSchema();
 
   const handler = createHandler({
     schema: graphQlSchema,

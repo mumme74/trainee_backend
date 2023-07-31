@@ -11,6 +11,7 @@ import initApi from "./routes";
 import pictureRoutes from "./routes/pictures";
 import graphQlRoute from "./graphql";
 import { initDb } from "./models"
+import { initGraphQlSchema } from "./graphql/schema";
 
 try{
   initDb();
@@ -39,9 +40,12 @@ app.use(express.json());
 
 postJsonParse(app);
 
+
 // Routes
 initApi(app);
+
 // graphql
+initGraphQlSchema();
 graphQlRoute(app);
 
 // 404

@@ -18,6 +18,7 @@ import {
 import { UserError } from "../../../src/helpers/errorHelpers";
 import { IFilterOptions } from "../../../src/helpers/userHelpers";
 import { throwErr as throwToGetStack } from "../../common";
+import { initGraphQlSchema } from "../../../src/graphql/schema";
 
 interface IRequest extends Request {
   res: Response;
@@ -28,6 +29,7 @@ const { res, next, clearMockRes } = getMockRes();
 const processEnv = process.env;
 
 beforeAll(() => {
+  initGraphQlSchema();
   return initTestDb();
 });
 
