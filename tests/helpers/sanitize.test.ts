@@ -1,4 +1,4 @@
-import { findStrings } from "../../src/helpers/sanitize";
+import { xssClean } from "../../src/helpers/sanitize";
 
 describe("test xss findStrings", () => {
   test("string no change", () => {
@@ -15,7 +15,7 @@ describe("test xss findStrings", () => {
       },
     });
 
-    const res = findStrings(JSON.parse(data));
+    const res = xssClean(JSON.parse(data));
     expect(res).toEqual(JSON.parse(data));
   });
 
@@ -37,7 +37,7 @@ describe("test xss findStrings", () => {
       },
     };
 
-    const res = findStrings(JSON.parse(data));
+    const res = xssClean(JSON.parse(data));
     expect(res).toEqual(correctRes);
   });
 });

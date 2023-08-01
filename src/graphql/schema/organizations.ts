@@ -1,7 +1,10 @@
 import { IGraphQl_UserType } from "./users";
 import { IGraphQl_PictureType } from "./pictures";
+import { IGraphQl_BaseResponse } from ".";
 
-export interface IGraphQL_OrganizationType {
+export interface IGraphQL_OrganizationType
+ extends IGraphQl_BaseResponse
+{
   id: number;
   name: string;
   domain: string;

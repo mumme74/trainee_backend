@@ -1,5 +1,5 @@
 # should only be active when we run tests
-type core_test_Query {
+type Query {
   testError: Error
   testErrorResponse: ErrorResponse
   testOkResponse: OkResponse

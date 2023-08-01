@@ -17,13 +17,13 @@ import xss from "xss";
 
 // xss sanitize all input strings against xss attacks
 // exported so it can be tested
-export function findStrings(branch: any): any {
+export function xssClean(branch: any): any {
   if (branch instanceof Object || branch instanceof Array) {
     for (const key in branch) {
       if (typeof branch[key] === "string") {
         branch[key] = xss(branch[key]);
       } else {
-        branch[key] = findStrings(branch[key]); // find subtree or just a primitive type
+        branch[key] = xssClean(branch[key]); // find subtree or just a primitive type
       }
     }
   }
@@ -57,23 +57,8 @@ export function postJsonParse(app: Express):
 {
   app.use(mongoSanitize());
   app.use((req: Request, res: Response, next: NextFunction): void => {
-    req.body = findStrings(req.body);
+    req.body = xssClean(req.body);
     next();
   });
 }
 
-export function base64ToBytes(base64:string):
-  Uint8Array
-{
-  const cb = (m:string) =>
-    m.codePointAt(0) || 0;
-  const binString = atob(base64);
-  return Uint8Array.from(binString, cb);
-}
-
-export function bytesToBase64(bytes:Uint8Array):
-  string
-{
-  const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join("");
-  return btoa(binString);
-}

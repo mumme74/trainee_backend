@@ -12,7 +12,7 @@ import {
   compareUser,
 } from "../../testHelpers";
 
-import graphqlRoute from "../../../src/graphql";
+import { graphQlRoute } from "../../../src/graphql/routes";
 import { User } from "../../../src/models/core_user";
 import { eRolesAvailable } from "../../../src/models/core_role";
 import { closeTestDb, initTestDb } from "../../testingDatabase";
@@ -22,7 +22,7 @@ import { userLoader } from "../../../src/graphql/resolvers/users";
 const processEnv = process.env;
 
 const app = jsonApp();
-graphqlRoute(app);
+graphQlRoute(app);
 app.finalize();
 
 const req = new JsonReq(app, "/graphql");

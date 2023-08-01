@@ -38,17 +38,12 @@ union MutationResponse = OkResponse | ErrorResponse
 # might get extended by code loading plugins
 type Query {
   ping: Ping
-  #${usersSchemaQueries}
-  #${groupSchemaQueries}
-  #${testingErrorResponseQueries}
 }
 
 # global entry point for mutations
 # might get extended by code loading plugins
 type Mutation {
   pong: Pong
-  #${usersSchemaMutations}
-  #${groupSchemaMutations}
 }
 
 # Global entry point for application

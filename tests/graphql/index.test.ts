@@ -13,21 +13,23 @@ import {
   destroyTestUser,
 } from "../testHelpers";
 
-import graphqlRoute from "../../src/graphql";
+import { graphQlRoute } from "../../src/graphql/routes";
 import { User } from "../../src/models/core_user";
 import { closeTestDb, initTestDb } from "../testingDatabase";
 import { initGraphQlSchema } from "../../src/graphql/schema";
 
 import request from "supertest";
 import supertest from "supertest";
+import { initGraphQl } from "../../src/graphql";
 
 const processEnv = process.env;
 
 const app = jsonApp();
-graphqlRoute(app);
+graphQlRoute(app);
 app.finalize();
 
-const schema = initGraphQlSchema();
+
+initGraphQl();
 
 const req = new JsonReq(app, "/graphql");
 
@@ -146,7 +148,7 @@ describe("GraphiQl", ()=>{
   test("succeed get graphiql html when develpoment", (done: CallbackHandler) => {
     process.env = { ...processEnv, NODE_ENV: "development" };
     const app = jsonApp();
-    graphqlRoute(app);
+    graphQlRoute(app);
     app.finalize();
     request(app).get('/graphiql')
       .expect(200)
@@ -161,7 +163,7 @@ describe("GraphiQl", ()=>{
   test("fail graphiql when not development", (done: CallbackHandler) => {
     process.env = { ...processEnv, NODE_ENV: "production" };
     const app = jsonApp();
-    graphqlRoute(app);
+    graphQlRoute(app);
     app.finalize();
     request(app).get('/graphiql')
     .expect(404)

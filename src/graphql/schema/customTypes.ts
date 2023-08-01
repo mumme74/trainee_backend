@@ -1,5 +1,5 @@
 import { GraphQLScalarType, Kind } from "graphql";
-import { base64ToBytes, bytesToBase64 } from "../../helpers/sanitize";
+import { base64ToBytes, bytesToBase64 } from "../../helpers/common";
 
 export const dateScalar = new GraphQLScalarType({
   name: "Date",

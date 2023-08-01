@@ -1,9 +1,11 @@
-import { rolesAvailableKeys } from "../../models/core_role";
+import { IGraphQl_BaseResponse } from ".";
 import { IGraphQL_OrganizationType } from "./organizations";
 import { IGraphQl_PictureType } from "./pictures";
 
 /// must be in sync with graphQl types
-export interface IGraphQl_UserType {
+export interface IGraphQl_UserType
+  extends IGraphQl_BaseResponse
+{
   id: number;
   fullName: string;
   firstName: string;

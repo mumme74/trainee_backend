@@ -13,10 +13,12 @@ import path from "path";
 import fs from "fs";
 
 import "./customTypes";
-
+import { GraphQlPlugin } from "..";
 
 
 /// these must be in sync with GraphQl schema
+export interface IGraphQl_BaseResponse {}
+
 export interface IGraphQl_Response {
   success: boolean;
   __typename: string;
@@ -41,48 +43,16 @@ export type IGraphQl_MutationResponse =
 // --------------------------------------------------------
 // sdl plugin stuff and loading sdl files and merge them to one doc
 
-/**
- * The type to add to registerSdlPlugin
- */
-export type SdlPluginType = {
-  name: string,
-  description?: string,
-  prefix: string,
-  rootDir: string,
-  sdlFiles: string[]
-}
 
 type SdlDocObj = {
   doc:DocumentNode,
   file:string,
-  plugin: SdlPluginType,
+  plugin: GraphQlPlugin,
 }
+
 
 // global schema
 let schema: GraphQLSchema;
-
-// holds all SDL plugins registered to system
-const sdlPlugins: SdlPluginType[] = [];
-
-/**
- * Registers a Sdl plugin to system
- * Muust be called before initGraphQlSchema is called
- * @param plugin
- */
-export function registerSdlPlugin(plugin: SdlPluginType) {
-  if (!plugin.name)
-    throw new Error('SdlPlug must have a name');
-  if (!plugin.rootDir)
-    throw new Error('Sdlplugin must have a rootDir');
-  if (schema)
-    throw new Error(
-      "Cant add SdlPlugin after initGraphqlSchema() is called ");
-  if (!plugin.sdlFiles.length) {
-    plugin.sdlFiles.push(
-      ...fs.readdirSync(plugin.rootDir).filter(f=>f.endsWith('.graphql')));
-  }
-  sdlPlugins.push(plugin);
-}
 
 /**
  * Gets the GraphQlSchemas
@@ -96,16 +66,16 @@ export function getGraphQlSchema() {
  * Initalizes GraphQlSchemas
  * @returns {GraphQLSchema}
  */
-export function initGraphQlSchema() {
+export function initGraphQlSchema(graphQlPlugins: GraphQlPlugin[], log=false) {
   if (schema) return schema;
-  const sdlFiles = sdlPlugins.map(
+  const sdlFiles = graphQlPlugins.map(
     p=>p.sdlFiles.map(
       f=>{return {file:path.join(p.rootDir, f), plugin:p}}
     )
   ).flat();
 
   const docs = sdlFiles.map(f=>loadSdlFile(f));
-  const merged = mergeSdlDocs(docs);
+  const merged = mergeSdlDocs(docs,log);
 
   schema = buildASTSchema(merged);
 
@@ -114,7 +84,7 @@ export function initGraphQlSchema() {
 
 // load a SDL file and parse it to a document
 function loadSdlFile(
-  {file, plugin}: {file:string, plugin:SdlPluginType}
+  {file, plugin}: {file:string, plugin:GraphQlPlugin}
 ):
   SdlDocObj
 {
@@ -143,7 +113,7 @@ function loadSdlFile(
 }
 
 // merge many sdl files to single document
-function mergeSdlDocs(sdlObjs: SdlDocObj[]) {
+function mergeSdlDocs(sdlObjs: SdlDocObj[], log:boolean) {
   const clone = (doc: DocumentNode) => {
     return {
       definitions: doc.definitions.map(d=>structuredClone(d)),
@@ -159,42 +129,76 @@ function mergeSdlDocs(sdlObjs: SdlDocObj[]) {
         def.name.value === lookFor);
     }
   }
-  const rootQuery = root.definitions.find(finder('Query')) as
-                        ObjectTypeDefinitionNode,
-        rootMutation = root.definitions.find(finder('Mutation')) as
-                        ObjectTypeDefinitionNode,
-        rootSubscription = root.definitions.find(finder('Subscription')) as
-                        ObjectTypeDefinitionNode;
 
-  const moveTo = (
-    rootObj: ObjectTypeDefinitionNode,
-    def: ObjectTypeDefinitionNode
+  const moveToFactory = (action: string) => {
+    const rootObj = root.definitions.find(finder(action)) as
+      ObjectTypeDefinitionNode;
+    return (def: ObjectTypeDefinitionNode, sdlObj: SdlDocObj) => {
+      if (!rootObj)
+        throw new Error(
+          `SDL error ${action} not supported, `+
+          `from file: ${sdlObj.file}`);
+
+      (rootObj.fields as FieldDefinitionNode[]).push(
+        ...(def.fields || [])
+      )
+    }
+  }
+
+  const moveToQuery = moveToFactory('Query'),
+        moveToMutation = moveToFactory('Mutation'),
+        moveToSubscription = moveToFactory('Subscription');
+
+  const route = (
+    def: ObjectTypeDefinitionNode,
+    typeName: string,
+    sdlObj: SdlDocObj
   ) => {
-    (rootObj.fields as FieldDefinitionNode[]).push(
-      ...(def.fields || [])
-    );
-  };
+
+    switch (typeName) {
+      // Move these to root Action
+      case 'Query': moveToQuery(def,sdlObj); return true;
+      case 'Mutation': moveToMutation(def,sdlObj); return true;
+      case 'Subscription': moveToSubscription(def,sdlObj); return true;
+      // else dont move these
+      default: return false;
+      }
+  }
 
   for (let i = 1; i<sdlObjs.length; ++i) {
     const prefix = sdlObjs[i].plugin.prefix;
     const doc = structuredClone(sdlObjs[i].doc);
 
     for (const def of doc.definitions) {
-      if (def.kind === Kind.OBJECT_TYPE_DEFINITION &&
-          prefix && // global has no prefix
-          def.name.value.startsWith(`${prefix}_`))
-      {
-        const parts = def.name.value.match(
-          new RegExp(`^${prefix}_([a-zA-A]+)_([a-zA-Z]+)$`));
-        const namespace = parts?.at(1),
-              typeName = parts?.at(2);
-        // is it a root type?
-        if (namespace && typeName) {
-          switch (typeName) {
-          case 'Query': moveTo(rootQuery,def); continue;// Dont move to doc
-          case 'Mutation': moveTo(rootQuery,def); continue;// Dont move to doc
-          case 'Subscription': moveTo(rootQuery,def); continue;// Dont move to doc
-          default: void 0;
+      const name = (def as any).name.value ;
+
+
+      if (def.kind === Kind.OBJECT_TYPE_DEFINITION) {
+        // all none global sdl parts
+        if (prefix) { // global has no prefix
+          if (!name.startsWith(`${prefix}_`)) {
+            throw new Error(
+              `Rule '${name}' must be prefixed with `+
+              `'${prefix}_' in ${sdlObjs[i].file}`);
+          }
+
+          const parts = name.match(
+            new RegExp(`^${prefix}_([a-zA-A]+)_([a-zA-Z]+)$`));
+          const namespace = parts?.at(1),
+                typeName = parts?.at(2);
+
+          // is it a root type?
+          if (namespace && typeName &&
+              route(def as ObjectTypeDefinitionNode, typeName, sdlObjs[i]))
+          {
+            continue;
+          }
+
+        // all global root actions
+        } else {
+          if (route(def as ObjectTypeDefinitionNode, name, sdlObjs[i]))
+          {
+            continue;
           }
         }
       }
@@ -203,40 +207,17 @@ function mergeSdlDocs(sdlObjs: SdlDocObj[]) {
     }
   }
 
+  if (log) {
+    console.log('SDL root actions:')
+    for (const def of root.definitions as any[]) {
+      if (def.fields ||['Query','Mutation'].indexOf(def.name?.value)>-1) {
+        console.log(' '+def.name?.value);
+        for (const fld of def.fields as any) {
+          console.log('  '+fld.name.value);
+        }
+      }
+    }
+  }
+
   return root;
 }
-
-// read global graphql files
-const globalSdlFiles = fs.readdirSync(__dirname)
-  .filter(f=>f.endsWith('.graphql'));
-
-const globalPlugin: SdlPluginType = {
-  name: 'Global',
-  description: 'The global graphql plugin',
-  prefix: '',
-  rootDir: __dirname,
-  sdlFiles: [...globalSdlFiles]
-}
-registerSdlPlugin(globalPlugin);
-
-
-// read core graphql files
-const coreSdlFiles = fs.readdirSync(path.join(__dirname, 'core'))
-         .filter(f=>f.endsWith('.graphql'));
-if (['test', 'development'].indexOf(""+process.env.NODE_ENV) === -1) {
-  let idx: number;
-  while ((idx = coreSdlFiles.findIndex(p=>p.startsWith('testing')))
-         && idx > -1 )
-  {
-    if (idx ===undefined || idx < 0) break;
-    coreSdlFiles.splice(idx, 1);
-  }
-}
-const corePlugin: SdlPluginType = {
-  name: 'Core',
-  description: 'The core to the system, user, group handling and such',
-  prefix: 'core',
-  rootDir: path.join(__dirname, 'core'),
-  sdlFiles: coreSdlFiles
-}
-registerSdlPlugin(corePlugin);

@@ -9,9 +9,9 @@ import cors from "cors";
 import { postJsonParse, preJsonParse } from "./helpers/sanitize";
 import initApi from "./routes";
 import pictureRoutes from "./routes/pictures";
-import graphQlRoute from "./graphql";
+import { graphQlRoute } from "./graphql/routes";
 import { initDb } from "./models"
-import { initGraphQlSchema } from "./graphql/schema";
+import { initGraphQl } from "./graphql";
 
 try{
   initDb();
@@ -45,7 +45,7 @@ postJsonParse(app);
 initApi(app);
 
 // graphql
-initGraphQlSchema();
+initGraphQl();
 graphQlRoute(app);
 
 // 404

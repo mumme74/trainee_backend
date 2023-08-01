@@ -1,7 +1,8 @@
 import { IGraphQl_UserType } from "./users";
+import { IGraphQl_BaseResponse } from "./index";
 
 /// must be in sync with graphQl types
-export interface IGraphQl_GroupType {
+export interface IGraphQl_GroupType extends IGraphQl_BaseResponse {
   id: number;
   teachers: () => Promise<IGraphQl_UserType[]>;
   students: () => Promise<IGraphQl_UserType[]>;
