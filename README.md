@@ -1,5 +1,4 @@
-![Node.js CI workflow]
-(https://github.com/mumme74/trainee_backend/actions/workflows/node.js.yml/badge.svg)
+![Node.js CI workflow](https://github.com/mumme74/trainee_backend/actions/workflows/node.js.yml/badge.svg)
 
 # trainee
 A web application that helps teachers and students with repetive training question tests.
