@@ -4,7 +4,7 @@
   "description": "Backend to Trainee system. It's a system that trains students.",
   "main": "server/index.js",
   "scripts": {
-    "test": "NODE_ENV=test && npm run build && node_modules/jest/bin/jest.js $INIT_CWD/src",
+    "test": "NODE_ENV=test && npm run build && node_modules/jest/bin/jest.js $INIT_CWD",
     "build": "tsc --build --incremental",
     "postbuild": "npm run copyFiles",
     "copyFiles": "copyfiles --error src/views/*.* src/graphql/schema/*.graphql src/graphql/schema/core/*.graphql build",
