@@ -1,5 +1,4 @@
 import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
-import { registerDbModel } from "./index";
 
 /**
  * Stores teachers connected to a group (group such as a class)
@@ -61,5 +60,3 @@ export class GroupTeacher extends Model {
     })
   }
 }
-
-registerDbModel(GroupTeacher, 'Core');

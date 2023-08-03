@@ -1,5 +1,5 @@
 import ModelDataLoader from "../modelDataLoader";
-import { Sequelize, Op, QueryTypes, Model, Transaction, ModelStatic } from "sequelize";
+import { Op, QueryTypes, Transaction, ModelStatic } from "sequelize";
 
 import { composeErrorResponse, rolesFilter, tryCatch } from "../helpers";
 import { isAdmin, isSuperAdmin } from "../../helpers/userHelpers";
@@ -13,7 +13,6 @@ import {
 } from "../schema/groups";
 import type { IGraphQl_MutationResponse } from "../schema";
 import { AuthRequest } from "../../types";
-import type { IGraphQl_UserType } from "../schema/users";
 import { GroupTeacher } from "../../models/core_group_teacher";
 import { User } from "../../models/core_user";
 import { GroupStudent } from "../../models/core_group_student";
@@ -22,6 +21,7 @@ import { boolean, number, string } from "joi";
 import { groupTeacherByGroupLoader, groupTeacherLoader } from "./groupTeachers";
 import { groupStudentByGroupLoader, groupStudentLoader } from "./groupStudents";
 import { organizationLoader } from "./organizations";
+import { getSequelize } from "../../models";
 
 
 // ----------------------------------------------------------------
@@ -261,7 +261,7 @@ const groupsFor = async (
   const t2name = lookInTeacher ? 'Teachers' : 'Students';
   const fld = lookInTeacher ? 'teacherId' : 'studentId';
   if (filter.length > 2) replacements.push(filter)
-  const grps = (await (Group.sequelize as Sequelize).query(`
+  const grps = (await getSequelize().query(`
     SELECT grp.id FROM core_Groups as grp
     INNER JOIN core_Group${t2name} as t2
     ON grp.id=t2.groupId
@@ -338,7 +338,7 @@ const createGroup = async (
     teacherIds.push(user.id);
   }
 
-  const group = await (Group.sequelize as Sequelize).transaction(
+  const group = await getSequelize().transaction(
     async (transaction: Transaction)=>
     {
       const group = await Group.create({
@@ -518,7 +518,7 @@ const addPeople = async (
   // Load all or fail (throws)
   const users = await userLoader.loadAll(userIds);
 
-  await (Group.sequelize as Sequelize).transaction(
+  await getSequelize().transaction(
     async (transaction: Transaction) => {
       for (const u of users) {
         const res = await (model as ModelStatic<any>).create(
@@ -550,7 +550,7 @@ const removePeople = async (
   // Promise to remove people from group
   const model = isTeacher ? GroupTeacher : GroupStudent,
         field = isTeacher ? 'teacherId' : 'studentId';
-  const nr = await (Group.sequelize as Sequelize).transaction(
+  const nr = await getSequelize().transaction(
     async (t:Transaction)=>{
       return await (model as ModelStatic<any>).destroy({
         where: {[field]:{[Op.in]:userIds}},

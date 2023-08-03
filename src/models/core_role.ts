@@ -1,5 +1,4 @@
 import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
-import { registerDbModel } from "./index";
 
 /**
  * @brief these are the 4 different roles a user can have
@@ -68,5 +67,3 @@ export class Role extends Model {
     });
   }
 }
-
-registerDbModel(Role, 'Core');

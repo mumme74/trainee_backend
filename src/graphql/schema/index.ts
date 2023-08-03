@@ -40,19 +40,6 @@ export type IGraphQl_MutationResponse =
   | IGraphQl_OkResponse
   | IGraphQl_ErrorResponse;
 
-// --------------------------------------------------------
-// sdl plugin stuff and loading sdl files and merge them to one doc
-
-
-type SdlDocObj = {
-  doc:DocumentNode,
-  file:string,
-  plugin: GraphQlPlugin,
-}
-
-
-// global schema
-let schema: GraphQLSchema;
 
 /**
  * Gets the GraphQlSchemas
@@ -70,7 +57,7 @@ export function initGraphQlSchema(graphQlPlugins: GraphQlPlugin[], log=false) {
   if (schema) return schema;
   const sdlFiles = graphQlPlugins.map(
     p=>p.sdlFiles.map(
-      f=>{return {file:path.join(p.rootDir, f), plugin:p}}
+      f=>{return {file:path.join(p.schemaDir, f), plugin:p}}
     )
   ).flat();
 
@@ -81,6 +68,29 @@ export function initGraphQlSchema(graphQlPlugins: GraphQlPlugin[], log=false) {
 
   return schema;
 }
+
+
+// -------------------------------------------------------
+// only testing things
+export const clearGraphQlSchemas = process.env.NODE_ENV !== 'test' ?
+  ()=>{ throw new Error('Just for testing') } :
+  ()=>{
+    schema = undefined;
+  }
+
+// --------------------------------------------------------
+// sdl plugin stuff and loading sdl files and merge them to one doc
+
+
+type SdlDocObj = {
+  doc:DocumentNode,
+  file:string,
+  plugin: GraphQlPlugin,
+}
+
+
+// global schema
+let schema: GraphQLSchema | undefined;
 
 // load a SDL file and parse it to a document
 function loadSdlFile(
@@ -108,7 +118,7 @@ function loadSdlFile(
       console.error(`${e} loading file ${file}`)
     }
 
-    process.exit(1)
+    throw e;
   }
 }
 

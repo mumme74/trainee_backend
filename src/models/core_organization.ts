@@ -1,6 +1,5 @@
 import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
 import { Picture } from "./core_picture";
-import { registerDbModel } from "./index";
 
 export class Organization extends Model {
   declare id: number;
@@ -84,5 +83,3 @@ export const fetchOrganizationNr = async (domain:string) => {
   const org = await Organization.findOne({where:{domain}});
   return org?.id;
 }
-
-registerDbModel(Organization, 'Core');

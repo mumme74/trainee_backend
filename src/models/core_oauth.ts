@@ -1,5 +1,4 @@
 import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
-import { registerDbModel } from "./index";
 
 /// stores oath login specific stuff
 
@@ -45,5 +44,3 @@ export class OAuth extends Model {
     });
   }
 }
-
-registerDbModel(OAuth, 'Core');

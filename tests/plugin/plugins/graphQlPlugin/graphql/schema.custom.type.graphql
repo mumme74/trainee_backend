@@ -1,0 +1,9 @@
+scalar TestType
+
+type tstWType_topic_Query {
+  tstWType_topic_QueryTest: String!
+}
+
+type tstWType_topic_Mutation {
+  tstWType_topic_MutationTest: String!
+}

@@ -1,5 +1,4 @@
 import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
-import { registerDbModel } from "./index";
 
 export class Picture extends Model {
   declare id: number;
@@ -53,5 +52,3 @@ export class Picture extends Model {
     });
   }
 }
-
-registerDbModel(Picture, 'Core');

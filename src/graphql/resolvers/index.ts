@@ -1,7 +1,7 @@
 import usersController from "./users";
 import groupsController from "./groups";
 
-import { composeErrorResponse } from "../helpers";
+import { composeErrorResponse, composeOkResponse } from "../helpers";
 import { errorResponse, IErrorResponse } from "../../helpers/errorHelpers";
 import {
   IGraphQl_BaseResponse,
@@ -24,29 +24,22 @@ const testResolvers =
           return composeErrorResponse("This is a test ErrorResponse");
         },
         testOkResponse: (): IGraphQl_OkResponse => {
-          return {
-            success: true,
-            nrAffected: 0,
-            ids: [9],
-            __typename: "OkResponse",
-          };
+          return composeOkResponse([9],0);
         },
         testMutationResponseErr: (): IGraphQl_MutationResponse => {
           return composeErrorResponse("This is a test ErrorResponse");
         },
         testMutationResponseOk: (): IGraphQl_MutationResponse => {
-          return {
-            success: true,
-            nrAffected: 0,
-            ids: [10],
-            __typename: "OkResponse",
-          };
+          return composeOkResponse([10],0);
         },
       };
 
+export type ResolverArgs = {
+  [key:string]:any
+} | undefined;
 
 export type ResolverFn =
-  (args?:{[key:string]:any}, context?:AuthRequest, info?: any)=>
+  (args?:ResolverArgs, context?:AuthRequest, info?: any)=>
     IGraphQl_BaseResponse | Promise<IGraphQl_BaseResponse>;
 
 export type ResolverObj = {[key:string]: ResolverFn};

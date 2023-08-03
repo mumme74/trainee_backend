@@ -1,0 +1,7 @@
+type tst_topic_Query {
+  tst_topic_QueryTest: String!
+}
+
+type tst_topic_Mutation {
+  tst_topic_MutationTest: String!
+}

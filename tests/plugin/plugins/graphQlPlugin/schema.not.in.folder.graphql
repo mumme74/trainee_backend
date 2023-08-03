@@ -1,0 +1,7 @@
+type tstOutOfFolder_topic_Query {
+  tstOutOfFolder_topic_QueryTest: String!
+}
+
+type tstOutOfFolder_topic_Mutation {
+  tstOutOfFolder_topic_MutationTest: String!
+}

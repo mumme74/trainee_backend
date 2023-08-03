@@ -2,7 +2,7 @@ import { InitOptions, Model, Sequelize } from "sequelize";
 import {
   registerDbPlugin,
   registerDbModel,
-  closeDbPlugin,
+  lockDbPlugin,
   defineDb,
   initDb,
   findDbPlugin,
@@ -38,7 +38,7 @@ describe('Test registerDbPlugin', ()=>{
     expect(plug.name).toBe('Test 1');
     expect(plug.modelPrefix).toBe('t1');
     expect(plug.description).toBe(undefined);
-    expect(plug.closed).toBeFalsy()
+    expect(plug.isLocked).toBeFalsy()
   })
   it('Should register with description', ()=>{
     registerDbPlugin('Test 2', "t2", __dirname, 'desc t2');
@@ -101,7 +101,7 @@ describe("Test registerDbModel", ()=>{
   it("Should fail to register to closed plugin", ()=>{
     class TestCls6 extends TestMdlBase {}
     registerDbPlugin('testMdl6','tst6', __dirname);
-    closeDbPlugin('testMdl5');
+    lockDbPlugin('testMdl5');
     expect(()=>{
       registerDbModel(TestCls6, 'testMdl5')
     }).toThrow();
@@ -110,7 +110,7 @@ describe("Test registerDbModel", ()=>{
     class TestCls7 extends TestMdlBase {}
     registerDbPlugin('testMdl7','tst7', __dirname);
     registerDbPlugin('testPlug7', 'tst7', __dirname);
-    closeDbPlugin('testMdl7')
+    lockDbPlugin('testMdl7')
     expect(()=>{
       registerDbModel(TestCls7, 'testPlug7')
     }).not.toThrow();

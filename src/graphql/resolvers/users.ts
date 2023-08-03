@@ -10,12 +10,13 @@ import { AuthRequest } from "../../types";
 import { composeErrorResponse, rolesFilter } from "../helpers";
 import { UserError } from "../../helpers/errorHelpers";
 import { User } from "../../models/core_user";
-import { Op, Sequelize, Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { Role, eRolesAvailable, rolesAvailableKeys, rolesAvailableNrs } from "../../models/core_role";
 import { organizationLoader, transformOrganization } from "./organizations";
 import { Organization, fetchOrganizationNr } from "../../models/core_organization";
 import { Picture } from "../../models/core_picture";
 import { OAuth } from "../../models/core_oauth";
+import { getSequelize } from "../../models";
 
 
 // -------------------------------------------------------------------------
@@ -71,7 +72,7 @@ export default {
       req: AuthRequest,
     ): Promise<IGraphQl_MutationResponse> => {
       try {
-        return await (User.sequelize as Sequelize).transaction(
+        return await getSequelize().transaction(
           async (transaction: Transaction)=>{
             // find optional organization from input.domain
             const orgId = bulkUsers.domain ?

@@ -1,4 +1,4 @@
-import type { IGraphQl_ErrorResponse } from "./schema";
+import type { IGraphQl_ErrorResponse, IGraphQl_OkResponse } from "./schema";
 import type { AuthRequest } from "../types";
 import { UserError } from "../helpers/errorHelpers";
 import type { IFilterOptions } from "../helpers/userHelpers";
@@ -16,6 +16,18 @@ export const composeErrorResponse = (
     __typename: "ErrorResponse",
   };
 };
+
+export const composeOkResponse = (
+  ids: number[], nrAffected?: number
+): IGraphQl_OkResponse =>
+{
+  return {
+    success: true,
+    nrAffected: nrAffected ?? ids.length,
+    ids,
+    __typename: 'OkResponse'
+  }
+}
 
 export const tryCatch = (controllerName: string, cb: Function) => {
   return (args: any, req: any, info: any) => {

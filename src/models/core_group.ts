@@ -1,5 +1,4 @@
 import { Model, DataTypes, Sequelize, InitOptions } from "sequelize";
-import { registerDbModel } from "./index";
 
 /// stores a group such as a class
 
@@ -53,5 +52,3 @@ export class Group extends Model {
     });
   }
 }
-
-registerDbModel(Group, 'Core');

@@ -1,9 +1,8 @@
 import {
   Model, DataTypes, Sequelize,
-  CreateOptions, QueryTypes, InitOptions
+  QueryTypes, InitOptions
 } from "sequelize";
-import { registerDbModel } from "./index";
-import { Role, eRolesAvailable } from "./core_role";
+import { Role } from "./core_role";
 import { Picture } from "./core_picture";
 import { rolesAvailableKeys } from "./core_role";
 import {
@@ -11,6 +10,7 @@ import {
   hashPasswordSync
 } from "../helpers/password";
 import { Organization } from "./core_organization";
+import { UserError } from "../helpers/errorHelpers";
 
 const nameValidator = (fld?:string)=>{
   return {
@@ -18,6 +18,20 @@ const nameValidator = (fld?:string)=>{
     msg: `Not a valid ${fld || "name"}`
   }
 };
+
+const passwdValidator = (cleartext?:string) => {
+  if (!cleartext) return;
+  if (typeof cleartext !== 'string') {
+    throw new UserError('Password must be a string')
+  } else if (cleartext.length < 8) {
+    throw new UserError('Passsword to short');
+  } else if (cleartext.toLowerCase() === cleartext) {
+    throw new UserError('Password must have mixed UPPER and lower case');
+  } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(cleartext)) {
+    // special chars
+    throw new UserError('Password must contain special chars');
+  }
+}
 
 export class User extends Model {
   declare id: number;
@@ -105,6 +119,7 @@ export class User extends Model {
         type: DataTypes.STRING,
         set(cleartext: string) {
           if (!cleartext) return;
+          passwdValidator(cleartext);
           try {
             const hash = hashPasswordSync(cleartext);
             this.setDataValue('password', hash);
@@ -165,5 +180,3 @@ export class User extends Model {
     })
   }
 }
-
-registerDbModel(User, 'Core');

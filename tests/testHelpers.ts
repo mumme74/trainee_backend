@@ -12,6 +12,8 @@ import { eRolesAvailable } from "../src/models/core_role";
 import { User } from "../src/models/core_user";
 import { Role } from "../src/models/core_role";
 import { initGraphQlSchema } from "../src/graphql/schema";
+import { Console } from "console";
+import internal, { Stream } from "stream";
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;
@@ -238,5 +240,62 @@ export async function destroyTestUser(user: User | undefined = undefined) {
       err.errors.forEach((e: any)=>console.error(e.message));
     else console.error(err.message || err, err.stack);
     throw err;
+  }
+}
+
+export class ArrStream extends Stream.Writable {
+  private arr: any[];
+  constructor(
+    arr: any[],
+    opts?: internal.WritableOptions | undefined
+  ) {
+    super(opts);
+    this.arr = arr;
+  }
+  _write(chunk: any, enc:any, next:any) {
+    this.arr.push(chunk.toString ? chunk.toString() : chunk);
+    next();
+  }
+}
+
+export class MockConsole extends Console {
+  private oldConsole = global.console;
+  private stdOutArr: any[];
+  private stdErrArr: any[];
+
+  constructor() {
+    console.log('redirect console')
+    const stdOutArr: any[] = [], stdErrArr:any[] = [];
+    const stdout = new ArrStream(stdOutArr),
+          stderr = new ArrStream(stdErrArr);
+
+    super(stdout, stderr);
+
+    this.oldConsole = global.console;
+    global.console = this;
+    this.stdErrArr = stdErrArr;
+    this.stdOutArr = stdOutArr;
+  }
+
+  get stdout(): any[] {
+    return [...this.stdOutArr.splice(0)];
+  }
+
+  get stderr(): any[] {
+    return [...this.stdErrArr.splice(0)];
+  }
+
+  debug(message?: any, ...optionalParams: any[]): void {
+    this.oldConsole.log.apply(this.oldConsole, arguments as any);
+  }
+
+  clear() {
+    this.stdErrArr.splice(0);
+    this.stdOutArr.splice(0);
+  }
+
+  restore() {
+    global.console = this.oldConsole;
+    console.log('console restored');
   }
 }
