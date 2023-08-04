@@ -229,7 +229,7 @@ export function closeDb() {
 export const resetDb_onlyForTesting = process.env.NODE_ENV === 'test' ?
   async () => {
     try {
-      await sequelize.drop();
+      await sequelize?.drop();
     } catch (e) {
       console.error(e);
     }

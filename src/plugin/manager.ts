@@ -45,7 +45,7 @@ export function requirePlugins(app: Express): void {
       if (plugin.prefix?.length < 3)
         throw new Error(
           `Plugin prefix must be at least 3chars in ${plugin.name}`);
-      if (plugin.description?.length < 10)
+      if (plugin.description?.length < 11)
         throw new Error(
           `Must have a detailed description to ${plugin.name}`);
 

@@ -145,7 +145,7 @@ describe("GraphiQl", ()=>{
     req.setToken("");
   });
 
-  test("succeed get graphiql html when develpoment", (done: CallbackHandler) => {
+  test("succeed get graphiql html when development", (done: CallbackHandler) => {
     process.env = { ...processEnv, NODE_ENV: "development" };
     const app = jsonApp();
     graphQlRoute(app);

@@ -208,7 +208,7 @@ describe("Test autoCreate", ()=>{
     );
   });
 
-  it("Should create schema and resolver for plugin", async ()=>{
+  it("Should autoCreate schema and resolver for plugin", async ()=>{
     process.env['PLUGIN.1'] =
       'tests/plugin/plugins/graphQlPlugin/test_graphql_plugin';
     requirePlugins(app);
@@ -222,7 +222,7 @@ describe("Test autoCreate", ()=>{
     ).toBeTruthy();
   });
 
-  it("Should create a custom type", async ()=>{
+  it("Should autoCreate a custom type", async ()=>{
     process.env['PLUGIN.1'] =
       'tests/plugin/plugins/graphQlPlugin/test_graphql_plugin_custom_type';
     requirePlugins(app);

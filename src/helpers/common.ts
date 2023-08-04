@@ -22,10 +22,10 @@ const getJsonFromFile = async (file:string) => {
   let str:string;
   try {
     str = await fsAwait.readFile(file) + "";
+    return JSON.parse(str);
   } catch(e) {
-    str = "{}"
+    return {};
   }
-  return JSON.parse(str);
 }
 
 /**
