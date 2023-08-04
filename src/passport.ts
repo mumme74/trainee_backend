@@ -51,7 +51,7 @@ passport.use(
   ),
 );
 
-// local stategy
+// local strategy
 passport.use(
   new LocalStrategy(
     {
@@ -100,7 +100,7 @@ passport.use(
   ),
 );
 
-// google stategy
+// google strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -165,12 +165,12 @@ export const passportJWT = (
   res: Response,
   next: NextFunction,
 ) => {
-  const errResponeJson = JSON.stringify(errorResponse("Invalid token"))
+  const errResponseJson = JSON.stringify(errorResponse("Invalid token"))
   return passport.authenticate(
     "jwt",
     {
       session: false,
-      failureFlash: errResponeJson,
+      failureFlash: errResponseJson,
     },
     (err: any, user: any, info: any) => {
       if (err || !user) {
@@ -201,7 +201,7 @@ function validateAud(parsedToken: any){
 }
 
 function validateExpiration(parsedToken: any) {
-  // we need to make exp from millisconds since epoch to minutes
+  // we need to make exp from milliseconds since epoch to minutes
   const expiresAt =
     Math.floor(parsedToken.exp / 60) -
     Math.floor(new Date().getTime() / 60000);

@@ -86,7 +86,7 @@ describe("userLoader", () => {
     await User.truncate();
   });
 
-  test("empty array non existant id", async () => {
+  test("empty array non existent id", async () => {
     const user = await userLoader.loadMany([1234567890]);
     expect(user[0] instanceof Error).toBe(true);
     expect((user[0] as Error).message).toContain('User.id=');

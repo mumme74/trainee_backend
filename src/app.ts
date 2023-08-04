@@ -1,6 +1,6 @@
 const nodeEnv = process.env.NODE_ENV || "development";
 import dotenv from "dotenv";
-dotenv.config({ path: `.env.${nodeEnv}` }); // must be done bofore any other imports
+dotenv.config({ path: `.env.${nodeEnv}` }); // must be done before any other imports
 
 import express, { Request, Response } from "express";
 import morgan from "morgan";
@@ -40,7 +40,7 @@ export async function initApp() {
 
   // middleware
   if (process.env.NODE_ENV !== "test") {
-    app.use(morgan("dev")); // dont clutter logs
+    app.use(morgan("dev")); // don't clutter logs
   }
 
   // pictures

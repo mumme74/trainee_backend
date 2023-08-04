@@ -6,5 +6,5 @@ type core_organization_Type {
   description: String!
   updatedBy: core_user_Type
   createdAt: Date!
-  updataedAt: Date!
+  updatedAt: Date!
 }

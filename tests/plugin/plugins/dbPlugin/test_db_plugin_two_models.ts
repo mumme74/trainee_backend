@@ -10,7 +10,7 @@ const test1_plugin: plugin.PluginBase = {
   description: "Testing plugin Db with 2 tables",
   prefix: "tstDb",
   resources: [plugin.eResources.database],
-  autocreate: {dbModels:[DbModelOne, DbModelTwo]},
+  autoCreate: {dbModels:[DbModelOne, DbModelTwo]},
   construct: (app: plugin.Express): void => {
     app.on(evts.beforeDatabaseStartup, beforeDatabase);
   }

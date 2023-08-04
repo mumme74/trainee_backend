@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe("UserError", () => {
-  test("sanity checks for Usererror", () => {
+  test("sanity checks for UserError", () => {
     const err = new UserError("test");
     expect(err instanceof Error).toEqual(true);
     expect(err.toString()).toEqual("UserError: test");
@@ -17,7 +17,7 @@ describe("UserError", () => {
   });
 });
 
-describe("errorReponse", () => {
+describe("errorResponse", () => {
   function matchObj(
     err:
       | string

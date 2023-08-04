@@ -28,7 +28,7 @@ const test1_plugin: plugin.PluginBase = {
   description: "Testing plugin schema out of folder",
   prefix: "tstOutOfFolder",
   resources: [plugin.eResources.graphql],
-  autocreate: {
+  autoCreate: {
     graphQl:{
       schemas:['../../schema.not.in.folder.graphql'],
       resolvers

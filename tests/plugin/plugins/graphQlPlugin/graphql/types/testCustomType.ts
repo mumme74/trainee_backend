@@ -2,7 +2,7 @@ import { GraphQLScalarType, Kind } from "graphql";
 
 export const testType = new GraphQLScalarType({
   name: "TestType",
-  description: "Test plugin with a customtype",
+  description: "Test plugin with a customType",
   serialize(value:any) {
     return "TestType:"+value;
   },

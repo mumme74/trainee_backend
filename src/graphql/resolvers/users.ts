@@ -159,7 +159,7 @@ export default {
         let orgId;
         if (!domain) orgId = req.user.user.organizationId;
         else {
-          // lookup organzation, specialcase moving out to no domain
+          // lookup organization, special case moving out to no domain
           const org = await Organization.findOne({where:{domain}});
           if (!org && domain)
             throw new UserError("Domain not found in any organization");
@@ -170,7 +170,7 @@ export default {
           // not super admin
           if (orgId !== req.user.user.organizationId && domain !== "")
             throw new UserError(
-              "You dont have priviledges to move user to another domain than your own",
+              "You don't have privileges to move user to another domain than your own",
             );
         }
 
@@ -318,7 +318,7 @@ const createUserAndRoles = async (
   for (const roleStr of (newUser?.roles || [])) {
     const roleNr = +eRolesAvailable[roleStr as any];
 
-    // make sure we only add with lower privs than ourselfs
+    // make sure we only add with lower privileges than our selfs
     if (roleNr >= highestRole) continue;
 
     const r = await Role.create({

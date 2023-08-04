@@ -47,7 +47,7 @@ let isDefined = false;
  * All models for this plugin gets prefixed by modelPrefix.
  *
  * Example: model 'Result' in plugin 'Reading' becomes
- *          Reading_Results as modelName (and tablename in database)
+ *          Reading_Results as modelName (and tableName in database)
  *
  * @param {string} name The name of the plugin
  * @param {string} modelPrefix Prefix with this
@@ -88,7 +88,7 @@ export function lockDbPlugin(plugin: string | DbPlugin) {
  * Register a DB model to the application
  * All Models must be registered before defineDb is called
  * @param {DbModel} model The model to register so bootstrap is called on it
- * @param {string} modelName The tablename stored in database
+ * @param {string} modelName The tableName stored in database
  * @param {DbPlugin | string} plugin The plugin to associate model with
  */
 export function registerDbModel(
@@ -120,7 +120,7 @@ export function registerDbModel(
 }
 
 /**
- * Workaround multiple unique indexes beeing created every
+ * Workaround multiple unique indexes being created every
  * time Sequelize re-syncs, see bug https://github.com/sequelize/sequelize/issues/12889
  * Should only affect sequelize < 7.0
  * @param {QueryInterface} queryInterface The query interface to run queries on

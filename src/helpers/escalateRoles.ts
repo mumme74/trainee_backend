@@ -12,7 +12,7 @@ export const passAsTeacher = async (user: User):
         ++regexCnt;
         if (new RegExp(regexStr).test(input)) ++matchCnt;
       }
-    } catch (e) { /*squelsh*/ }
+    } catch (e) { /*squelch*/ }
   }
 
   if (

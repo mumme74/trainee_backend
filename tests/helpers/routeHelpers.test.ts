@@ -94,14 +94,14 @@ function testNameFields(
   userObj: { firstName: string; lastName: string },
   schema: any,
 ) {
-  test("fail empty firstname", () => {
+  test("fail empty firstName", () => {
     validate(schema, { ...userObj, firstName: "" });
     expect(res.status).toBeCalledWith(400);
     matchErrorMockCall(res, '"firstName" is not allowed to be empty');
     expect(next).not.toBeCalled();
   });
 
-  test("fail too long firstname", () => {
+  test("fail too long firstName", () => {
     validate(schema, {
       ...userObj,
       firstName: "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
@@ -111,14 +111,14 @@ function testNameFields(
     expect(next).not.toBeCalled();
   });
 
-  test("fail empty lastname", () => {
+  test("fail empty lastName", () => {
     validate(schema, { ...userObj, lastName: "" });
     expect(res.status).toBeCalledWith(400);
     matchErrorMockCall(res, '"lastName" is not allowed to be empty');
     expect(next).not.toBeCalled();
   });
 
-  test("fail too long lastname", () => {
+  test("fail too long lastName", () => {
     validate(schema, {
       ...userObj,
       lastName: "Thisisaverylongnameforaapersonsolongthatitshouldnotbeallowed",
@@ -342,7 +342,7 @@ describe("hasRoles function", () => {
 
     expect(res.status).toBeCalledWith(403);
     const data = (res.json as jest.Mock).mock.calls[0][0];
-    matchError(data, "Insufficient priviledges");
+    matchError(data, "Insufficient privileges");
     expect(next).not.toBeCalled();
   });
 

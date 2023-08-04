@@ -7,7 +7,7 @@ const htmlEscChars: HtmlEscChars = {
   "'": "&#39;",
   '"': "&quot;",
 };
-// need to specialcase & because it can be a start of a already escaped entity
+// need to special case & because it can be a start of a already escaped entity
 const htmlEscKeys = Object.keys(htmlEscChars).map((key) =>
   key === "&" ? "&(?![#\\w]\\w{1,5};)" : key,
 );

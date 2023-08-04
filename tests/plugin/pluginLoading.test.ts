@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: `.env.test` }); // must be done bofore any other imports
+dotenv.config({ path: `.env.test` }); // must be done before any other imports
 
 import "../testProcess.env"
 import {
@@ -111,7 +111,7 @@ describe('Test plugin loading', ()=>{
     process.env['PLUGIN.1'] = 'tests/plugin/plugins/test_short_prefix';
     expect(()=>{
       requirePlugins(app);
-    }).toThrowError(/^Plugin prefix must be atleast/);;
+    }).toThrowError(/^Plugin prefix must be at least/);;
   });
 
   it('Should throw short description', ()=>{
@@ -141,10 +141,10 @@ describe("getPlugin tests", ()=>{
       {name:'test1',prefix:'tst'});
   });
 
-  it('Should return undefined for none existant search', ()=>{
+  it('Should return undefined for none existent search', ()=>{
     process.env['PLUGIN.1'] = 'tests/plugin/plugins/test1';
     requirePlugins(app);
-    expect(getPlugin({name:'none_existant'})).toBe(undefined);
+    expect(getPlugin({name:'none_existent'})).toBe(undefined);
   });
 
   it('Should find plugin test1 from path', ()=>{
@@ -155,20 +155,20 @@ describe("getPlugin tests", ()=>{
       {name:'test1',prefix:'tst'});
   });
 
-  it('Should return undefined for none existant path search', ()=>{
+  it('Should return undefined for none existent path search', ()=>{
     process.env['PLUGIN.1'] = 'tests/plugin/plugins/test1';
     requirePlugins(app);
-    const plug = getPlugin({path:'/none/existant/test1'});
+    const plug = getPlugin({path:'/none/existent/test1'});
     expect(plug).toBe(undefined);
   });
 });
 
-describe("Test autocreate", ()=>{
+describe("Test autoCreate", ()=>{
   afterEach(()=>{
     clearGraphQlPlugins();
   })
 
-  it("Should autocreate graphQl schema", async ()=>{
+  it("Should autoCreate graphQl schema", async ()=>{
     process.env['PLUGIN.1'] =
       'tests/plugin/plugins/graphQlPlugin/test_graphql_plugin';
     requirePlugins(app);
@@ -188,7 +188,7 @@ describe("Test autocreate", ()=>{
     );
   });
 
-  it("Should autocreate graphQl with schema out of folder", async ()=>{
+  it("Should autoCreate graphQl with schema out of folder", async ()=>{
     process.env['PLUGIN.1'] =
       'tests/plugin/plugins/graphQlPlugin/test_graphql_plugin_out_of_folder';
     requirePlugins(app);
@@ -249,7 +249,7 @@ describe("Test database plugin", ()=>{
     await closeTestDb(true);
   })
 
-  it('Should autocreate table from dbModel', async ()=>{
+  it('Should autoCreate table from dbModel', async ()=>{
     process.env['PLUGIN.1'] =
       'tests/plugin/plugins/dbPlugin/test_db_plugin';
     requirePlugins(app);
@@ -284,7 +284,7 @@ describe("Test database plugin", ()=>{
     expect(tables?.map(t=>t.name)).toContain('tstDb_DbModelTwos');
   });
 
-  it('Should autocreate dbModel', async ()=>{
+  it('Should autoCreate dbModel', async ()=>{
     process.env['PLUGIN.1'] =
       'tests/plugin/plugins/dbPlugin/test_db_plugin';
     requirePlugins(app);

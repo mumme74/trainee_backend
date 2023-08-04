@@ -112,9 +112,9 @@ describe("rolesFilter", () => {
   const arg = { args: "arg" };
   const info = "info";
 
-  const ANY_OF_ERR_STRING = "Insufficient priviledges";
-  const ALL_OF_ERR_STRING = "You do not have all required priviledges";
-  const EXCLUDE_ERR_STRING = "You have a priviledge that you shall NOT have";
+  const ANY_OF_ERR_STRING = "Insufficient privileges";
+  const ALL_OF_ERR_STRING = "You do not have all required privileges";
+  const EXCLUDE_ERR_STRING = "You have a privilege that you shall NOT have";
 
 
 

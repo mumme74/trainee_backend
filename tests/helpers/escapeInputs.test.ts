@@ -2,7 +2,7 @@ import { escapeHTML } from "../../src/helpers/escapeInputs";
 
 describe("don't escape", () => {
   test("clean string", () => {
-    expect(escapeHTML("dont touch me!")).toEqual("dont touch me!");
+    expect(escapeHTML("don't touch me!")).toEqual("don't touch me!");
   });
   test("test &amp;", () => {
     expect(escapeHTML("Me &amp;")).toEqual("Me &amp;");

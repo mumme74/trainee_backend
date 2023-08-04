@@ -703,7 +703,7 @@ describe("avaliableroles", () => {
           .expect(403)
           .expect((res: request.Response) => {
             expect(mockController.rolesAvailable).not.toBeCalled();
-            matchErrorSupertest(res, "Insufficient priviledges");
+            matchErrorSupertest(res, "Insufficient privileges");
           })
           .end(done);
       })
@@ -722,7 +722,7 @@ describe("avaliableroles", () => {
           .expect(403)
           .expect((res: request.Response) => {
             expect(mockController.rolesAvailable).not.toBeCalled();
-            matchErrorSupertest(res, "Insufficient priviledges");
+            matchErrorSupertest(res, "Insufficient privileges");
           })
           .end(done);
       })

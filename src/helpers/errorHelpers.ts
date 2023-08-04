@@ -6,8 +6,8 @@ export interface IErrorResponse {
 }
 
 /**
- * @brief Custom error to differentiate between system error and error user triggred
- *        such as insuficient credentials
+ * @brief Custom error to differentiate between system error and error user triggered
+ *        such as insufficient credentials
  */
 export class UserError extends Error {
   toString() {

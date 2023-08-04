@@ -145,7 +145,7 @@ const UsersController: IUsersController = {
   googleOAuthOk: async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest,
           authObj = authReq.user;
-    // login succeded from google oauth
+    // login succeeded from google oauth
     // generate token
     //console.log("req.user", authReq.user);
 
@@ -230,9 +230,9 @@ const UsersController: IUsersController = {
         }
       }
       console.log("Failed to delete");
-      return res.status(400).json(errorResponse("Missmatched info!"));
+      return res.status(400).json(errorResponse("Mismatched info!"));
     } catch (err: any) {
-      console.log("Failed to delete, error occured");
+      console.log("Failed to delete, error occurred");
       return res.status(500).json(errorResponse(err));
     }
   },

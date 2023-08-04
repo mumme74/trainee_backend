@@ -14,7 +14,7 @@ import {
   closeTestDb
 } from "../testingDatabase";
 
-// test db plugin functionallity
+// test db plugin functionality
 
 
 let mdlName: string | undefined,
@@ -106,7 +106,7 @@ describe("Test registerDbModel", ()=>{
       registerDbModel(TestCls6, 'testMdl5')
     }).toThrow();
   });
-  it("Should succed to register to another unclosed plugin", ()=>{
+  it("Should succeed to register to another unclosed plugin", ()=>{
     class TestCls7 extends TestMdlBase {}
     registerDbPlugin('testMdl7','tst7', __dirname);
     registerDbPlugin('testPlug7', 'tst7', __dirname);
@@ -139,7 +139,7 @@ describe("Test bootstrap mehods called", ()=>{
     expect(bootstrapAfterHookCalled).toBe(true);
     expect(mdlName).toBe('b1_TestB1s');
   });
-  it("Should throw registerPlugin after definedb called", async ()=>{
+  it("Should throw registerPlugin after defineBb called", async ()=>{
     if (!sequelize) {
       registerDbPlugin('testB2', 'b2', __dirname);
       await runDefineDb();
@@ -148,7 +148,7 @@ describe("Test bootstrap mehods called", ()=>{
       registerDbPlugin('testB3', 'b3', __dirname);
     }).toThrow()
   });
-  it("Should throw registerModel after definedb called", async ()=>{
+  it("Should throw registerModel after defineDb called", async ()=>{
     class TestB4 extends TestMdlBase {}
     if (!sequelize) {
       registerDbPlugin('testB4', 'b4', __dirname);

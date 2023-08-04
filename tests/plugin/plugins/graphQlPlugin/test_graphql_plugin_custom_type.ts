@@ -28,7 +28,7 @@ const test1_plugin: plugin.PluginBase = {
   description: "Testing plugin with custom type",
   prefix: "tstWType",
   resources: [plugin.eResources.graphql],
-  autocreate: {
+  autoCreate: {
     graphQl:{
       schemas:['../schema.custom.type.graphql'],
       resolvers,

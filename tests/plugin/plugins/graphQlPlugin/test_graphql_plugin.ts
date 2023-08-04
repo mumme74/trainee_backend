@@ -28,7 +28,7 @@ const test1_plugin: plugin.PluginBase = {
   description: "Testing plugin one",
   prefix: "tst",
   resources: [plugin.eResources.graphql],
-  autocreate: {graphQl:{resolvers}},
+  autoCreate: {graphQl:{resolvers}},
   construct: (app: plugin.Express): void => {
     app.on(evts.beforeGraphQl, beforeGraphQl);
   }

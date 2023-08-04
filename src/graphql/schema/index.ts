@@ -50,7 +50,7 @@ export function getGraphQlSchema() {
 }
 
 /**
- * Initalizes GraphQlSchemas
+ * Initializes GraphQlSchemas
  * @returns {GraphQLSchema}
  */
 export function initGraphQlSchema(graphQlPlugins: GraphQlPlugin[], log=false) {
@@ -170,7 +170,7 @@ function mergeSdlDocs(sdlObjs: SdlDocObj[], log:boolean) {
       case 'Query': moveToQuery(def,sdlObj); return true;
       case 'Mutation': moveToMutation(def,sdlObj); return true;
       case 'Subscription': moveToSubscription(def,sdlObj); return true;
-      // else dont move these
+      // else don't move these
       default: return false;
       }
   }

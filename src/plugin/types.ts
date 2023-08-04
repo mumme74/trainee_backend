@@ -68,7 +68,7 @@ export enum eResources {
 }
 
 /**
- * The signals a plugin can recieve from system
+ * The signals a plugin can receive from system
  */
 export enum ePluginEvents {
   beforeDatabaseStartup = "beforeDatabaseStartup",
@@ -95,13 +95,13 @@ export declare interface PluginBase {
   readonly prefix: string;
   /**
    * Which resources this plugin uses
-   * this relies on plugins beeing truthful */
+   * this relies on plugins being truthful */
   readonly resources: eResources[];
   /** Auto initializes these resources. */
-  autocreate?: {
-    /** if set: autoinitialize these databasemodels */
+  autoCreate?: {
+    /** if set: auto initialize these database models */
     dbModels?:DbModel[],
-    /** if set: autoinitialize these paths i GraphQl system */
+    /** if set: auto initialize these paths i GraphQl system */
     graphQl?:{
       /**
        * if set: inject only these schema files (filenames only)
@@ -111,7 +111,7 @@ export declare interface PluginBase {
        * All types in schema must be prefixed by plugin prefix and subject
        * ie: read_result_SetResultsForUser
        *
-       * Path to schema files: all files in 'graphql/schema/' subolder
+       * Path to schema files: all files in 'graphql/schema/' subfolder
        * with *.graphql file ending
        */
       schemas?: string[],

@@ -24,7 +24,7 @@ const passwdValidator = (cleartext?:string) => {
   if (typeof cleartext !== 'string') {
     throw new UserError('Password must be a string')
   } else if (cleartext.length < 8) {
-    throw new UserError('Passsword to short');
+    throw new UserError('Password to short');
   } else if (cleartext.toLowerCase() === cleartext) {
     throw new UserError('Password must have mixed UPPER and lower case');
   } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(cleartext)) {
@@ -50,8 +50,8 @@ export class User extends Model {
 
   // virtual functions
   async roles(): Promise<string[]> {
-    const myroles = await this.getRoles();
-    const res = myroles.map((n: Role)=>rolesAvailableKeys[n.role]);
+    const myRoles = await this.getRoles();
+    const res = myRoles.map((n: Role)=>rolesAvailableKeys[n.role]);
     return res;
   }
   fullName(): string {
@@ -65,7 +65,7 @@ export class User extends Model {
   async domain(): Promise<string|null>  {
     if (!this.organizationId) return null;
     const res = await this.sequelize.query(
-      'SELECT domain FROM core_Organiztion WHERE id=?'
+      'SELECT domain FROM core_Organization WHERE id=?'
       , {
         replacements: [this.organizationId],
         type: QueryTypes.SELECT

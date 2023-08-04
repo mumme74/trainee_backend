@@ -36,7 +36,7 @@ export interface IFilterOptions {
  * @brief Run req.user through these filters
  * @param opt the filters that have to be meet to be allowed through
  * @param req the request with user attached to it
- * @returns empty string on succes, or errormessage otherwise
+ * @returns empty string on succes, or error message otherwise
  */
 export const meetRoles = async (opt: IFilterOptions, req: AuthRequest):
   Promise<string> =>
@@ -55,13 +55,13 @@ export const meetRoles = async (opt: IFilterOptions, req: AuthRequest):
   }
 
   if (hasProp(opt.anyOf) && !hasRole(opt.anyOf))
-    return "Insufficient priviledges";
+    return "Insufficient privileges";
 
   if (hasProp(opt.exclude) && hasRole(opt.exclude))
-    return "You have a priviledge that you shall NOT have";
+    return "You have a privilege that you shall NOT have";
 
   if (hasProp(opt.allOf) && opt.allOf?.find(r=>roles.indexOf(r)===-1))
-    return "You do not have all required priviledges";
+    return "You do not have all required privileges";
 
   return "";
 };

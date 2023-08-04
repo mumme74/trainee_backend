@@ -34,14 +34,14 @@ export type GraphQlPlugin = {
 
 /**
  * Registers a Sdl plugin to system
- * Muust be called before initGraphQlSchema is called
+ * Must be called before initGraphQlSchema is called
  * @param plugin
  */
 export function registerGraphQlPlugin(plugin: GraphQlPlugin) {
   if (!plugin.name)
     throw new Error('SdlPlug must have a name');
   if (!plugin.schemaDir)
-    throw new Error('Sdlplugin must have a rootDir');
+    throw new Error('SdlPlugin must have a rootDir');
   if (getGraphQlSchema())
     throw new Error(
       "Cant add SdlPlugin after initGraphqlSchema() is called");

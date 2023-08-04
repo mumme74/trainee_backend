@@ -247,7 +247,7 @@ export const transformGroup = (group: Group):
  * @param {number} userId The user.id
  * @param {string} [filter] A filter to match the name of group
  * @param {boolean} [lookInTeacher] Look for teacher, default look for student
- * @param {boolean} [descending] Sort Descending instaed of ascending based of group name
+ * @param {boolean} [descending] Sort Descending instead of ascending based of group name
  * @returns Promise<IGraphQl_GroupType[]>
  */
 const groupsFor = async (
@@ -392,7 +392,7 @@ const deleteGroup = async (id: number, req: AuthRequest):
       if (group.ownerId !== user.id)
         throw new UserError("You can't delete a group you don't own")
 
-      // can only delete a class where we are the sole teacher attched to the group
+      // can only delete a class where we are the sole teacher attached to the group
       const res = await GroupTeacher.findAll({
         where:{
           [Op.and]:[

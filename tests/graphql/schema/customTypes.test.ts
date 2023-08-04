@@ -59,5 +59,5 @@ describe("blobType", ()=>{
     const u8arr = blobType.parseValue(binU8String);
     expect(u8arr).toStrictEqual(binU8);
   });
-  test("Should succeed parseLitteral", ()=>{});
+  test("Should succeed parseLiteral", ()=>{});
 })

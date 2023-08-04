@@ -2,7 +2,7 @@ import path from "node:path";
 import * as fsAwait from "node:fs/promises";
 
 /**
- * Gets the classname cls
+ * Gets the className cls
  * @param {object} cls The class to get name from
  * @returns {string} The defined name in JS code
  */

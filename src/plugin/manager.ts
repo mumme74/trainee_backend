@@ -41,10 +41,10 @@ export function requirePlugins(app: Express): void {
         throw new Error(`Plugin did not default export a PluginBase, ${pluginPath}`);
       if (plugin.name?.length < 3)
         throw new Error(
-          `Must give name to plugin, atleast 3chars long ${pluginPath}`);
+          `Must give name to plugin, at least 3chars long ${pluginPath}`);
       if (plugin.prefix?.length < 3)
         throw new Error(
-          `Plugin prefix must be atleast 3chars in ${plugin.name}`);
+          `Plugin prefix must be at least 3chars in ${plugin.name}`);
       if (plugin.description?.length < 10)
         throw new Error(
           `Must have a detailed description to ${plugin.name}`);
@@ -52,9 +52,9 @@ export function requirePlugins(app: Express): void {
       const pluginObj = {name:plugin.name, plugin, path:pat};
       allPlugins.set(plugin.name, pluginObj);
       app.on(ePluginEvents.beforeDatabaseStartup,
-        tryOn(pluginObj, autocreateDbModels));
+        tryOn(pluginObj, autoCreateDbModels));
       app.on(ePluginEvents.beforeGraphQl,
-        tryOn(pluginObj, autocreateGraphQl));
+        tryOn(pluginObj, autoCreateGraphQl));
 
       plugin.construct(app);
 
@@ -101,36 +101,36 @@ export const _clearPlugins = process.env.NODE_ENV === 'test' ?
  ()=>{allPlugins.clear()} :
  ()=>{ throw '_clearPlugins() only for testing'}
 
-async function autocreateDbModels(pluginObj: PluginObj) {
+async function autoCreateDbModels(pluginObj: PluginObj) {
   const plugin = pluginObj.plugin;
-  if (!plugin.autocreate?.dbModels) return;
+  if (!plugin.autoCreate?.dbModels) return;
   const modelsDir = path.join(
     path.dirname(pluginObj.path), 'models');
   const dbPlug = registerDbPlugin(plugin.name, plugin.prefix, modelsDir);
 
-  for (const model of plugin.autocreate?.dbModels) {
+  for (const model of plugin.autoCreate?.dbModels) {
     registerDbModel(
       model, dbPlug, getClassName(model));
   }
 }
 
-async function autocreateGraphQl(pluginObj: PluginObj) {
+async function autoCreateGraphQl(pluginObj: PluginObj) {
   const plugin = pluginObj.plugin;
-  if (!plugin.autocreate?.graphQl) return;
+  if (!plugin.autoCreate?.graphQl) return;
 
   const pluginDir = path.dirname(pluginObj.path);
   const schemasDir = path.join(pluginDir, 'graphql/schema');
 
-  const schemas = (!plugin.autocreate?.graphQl.schemas) ?
+  const schemas = (!plugin.autoCreate?.graphQl.schemas) ?
     fs.readdirSync(schemasDir).filter(f=>f.endsWith('.graphql')) :
-    [...plugin.autocreate.graphQl.schemas];
+    [...plugin.autoCreate.graphQl.schemas];
 
   let customTypes:GraphQLScalarType<unknown, unknown>[] | undefined;
-  if (plugin.autocreate.graphQl.customTypesFile) {
+  if (plugin.autoCreate.graphQl.customTypesFile) {
     const typePath = path.join(
       pluginDir,
       'graphql/types',
-      plugin.autocreate.graphQl.customTypesFile);
+      plugin.autoCreate.graphQl.customTypesFile);
 
     try {
       customTypes = require(typePath);
@@ -145,7 +145,7 @@ async function autocreateGraphQl(pluginObj: PluginObj) {
     prefix: plugin.prefix,
     schemaDir: schemasDir,
     sdlFiles: schemas,
-    resolvers: plugin.autocreate.graphQl.resolvers,
+    resolvers: plugin.autoCreate.graphQl.resolvers,
     customTypes
   };
 

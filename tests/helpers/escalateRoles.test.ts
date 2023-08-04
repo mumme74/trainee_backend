@@ -226,7 +226,7 @@ describe("escalation firstname", () => {
   });
 });
 
-describe("escalation lastname", () => {
+describe("escalation lastName", () => {
   beforeEach(() => {
     process.env.ENABLE_AUTO_ROLE_TEACHER = "true";
     process.env.TEACHER_LAST_NAME_REGEX = "^.+\\s123(?:KU|TE|KA)GY$";

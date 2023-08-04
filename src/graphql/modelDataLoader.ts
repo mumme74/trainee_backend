@@ -3,7 +3,7 @@ import { Op, ModelStatic } from "sequelize";
 import { getClassName } from "../helpers/common";
 
 /**
- * Custom DataLoader class, less boilarplate and have loadAll method
+ * Custom DataLoader class, less boilerplate and have loadAll method
  */
 export default class ModelDataLoader<V, K = number, C = K>
                   extends DataLoader<K, V, C>
@@ -32,7 +32,7 @@ export default class ModelDataLoader<V, K = number, C = K>
   /**
    * Loads all records with id aas key
    * Throws if any of ids could not be loaded
-   * @param {K[]} ids Array of keys, normaly numbers
+   * @param {K[]} ids Array of keys, normally numbers
    * @returns {Promise<Model[]>}
    */
   loadAll(ids: readonly K[]): PromiseLike<V[]> {

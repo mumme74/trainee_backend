@@ -16,7 +16,7 @@ type ErrorResponse {
   error: Error
 }
 
-# global ok reponse to mutation events
+# global ok response to mutation events
 type OkResponse {
   success: Boolean! # true
   nrAffected: Int!

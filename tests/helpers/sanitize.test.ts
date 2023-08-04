@@ -19,7 +19,7 @@ describe("test xss findStrings", () => {
     expect(res).toEqual(JSON.parse(data));
   });
 
-  test("string whick should be escaped", () => {
+  test("string which should be escaped", () => {
     // we goe around JSON here to provide a simple deepcopy
     const data = JSON.stringify({
       body: {
