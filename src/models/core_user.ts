@@ -7,7 +7,8 @@ import { Picture } from "./core_picture";
 import { rolesAvailableKeys } from "./core_role";
 import {
   comparePasswordHash,
-  hashPasswordSync
+  hashPasswordSync,
+  passwdStrengthFail
 } from "../helpers/password";
 import { Organization } from "./core_organization";
 import { UserError } from "../helpers/errorHelpers";
@@ -20,17 +21,9 @@ const nameValidator = (fld?:string)=>{
 };
 
 const passwdValidator = (cleartext?:string) => {
-  if (!cleartext) return;
-  if (typeof cleartext !== 'string') {
-    throw new UserError('Password must be a string')
-  } else if (cleartext.length < 8) {
-    throw new UserError('Password to short');
-  } else if (cleartext.toLowerCase() === cleartext) {
-    throw new UserError('Password must have mixed UPPER and lower case');
-  } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(cleartext)) {
-    // special chars
-    throw new UserError('Password must contain special chars');
-  }
+  if (!cleartext) return; // is empty when creating
+  const fail = passwdStrengthFail(cleartext);
+  if (fail) throw new UserError(fail);
 }
 
 export class User extends Model {

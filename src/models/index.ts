@@ -330,7 +330,7 @@ function registerCore() {
 
   for (const exp of exports) {
     for (const [name, vlu] of Object.entries(exp)) {
-      if ((vlu as any).prototype instanceof  Model)
+      if ((vlu as any)?.prototype instanceof  Model)
         registerDbModel(vlu as DbModel, plug, name)
     }
 

@@ -3,7 +3,8 @@ import { Request, Response, NextFunction } from "express";
 import { AuthRequest } from "../types";
 import type { IFilterOptions } from "./userHelpers";
 import { meetRoles } from "./userHelpers";
-import { errorResponse } from "./errorHelpers";
+import { UserError, errorResponse } from "./errorHelpers";
+import { passwdStrengthFail } from "./password";
 
 export const validateBody = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -31,7 +32,11 @@ export const validateBody = (schema: Joi.ObjectSchema) => {
 };
 
 const password = Joi.string()
-  .pattern(/^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/)
+  .custom((value:string, helpers: Joi.CustomHelpers<any>) => {
+    const fail = passwdStrengthFail(value);
+    if (fail) throw new UserError(fail);
+    return value;
+  })
   .required();
 const firstName = Joi.string().min(2).max(30).required();
 const lastName = Joi.string().min(2).max(50).required();

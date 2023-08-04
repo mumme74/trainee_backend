@@ -22,7 +22,7 @@ beforeAll(initTestDb);
 afterAll(closeTestDb);
 
 beforeEach(() => {
-  clearMockRes();
+  return clearMockRes();
 });
 
 // helpers
@@ -47,35 +47,42 @@ function testPassword(baseObj: { password: string }, schema: any) {
   test("fail when password all lowercase", () => {
     validate(schema, { ...baseObj, password: "secretpass1" });
     expect(res.status).toBeCalledWith(400);
-    matchErrorMockCall(res, '"password" with value');
+    matchErrorMockCall(res, '"password" failed custom validation because Password must have mixed UPPER and lower case');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password all CAPS", () => {
     validate(schema, { ...baseObj, password: "SECRETPASS1" });
     expect(res.status).toBeCalledWith(400);
-    matchErrorMockCall(res, '"password" with value');
+    matchErrorMockCall(res, '"password" failed custom validation because Password must have mixed UPPER and lower case');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password no special char", () => {
     validate(schema, { ...baseObj, password: "SecretPass1" });
     expect(res.status).toBeCalledWith(400);
-    matchErrorMockCall(res, '"password" with value');
+    matchErrorMockCall(res, '"password" failed custom validation because Password insufficient strength.\nMust contain special char');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password no number", () => {
     validate(schema, { ...baseObj, password: "SecretPass$" });
     expect(res.status).toBeCalledWith(400);
-    matchErrorMockCall(res, '"password" with value');
+    matchErrorMockCall(res, '"password" failed custom validation because Password must have a number in it');
     expect(next).not.toBeCalled();
   });
 
   test("fail when password to short", () => {
     validate(schema, { ...baseObj, password: "Secre1$" });
     expect(res.status).toBeCalledWith(400);
-    matchErrorMockCall(res, '"password" with value');
+    matchErrorMockCall(res, '"password" failed custom validation because Password is to short');
+    expect(next).not.toBeCalled();
+  });
+
+  test("fail when password to long", () => {
+    validate(schema, { ...baseObj, password: "Secre1$".padEnd(51,'padd') });
+    expect(res.status).toBeCalledWith(400);
+    matchErrorMockCall(res, '"password" failed custom validation because Password is to long');
     expect(next).not.toBeCalled();
   });
 

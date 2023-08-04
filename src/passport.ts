@@ -19,10 +19,11 @@ import { Role } from "./models/core_role";
 import { OAuth } from "./models/core_oauth";
 import { Organization } from "./models/core_organization";
 import { Picture } from "./models/core_picture";
+import { Login, eLoginState } from "./models/core_login";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
-// JSON web token strategy
+// JSON web token strategy, sort of a router to correct strategy
 passport.use(
   new JwtStrategy(
     {
@@ -51,7 +52,7 @@ passport.use(
   ),
 );
 
-// local strategy
+// local strategy, login via password
 passport.use(
   new LocalStrategy(
     {
@@ -73,8 +74,10 @@ passport.use(
 
         // if not, handle it
         if (!user) {
+          // can't log when there is no user
           done(false, false, "User does not exist");
         } else if (user.banned) {
+          await logLogin(eLoginState.UserBanned, user);
           done(false, user, "User is banned");
         } else {
           // check is the password is correct
@@ -82,11 +85,14 @@ passport.use(
 
           // if not, handle it
           if (!isMatch) {
+            await logLogin(eLoginState.WrongPassword, user);
             done(403, false, "Password incorrect");
           } else {
             // update last login
             user.lastLogin = new Date();
             await user.save();
+
+            await logLogin(eLoginState.PasswdLoginOk, user);
 
             // otherwise return the user
             done(null, {user, roles:[],oauth:null,pic:null}, "User found");
@@ -100,7 +106,7 @@ passport.use(
   ),
 );
 
-// google strategy
+// google strategy, login via google oauth2
 passport.use(
   new GoogleStrategy(
     {
@@ -117,20 +123,30 @@ passport.use(
       //console.log(googleId);
 
       try {
-        // checks, throws if error
-        validateAud(parsedToken);
-        const expiresAt = validateExpiration(parsedToken);
-        (req as AuthRequest).tokenExpiresIn = expiresAt;
-
         if (!parsedToken.email_verified)
           throw new UserError("Not a verified email in oath token!");
 
-        // done with validation,find user
+        // find the user
         const email = parsedToken.email,
               provider = parsedToken.name.toLowerCase();
-
         let {user, oauth} = await findUserAndOAuth(
           email,provider, parsedToken.sub);
+
+        // checks
+        if (!validateAud(parsedToken)) {
+          await logLogin(eLoginState.OAuthFailAud, user, oauth);
+          throw new UserError("Wrong OAuth clientId!");
+        }
+        const expiresAt = validateExpiration(parsedToken);
+        if (expiresAt === null) {
+          logLogin(eLoginState.OAuthTokenExpired, user, oauth);
+          throw new UserError(
+            "Expiration date was already passed on oauth token");
+          }
+        (req as AuthRequest).tokenExpiresIn = expiresAt;
+
+
+        // done with validation,find user
 
         // if not found create user and oauth entry
         if (!user)
@@ -140,10 +156,13 @@ passport.use(
         // update user avatar?
         const userPic = await checkUserPic(user, parsedToken);
 
-        if (user.banned)
+        if (user.banned) {
+          logLogin(eLoginState.UserBanned, user, oauth);
           done(false, user, "User is banned");
-        else
+        } else {
+          logLogin(eLoginState.OAuthLoginOk, user, oauth);
           done(null, {user, roles:[], oauth, userPic});
+        }
       } catch (err: any) {
         console.log(err.message);
         done(err, false, err.message);
@@ -160,12 +179,14 @@ export const passportGoogle = passport.authenticate("google-verify-token", {
   session: false,
 });
 
+const errResponseJson = JSON.stringify(errorResponse("Invalid token"))
+
+// this is when we are logged in
 export const passportJWT = (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const errResponseJson = JSON.stringify(errorResponse("Invalid token"))
   return passport.authenticate(
     "jwt",
     {
@@ -191,13 +212,20 @@ export const passportJWT = (
   )(req, res, next);
 };
 
+const logLogin = (
+  state: eLoginState, user: User | null, oauth?: OAuth | null
+) => {
+  if (user)
+    return Login.create({
+      state, userId:user.id, oauthId:oauth?.id || null})
+}
+
 function validateAud(parsedToken: any){
-  const auds: [string] = Array.isArray(parsedToken.aud)
+  const audFields: [string] = Array.isArray(parsedToken.aud)
   ? parsedToken.aud
   : [parsedToken.aud];
 
-  if (!auds.find((aud) => aud === process.env.GOOGLE_CLIENT_ID))
-    throw new UserError("Wrong OAuth clientId!");
+  return audFields.find((aud) => aud === process.env.GOOGLE_CLIENT_ID);
 }
 
 function validateExpiration(parsedToken: any) {
@@ -205,11 +233,7 @@ function validateExpiration(parsedToken: any) {
   const expiresAt =
     Math.floor(parsedToken.exp / 60) -
     Math.floor(new Date().getTime() / 60000);
-  if (expiresAt < 0)
-    throw new UserError(
-      "Expiration date was already passed on oauth token",
-    );
-  return expiresAt;
+  return (expiresAt < 0) ? null : expiresAt;
 }
 
 async function findUserAndOAuth(

@@ -9,6 +9,7 @@ import "../testProcess.env";
 import type { IUsersController } from "../../src/controllers/users";
 import { User } from "../../src/models/core_user";
 import { Role, eRolesAvailable } from "../../src/models/core_role";
+import { Login, eLoginState } from "../../src/models/core_login";
 import userRoutes from "../../src/routes/users";
 import { initTestDb, closeTestDb } from "../testingDatabase";
 import {
@@ -24,6 +25,7 @@ import {
   createTestUser,
   destroyTestUser,
 } from "../testHelpers";
+import { literal } from "sequelize";
 
 function respond(req: Request, res: Response, next: NextFunction) {
   return res.status(200).json(req.body);
@@ -53,9 +55,9 @@ afterAll(async () => {
   await closeTestDb();
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   for (const mockFn of Object.values(mockController)) {
-    mockFn.mockClear();
+    await mockFn.mockClear();
   }
 });
 
@@ -81,19 +83,18 @@ describe("signup", () => {
     password: "SectretPass1$",
   };
 
-  test("fail signup email invalid", (done: CallbackHandler) => {
-    req
+  test("fail signup email invalid", async () => {
+    await req
       .post({ ...userObj, email: "test@failmail" })
       .expect(400)
       .expect((response: request.Response) => {
         matchErrorSupertest(response, '"email" must be a valid email');
         expect(mockController.signup).not.toBeCalled();
-      })
-      .end(done);
+      });
   });
 
-  test("fail signup userName invalid", (done: CallbackHandler) => {
-    req
+  test("fail signup userName invalid", async () => {
+    await req
       .post({ ...userObj, userName: "hej@" })
       .expect(400)
       .expect((res: request.Response) => {
@@ -102,54 +103,49 @@ describe("signup", () => {
           res,
           '"userName" with value "hej@" fails to match the required pattern:',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("fail signup firstName invalid", (done: CallbackHandler) => {
-    req
+  test("fail signup firstName invalid", async () => {
+    await req
       .post({ ...userObj, firstName: "F" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.signup).not.toBeCalled();
         matchErrorSupertest(res, '"firstName" length must be at least');
-      })
-      .end(done);
+      });
   });
 
-  test("fail signup lastName invalid", (done: CallbackHandler) => {
-    req
+  test("fail signup lastName invalid", async () => {
+    await req
       .post({ ...userObj, lastName: "F" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.signup).not.toBeCalled();
         matchErrorSupertest(res, '"lastName" length must be at least');
-      })
-      .end(done);
+      });
   });
 
-  test("fail signup password invalid", (done: CallbackHandler) => {
-    req
+  test("fail signup password invalid", async () => {
+    await req
       .post({ ...userObj, password: "notvalid" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.signup).not.toBeCalled();
         matchErrorSupertest(
           res,
-          '"password" with value "notvalid" fails to match the required pattern:',
+          '"password" failed custom validation because Password must have mixed UPPER and lower case',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("succeed signup", (done: CallbackHandler) => {
-    req
+  test("succeed signup", async () => {
+    await req
       .post({ ...userObj })
       .expect(200)
       .expect((response: any) => {
         expect(response.body).toEqual(userObj);
-      })
-      .end(done);
+      });
   });
 });
 
@@ -164,8 +160,8 @@ describe("login", () => {
 
   afterAll(destroyUser);
 
-  test("fail login name empty", (done: CallbackHandler) => {
-    req
+  test("fail login name empty", async () => {
+    await req
       .post({ ...loginObj, login: "" })
       .expect(400)
       .expect((res: request.Response) => {
@@ -174,12 +170,11 @@ describe("login", () => {
           res,
           '"login" does not match any of the allowed types',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("fail login email invalid", (done: CallbackHandler) => {
-    req
+  test("fail login email invalid", async () => {
+    await req
       .post({ ...loginObj, login: "test@failmail" })
       .expect(400)
       .expect((res: request.Response) => {
@@ -188,12 +183,11 @@ describe("login", () => {
           res,
           '"login" does not match any of the allowed types',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("fail login name to short", (done: CallbackHandler) => {
-    req
+  test("fail login name to short", async () => {
+    await req
       .post({ ...loginObj, login: "he" })
       .expect(400)
       .expect((res: request.Response) => {
@@ -202,48 +196,62 @@ describe("login", () => {
           res,
           '"login" does not match any of the allowed types',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("fail login with password invalid", (done: CallbackHandler) => {
-    req
+  test("fail login with password invalid", async () => {
+    await req
       .post({ ...loginObj, password: "Secretpass1" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.login).not.toBeCalled();
         matchErrorSupertest(
           res,
-          '"password" with value "Secretpass1" fails to match the required pattern',
+          '"password" failed custom validation because Password insufficient strength',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("succeed login with email", (done: CallbackHandler) => {
-    req
+  test("succeed login with email", async () => {
+    await req
       .post({ ...loginObj, login: user.email })
       .expect(200)
-      .expect((response: request.Response) => {
+      .expect(async (response: request.Response) => {
+        console.log(response.body)
         expect(mockController.login).toBeCalled();
         const request = (mockController.login as jest.Mock).mock.calls[0][0];
-        compareUser(request.user.user, user);
-        expect(request.user.user.updatedAt.getTime())
-          .toBeGreaterThan(user.updatedAt.getTime())
-      })
-      .end(done);
+        compareUser(request?.user?.user, user);
+        expect(request.user?.user?.updatedAt.getTime())
+          .toBeGreaterThan(user.updatedAt.getTime());
+        const login = await Login.findOne({
+          where:{userId:user.id},order:[[literal('id'), 'DESC']]});
+        expect(login?.state).toBe(eLoginState.PasswdLoginOk);
+      });
   });
 
-  test("succeed login with userName", (done: CallbackHandler) => {
-    req
+  test("succeed login with userName", async () => {
+    await req
       .post({ ...loginObj, login: user.userName })
       .expect(200)
-      .expect((response: request.Response) => {
+      .expect(async (response: request.Response) => {
         expect(mockController.login).toBeCalled();
         const request = (mockController.login as jest.Mock).mock.calls[0][0];
         compareUser(request.user.user, user);
-      })
-      .end(done);
+        const login = await Login.findOne({
+          where:{userId:user.id},order:[[literal('id'), 'DESC']]})
+        expect(login?.state).toBe(eLoginState.PasswdLoginOk);
+      });
+  });
+
+  test("fail login with userName wrong password", async () => {
+    await req
+      .post({password: 'NotThePa$3WdWeWan%t', login: user.userName })
+      .expect(403)
+      .expect(async (response: request.Response) => {
+          const login = await Login.findOne({
+            where:{userId:user.id},order:[[literal('id'), 'DESC']]});
+          expect(login?.state).toBe(eLoginState.WrongPassword);
+      });
   });
 });
 
@@ -263,35 +271,33 @@ describe("myinfo", () => {
     req.setToken("");
   });
 
-  test("fail no token", (done: CallbackHandler) => {
-    req
+  test("fail no token", async () => {
+    await req
       .get()
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.myInfo).not.toBeCalled();
         matchErrorSupertest(res, "No auth token");
-      })
-      .end(done);
+      });
   });
 
-  test("fail expired token", (done: CallbackHandler) => {
+  test("fail expired token", async () => {
     req.setToken(
       signToken({
         userId: user.id,
         expiresInMinutes: 0,
       }),
     );
-    req
+    await req
       .get()
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.myInfo).not.toBeCalled();
         matchErrorSupertest(res, "jwt expired");
-      })
-      .end(done);
+      });
   });
 
-  test("fail not yet valid token", (done: CallbackHandler) => {
+  test("fail not yet valid token", async () => {
     req.setToken(
       signToken({
         userId: user.id,
@@ -299,17 +305,16 @@ describe("myinfo", () => {
         notBefore: 5,
       }),
     );
-    req
+    await req
       .get()
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.myInfo).not.toBeCalled();
         matchErrorSupertest(res, "jwt not active");
-      })
-      .end(done);
+      });
   });
 
-  test("fail tampered token", (done: CallbackHandler) => {
+  test("fail tampered token", async () => {
     const tokenPaths = signToken({
       userId: user.id,
     }).split(".");
@@ -321,63 +326,52 @@ describe("myinfo", () => {
       return Buffer.from(JSON.stringify(data)).toString("base64");
     })();
     req.setToken(tokenPaths.join("."));
-    req
+    await req
       .get()
       .expect(401)
       .expect((res: request.Response) => {
         //console.log(res);
         expect(mockController.myInfo).not.toBeCalled();
         matchErrorSupertest(res, "invalid token");
-      })
-      .end(done);
+      });
   });
 
-  test("fail banned user", (done: any) => {
+  test("fail banned user", async () => {
     user.banned = true;
-    user
-      .save()
-      .then(() => {
-        req.setToken(signToken({ userId: user.id }));
-        req
-          .get()
-          .expect(403)
-          .expect((res: request.Response) => {
-            expect(res.forbidden).toBe(true);
-            expect(mockController.myInfo).not.toBeCalled();
-            matchErrorSupertest(res, "User is banned");
-          })
-          .end(done);
-      })
-      .catch(done);
-  });
-
-  test("fail token belongs to deleted user", (done: any) => {
-    user.destroy()
-      .then(() => {
-        req.setToken(signToken({ userId: user.id }));
-        req
-          .get()
-          .expect(401)
-          .expect((res: request.Response) => {
-            expect(mockController.myInfo).not.toBeCalled();
-            matchErrorSupertest(res, "Unauthenticated");
-          })
-          .end(done);
-      })
-      .catch(done);
-  });
-
-  test("succeed with valid token", (done: CallbackHandler) => {
+    await user.save();
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
+      .get()
+      .expect(403)
+      .expect((res: request.Response) => {
+        expect(res.forbidden).toBe(true);
+        expect(mockController.myInfo).not.toBeCalled();
+        matchErrorSupertest(res, "User is banned");
+      });
+  });
+
+  test("fail token belongs to deleted user", async () => {
+    await user.destroy()
+    req.setToken(signToken({ userId: user.id }));
+    await req
+      .get()
+      .expect(401)
+      .expect((res: request.Response) => {
+        expect(mockController.myInfo).not.toBeCalled();
+        matchErrorSupertest(res, "Unauthenticated");
+      });
+  });
+
+  test("succeed with valid token", async () => {
+    req.setToken(signToken({ userId: user.id }));
+    await req
       .get()
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.myInfo).toBeCalled();
         const r = (mockController.myInfo as jest.Mock).mock.calls[0][0];
         compareUser(r.user.user, user);
-      })
-      .end(done);
+      });
   });
 });
 
@@ -400,80 +394,74 @@ describe("savemyuserinfo", () => {
     req.setToken("");
   });
 
-  test("fail when GET", (done: CallbackHandler) => {
-    req.get().expect(404).end(done);
+  test("fail when GET", async () => {
+    await req.get().expect(404);
   });
 
-  test("fail no token", (done: CallbackHandler) => {
-    req
+  test("fail no token", async () => {
+    await req
       .post({ ...userObj })
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.saveMyUserInfo).not.toBeCalled();
         matchErrorSupertest(res, "No auth token");
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid email", (done: CallbackHandler) => {
+  test("fail invalid email", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, email: "no@invalid" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.saveMyUserInfo).not.toBeCalled();
         matchErrorSupertest(res, '"email" must be a valid email');
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid firstName", (done: CallbackHandler) => {
+  test("fail invalid firstName", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, firstName: "n" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.saveMyUserInfo).not.toBeCalled();
         matchErrorSupertest(res, '"firstName" length must be at least');
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid lastName", (done: CallbackHandler) => {
+  test("fail invalid lastName", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, lastName: "n" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.saveMyUserInfo).not.toBeCalled();
         matchErrorSupertest(res, '"lastName" length must be at least');
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid picture", (done: CallbackHandler) => {
+  test("fail invalid picture", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, picture: "invalid" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.saveMyUserInfo).not.toBeCalled();
         matchErrorSupertest(res, '"picture" must be a valid uri');
-      })
-      .end(done);
+      });
   });
 
-  test("succeed with save userInfo", (done: CallbackHandler) => {
+  test("succeed with save userInfo", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj })
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.saveMyUserInfo).toBeCalled();
         const r = (mockController.saveMyUserInfo as jest.Mock).mock.calls[0][0];
         compareUser(r.user.user, user);
-      })
-      .end(done);
+      });
   });
 });
 
@@ -493,39 +481,37 @@ describe("changemypassword", () => {
     req.setToken("");
   });
 
-  test("fail when GET", (done: CallbackHandler) => {
-    req.get().expect(404).end(done);
+  test("fail when GET", async () => {
+    await req.get().expect(404);
   });
 
-  test("fail no token", (done: CallbackHandler) => {
-    req
+  test("fail no token", async () => {
+    await req
       .post({ ...userObj })
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.changeMyPassword).not.toBeCalled();
         matchErrorSupertest(res, "No auth token");
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid password", (done: CallbackHandler) => {
+  test("fail invalid password", async () => {
     req.setToken(signToken({ userId: user.id}));
-    req
+    await req
       .post({ ...userObj, password: "Secretpass1" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.changeMyPassword).not.toBeCalled();
         matchErrorSupertest(
           res,
-          '"password" with value "Secretpass1" fails to match the required pattern',
+          '"password" failed custom validation because Password insufficient strength',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("succeed with change password", (done: CallbackHandler) => {
+  test("succeed with change password", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj })
       .expect(200)
       .expect((res: request.Response) => {
@@ -533,8 +519,7 @@ describe("changemypassword", () => {
         const r = (mockController.changeMyPassword as jest.Mock).mock
           .calls[0][0];
         compareUser(r.user.user, user);
-      })
-      .end(done);
+      });
   });
 });
 
@@ -558,24 +543,23 @@ describe("deletemyself", () => {
     req.setToken("");
   });
 
-  test("fail when GET", (done: CallbackHandler) => {
-    req.get().expect(404).end(done);
+  test("fail when GET", async () => {
+    await req.get().expect(404);
   });
 
-  test("fail no token", (done: CallbackHandler) => {
-    req
+  test("fail no token", async () => {
+    await req
       .post({ ...userObj })
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).not.toBeCalled();
         matchErrorSupertest(res, "No auth token");
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid userName", (done: CallbackHandler) => {
+  test("fail invalid userName", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, userName: "no@" })
       .expect(400)
       .expect((res: request.Response) => {
@@ -584,50 +568,46 @@ describe("deletemyself", () => {
           res,
           '"userName" with value "no@" fails to match the required pattern',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid email", (done: CallbackHandler) => {
+  test("fail invalid email", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, email: "no@invalid" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).not.toBeCalled();
         matchErrorSupertest(res, '"email" must be a valid email');
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid firstName", (done: CallbackHandler) => {
+  test("fail invalid firstName", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, firstName: "n" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).not.toBeCalled();
         matchErrorSupertest(res, '"firstName" length must be at least');
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid lastName", (done: CallbackHandler) => {
+  test("fail invalid lastName", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, lastName: "n" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).not.toBeCalled();
         matchErrorSupertest(res, '"lastName" length must be at least');
-      })
-      .end(done);
+      });
   });
 
-  test("fail invalid password", (done: CallbackHandler) => {
+  test("fail invalid password", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
-      .post({ ...userObj, password: "SecretPass1" })
+    await req
+      .post({ ...userObj, password: "Secret" })
       .expect(400)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).not.toBeCalled();
@@ -635,34 +615,31 @@ describe("deletemyself", () => {
           res,
           '"password" does not match any of the allowed types',
         );
-      })
-      .end(done);
+      });
   });
 
-  test("succeed with save userInfo", (done: CallbackHandler) => {
+  test("succeed with save userInfo", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj })
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).toBeCalled();
         const r = (mockController.deleteMyself as jest.Mock).mock.calls[0][0];
         compareUser(r.user.user, user);
-      })
-      .end(done);
+      });
   });
 
-  test("succeed with save userInfo and empty password", (done: CallbackHandler) => {
+  test("succeed with save userInfo and empty password", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .post({ ...userObj, password: "" })
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.deleteMyself).toBeCalled();
         const r = (mockController.deleteMyself as jest.Mock).mock.calls[0][0];
         compareUser(r.user.user, user);
-      })
-      .end(done);
+      });
   });
 });
 
@@ -678,101 +655,73 @@ describe("avaliableroles", () => {
     req.setToken("");
   });
 
-  test("fail when Post", (done: CallbackHandler) => {
-    req.post({}).expect(404).end(done);
+  test("fail when Post", async () => {
+    await req.post({}).expect(404);
   });
 
-  test("fail no token", (done: CallbackHandler) => {
-    req
+  test("fail no token", async () => {
+    await req
       .get()
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.rolesAvailable).not.toBeCalled();
         matchErrorSupertest(res, "No auth token");
-      })
-      .end(done);
-  });
-
-  test("fail with role student", (done: any) => {
-    user
-      .save()
-      .then(() => {
-        req.setToken(signToken({ userId: user.id }));
-        req
-          .get()
-          .expect(403)
-          .expect((res: request.Response) => {
-            expect(mockController.rolesAvailable).not.toBeCalled();
-            matchErrorSupertest(res, "Insufficient privileges");
-          })
-          .end(done);
-      })
-      .catch(done);
-  });
-
-  test("fail with role teacher", (done: any) => {
-    Role.create({userId:user.id,role:eRolesAvailable.teacher})
-    .then(()=>{
-      user
-      .save()
-      .then(() => {
-        req.setToken(signToken({ userId: user.id }));
-        req
-          .get()
-          .expect(403)
-          .expect((res: request.Response) => {
-            expect(mockController.rolesAvailable).not.toBeCalled();
-            matchErrorSupertest(res, "Insufficient privileges");
-          })
-          .end(done);
-      })
-      .catch(done);
-    })
-  });
-
-  test("succeed with role admin", (done: any) => {
-
-    Role.create({userId:user.id,role:eRolesAvailable.admin})
-    .then(()=>{
-      user
-        .save()
-        .then(() => {
-          req.setToken(signToken({ userId: user.id }));
-          req
-            .get()
-            .expect(200)
-            .expect((res: request.Response) => {
-              expect(mockController.rolesAvailable).toBeCalled();
-              const r = (mockController.rolesAvailable as jest.Mock).mock
-                .calls[0][0];
-              compareUser(r.user.user, user);
-            })
-            .end(done);
-        })
-        .catch(done);
       });
   });
 
-  test("succeed with role super admin", (done: any) => {
-    Role.create({userId:user.id,role:eRolesAvailable.super})
-    .then(()=>{
-      user
-        .save()
-        .then(() => {
-          req.setToken(signToken({ userId: user.id }));
-          req
-            .get()
-            .expect(200)
-            .expect((res: request.Response) => {
-              expect(mockController.rolesAvailable).toBeCalled();
-              const r = (mockController.rolesAvailable as jest.Mock).mock
-                .calls[0][0];
-              compareUser(r.user.user, user);
-            })
-            .end(done);
-        })
-        .catch(done);
-    });
+  test("fail with role student", async () => {
+    await user.save()
+    req.setToken(signToken({ userId: user.id }));
+    await req
+      .get()
+      .expect(403)
+      .expect((res: request.Response) => {
+        expect(mockController.rolesAvailable).not.toBeCalled();
+        matchErrorSupertest(res, "Insufficient privileges");
+      });
+  });
+
+  test("fail with role teacher", async () => {
+    await Role.create({userId:user.id,role:eRolesAvailable.teacher})
+    await user.save()
+    req.setToken(signToken({ userId: user.id }));
+    await req
+      .get()
+      .expect(403)
+      .expect((res: request.Response) => {
+        expect(mockController.rolesAvailable).not.toBeCalled();
+        matchErrorSupertest(res, "Insufficient privileges");
+      });
+  });
+
+  test("succeed with role admin", async () => {
+    await Role.create({userId:user.id,role:eRolesAvailable.admin});
+    await user.save();
+    req.setToken(signToken({ userId: user.id }));
+    await req
+      .get()
+      .expect(200)
+      .expect((res: request.Response) => {
+        expect(mockController.rolesAvailable).toBeCalled();
+        const r = (mockController.rolesAvailable as jest.Mock).mock
+          .calls[0][0];
+        compareUser(r.user.user, user);
+      });
+  });
+
+  test("succeed with role super admin", async () => {
+    await Role.create({userId:user.id,role:eRolesAvailable.super})
+    await user.save()
+    req.setToken(signToken({ userId: user.id }));
+    await req
+      .get()
+      .expect(200)
+      .expect((res: request.Response) => {
+        expect(mockController.rolesAvailable).toBeCalled();
+        const r = (mockController.rolesAvailable as jest.Mock).mock
+          .calls[0][0];
+        compareUser(r.user.user, user);
+      });
   });
 });
 
@@ -788,31 +737,29 @@ describe("secret", () => {
     req.setToken("");
   });
 
-  test("fail when POST", (done: CallbackHandler) => {
-    req.post({}).expect(404).end(done);
+  test("fail when POST", async () => {
+    await req.post({}).expect(404);
   });
 
-  test("fail no token", (done: CallbackHandler) => {
-    req
+  test("fail no token", async () => {
+    await req
       .get()
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.secret).not.toBeCalled();
         matchErrorSupertest(res, "No auth token");
-      })
-      .end(done);
+      });
   });
 
-  test("succeed with token", (done: CallbackHandler) => {
+  test("succeed with token", async () => {
     req.setToken(signToken({ userId: user.id }));
-    req
+    await req
       .get()
       .expect(200)
       .expect((res: request.Response) => {
         expect(mockController.secret).toBeCalled();
         const r = (mockController.secret as jest.Mock).mock.calls[0][0];
         compareUser(r.user.user, user);
-      })
-      .end(done);
+      });
   });
 });

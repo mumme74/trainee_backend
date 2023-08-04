@@ -34,15 +34,28 @@ function userRoutes(
 
   usersRouter
     .route("/signup")
-    .post(validateBody(schemas.newUserSchema), controller.signup);
+    .post(
+      validateBody(schemas.newUserSchema),
+      controller.signup);
 
   usersRouter
     .route("/login")
-    .post(validateBody(schemas.loginSchema), passportLogin, controller.login);
+    .post(
+      validateBody(schemas.loginSchema),
+      passportLogin,
+      controller.login);
 
-  usersRouter.route("/oauth/google").post(passportGoogle, controller.googleOAuthOk);
+  usersRouter
+    .route("/oauth/google")
+    .post(
+      passportGoogle,
+      controller.googleOAuthOk);
 
-  usersRouter.route("/myinfo").get(passportJWT, controller.myInfo);
+  usersRouter
+    .route("/myinfo")
+    .get(
+      passportJWT,
+      controller.myInfo);
 
   usersRouter
     .route("/savemyuserinfo")
@@ -57,18 +70,20 @@ function userRoutes(
     .post(
       passportJWT,
       validateBody(schemas.passwordSchema),
-      controller.changeMyPassword,
-    );
+      controller.changeMyPassword);
 
-  usersRouter.route("/secret").get(passportJWT, controller.secret);
+  usersRouter
+    .route("/secret")
+    .get(
+      passportJWT,
+      controller.secret);
 
   usersRouter
     .route("/deletemyself")
     .post(
       passportJWT,
       validateBody(schemas.deleteMySelfSchema),
-      controller.deleteMyself,
-    );
+      controller.deleteMyself);
 
   usersRouter
     .route("/availableroles")

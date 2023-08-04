@@ -1,6 +1,30 @@
 import bcrypt from "bcrypt";
 import { UserError } from "./errorHelpers";
 
+/**
+ * Check if cleartext fails sufficiently strong test
+ * @param {string} cleartext The password to match against
+ * @returns {boolean | string} false if it passes,
+ *   a string with error message if not
+ */
+export function passwdStrengthFail(cleartext:string) {
+  if (typeof cleartext !== 'string') {
+    return 'Password must be a string';
+  } else if (cleartext.length < 8) {
+    return 'Password is to short';
+  } else if (cleartext.length > 50) {
+    return 'Password is to long'
+  } else if (cleartext.toLowerCase() === cleartext ||
+             cleartext.toUpperCase() === cleartext)
+  {
+    return 'Password must have mixed UPPER and lower case';
+  } else if (!/\d+/.test(cleartext)) {
+    return 'Password must have a number in it'
+  } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(cleartext)) {
+    // special chars
+    return 'Password insufficient strength.\nMust contain special chars';
+  }
+}
 
 /**
  * Generate a hash from cleartext
