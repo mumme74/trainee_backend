@@ -29,7 +29,9 @@ export function finalhandlerAuthError (
 
   // determine if this is a auth error
   const statusCode = getHttpStatusCode({error, response});
-  if ([401, 403].indexOf(statusCode) === -1)
+  if (statusCode === 429) // Too many attempts
+    response.setHeader('Retry-after', 60 * 10); // 10min
+  else if ([401, 403].indexOf(statusCode) === -1)
     return next(error);
 
   const errMsg = error.message || ""+error;

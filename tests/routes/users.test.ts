@@ -256,6 +256,22 @@ describe("login", () => {
           expect(login?.state).toBe(eLoginState.WrongPassword);
       });
   });
+
+  test("fail login 10 times, get 429 Too many request", async () => {
+    for (let i = 0; i < 10; i++)
+      await req.post({password: 'Not@corre3tPla$e', login:user.email});
+
+    // check on the 10th request
+    await req
+      .post({password: 'NotThePa$3WdWeWan%t', login: user.userName })
+      .expect(429)
+      .expect('Retry-After', '600')
+      .expect(async (response: request.Response) => {
+          const login = await Login.findOne({
+            where:{userId:user.id},order:[[literal('id'), 'DESC']]});
+          expect(login?.state).toBe(eLoginState.LoginSpam);
+      });
+  });
 });
 
 describe("oauth google", () => {

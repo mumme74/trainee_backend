@@ -21,7 +21,6 @@ import { OAuth } from "./models/core_oauth";
 import { Organization } from "./models/core_organization";
 import { Picture } from "./models/core_picture";
 import { Login, eLoginState } from "./models/core_login";
-import { getErrorMessage } from "./middlewares/common.errorhandlers";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -78,9 +77,15 @@ passport.use(
         if (!user) {
           // can't log when there is no user
           done(new HttpError[401]('User does not exist'));
+
+        } else if (await checkLoginSpam(user)) {
+          await logLogin(eLoginState.LoginSpam, user);
+          return done(new HttpError[429]("Too many attempts, wait 10 minutes"));
+
         } else if (user.banned) {
           await logLogin(eLoginState.UserBanned, user);
           done(new HttpError[403]("User is banned"));
+
         } else {
           // check is the password is correct
           const isMatch = await user.isValidPassword(password);
@@ -134,6 +139,11 @@ passport.use(
         let {user, oauth} = await findUserAndOAuth(
           email,provider, parsedToken.sub);
 
+        if (user && await checkLoginSpam(user)) {
+          await logLogin(eLoginState.LoginSpam, user, oauth);
+          return done(new HttpError[429]("Too many attempts, wait 10 minutes"));
+        }
+
         // checks
         if (!validateAud(parsedToken)) {
           await logLogin(eLoginState.OAuthFailAud, user, oauth);
@@ -146,7 +156,6 @@ passport.use(
             "Expiration date was already passed on oauth token");
           }
         (req as AuthRequest).tokenExpiresIn = expiresAt;
-
 
         // done with validation,find user
 
@@ -221,6 +230,23 @@ const logLogin = (
   if (user)
     return Login.create({
       state, userId:user.id, oauthId:oauth?.id || null})
+}
+
+async function checkLoginSpam(user: User) {
+  // check if someone are trying to brute force
+  const freshAttempts = await Login.count({
+    where:{
+      [Op.and]: [
+        {userId:user?.id},
+        // only count the last 10 minutes
+        {createdAt:{
+          [Op.gt]: new Date(new Date().getTime() - 10 * 60000)}
+        }
+      ]
+    }
+  });
+
+  return freshAttempts > 9;
 }
 
 function validateAud(parsedToken: any){
