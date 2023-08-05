@@ -24,8 +24,11 @@ import {
   pictureDefaultObj,
   createTestUser,
   destroyTestUser,
+  MockConsole,
 } from "../testHelpers";
 import { literal } from "sequelize";
+
+const mockConsole = new MockConsole();
 
 function respond(req: Request, res: Response, next: NextFunction) {
   return res.status(200).json(req.body);
@@ -52,6 +55,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  mockConsole.restore();
   await closeTestDb();
 });
 
@@ -217,7 +221,6 @@ describe("login", () => {
       .post({ ...loginObj, login: user.email })
       .expect(200)
       .expect(async (response: request.Response) => {
-        console.log(response.body)
         expect(mockController.login).toBeCalled();
         const request = (mockController.login as jest.Mock).mock.calls[0][0];
         compareUser(request?.user?.user, user);
@@ -358,7 +361,7 @@ describe("myinfo", () => {
       .expect(401)
       .expect((res: request.Response) => {
         expect(mockController.myInfo).not.toBeCalled();
-        matchErrorSupertest(res, "Unauthenticated");
+        matchErrorSupertest(res, "User does not exist");
       });
   });
 

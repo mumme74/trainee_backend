@@ -15,6 +15,8 @@ import { initGraphQl } from "./graphql";
 import { requirePlugins } from "./plugin/manager";
 import { ePluginEvents } from "./plugin/types";
 import { closeDb } from "./models"
+import { finalhandlerErrorToJson } from "./middlewares/error.finalhandler"
+import { finalhandlerAuthError } from "./middlewares/auth.fail.finalhandler";
 
 // create the global app
 const app = express();
@@ -69,21 +71,11 @@ export async function initApp() {
       .json({ error: { message: `Endpoint not found ${req.path}` } });
   });
 
-  const showErrors = nodeEnv === "development";
-  app.use((err: Error, req: Request, res: Response) => {
-    const errObj = {
-      success: false,
-      error: {
-        message: "500: Internal Server Error",
-        status: 500,
-        error: showErrors
-          ? { message: err.message, stack: err.stack?.split("\n") }
-          : undefined,
-      },
-    };
-    console.log(err);
-    res.status(500).json(errObj);
-  });
+  // authentication errors
+  app.use(finalhandlerAuthError);
+
+  // last resort final error
+  app.use(finalhandlerErrorToJson);
 
   app.on('close', closeDb);
 

@@ -14,21 +14,35 @@ import { Role } from "../src/models/core_role";
 import { initGraphQlSchema } from "../src/graphql/schema";
 import { Console } from "console";
 import internal, { Stream } from "stream";
+import { finalhandlerAuthError } from "../src/middlewares/auth.fail.finalhandler";
+import { finalhandlerErrorToJson } from "../src/middlewares/error.finalhandler";
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;
 }
 export function jsonApp() {
   const app = Express() as IJsonApp;
+
   app.use(Express.json());
+  app.use(Express.urlencoded({extended: true}));
+
   app.finalize = () => {
+
+    // authentication errors
+    app.use(finalhandlerAuthError);
+
+
     app.use((req: Request, res: Response, next: NextFunction) => {
+      if (res.headersSent)
+        return next();
       //console.log(`404 not found ${req.path}`);
       res.status(404).json({
         success: false,
         error: { message: `Not found ${req.path}` },
       });
+      return next();
     });
+
 
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       const status = !isNaN(+err) ? +err : 500
@@ -42,13 +56,17 @@ export function jsonApp() {
       };
       console.log('express error',err);
       res.status(status).json(errObj);
+      return next(err);
     });
+
+    // last resort final error
+    app.use(finalhandlerErrorToJson);
   };
   return app;
 }
 
 export function matchErrorSupertest(res: supertest.Response, errMsg: string) {
-  matchError(JSON.parse(res.text), errMsg);
+  matchError(res.body, errMsg);
 }
 
 export function matchErrorMockCall(res: Response, errMsg: string) {

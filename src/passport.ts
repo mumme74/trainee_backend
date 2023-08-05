@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import passport from "passport";
 import { Request, Response, NextFunction } from "express";
+import * as HttpError from "http-errors"
 import { Strategy as JwtStrategy } from "passport-jwt";
 import { ExtractJwt } from "passport-jwt";
 import { Strategy as LocalStrategy} from "passport-local";
@@ -20,6 +21,7 @@ import { OAuth } from "./models/core_oauth";
 import { Organization } from "./models/core_organization";
 import { Picture } from "./models/core_picture";
 import { Login, eLoginState } from "./models/core_login";
+import { getErrorMessage } from "./middlewares/common.errorhandlers";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -37,16 +39,16 @@ passport.use(
 
         // if user doesn't exist, handle it
         if (!user) {
-          done(401, false, "User does not exist");
+          return done(new HttpError[401]("User does not exist"));
         } else if (user.banned) {
-          done(false, user, "User is banned");
+          return done(new HttpError[403]("User is banned"));
         } else {
           // Otherwise, return the user
-          done(null, user, "User found");
+          return done(null, user, "User found");
         }
 
       } catch (err: any) {
-        done(err, false, err.message);
+        return done(err, false, err.message);
       }
     },
   ),
@@ -75,10 +77,10 @@ passport.use(
         // if not, handle it
         if (!user) {
           // can't log when there is no user
-          done(false, false, "User does not exist");
+          done(new HttpError[401]('User does not exist'));
         } else if (user.banned) {
           await logLogin(eLoginState.UserBanned, user);
-          done(false, user, "User is banned");
+          done(new HttpError[403]("User is banned"));
         } else {
           // check is the password is correct
           const isMatch = await user.isValidPassword(password);
@@ -86,7 +88,7 @@ passport.use(
           // if not, handle it
           if (!isMatch) {
             await logLogin(eLoginState.WrongPassword, user);
-            done(403, false, "Password incorrect");
+            done(new HttpError[403]('Password incorrect'))
           } else {
             // update last login
             user.lastLogin = new Date();
@@ -158,13 +160,14 @@ passport.use(
 
         if (user.banned) {
           logLogin(eLoginState.UserBanned, user, oauth);
-          done(false, user, "User is banned");
+          done(new HttpError[403]("User is banned"));
         } else {
           logLogin(eLoginState.OAuthLoginOk, user, oauth);
           done(null, {user, roles:[], oauth, userPic});
         }
       } catch (err: any) {
         console.log(err.message);
+        err.statusCode = 401;
         done(err, false, err.message);
       }
     },
@@ -194,13 +197,13 @@ export const passportJWT = (
       failureFlash: errResponseJson,
     },
     (err: any, user: any, info: any) => {
-      if (err || !user) {
-        return res.status(!isNaN(err) && err ? err : 401)
-          .json(errorResponse(info?.message || "Unauthenticated"));
+      if (HttpError.isHttpError(err))
+        return next(err);
+      else if (err || !user) {
+        return next(new HttpError[401](
+          err ? err.message: info || "Unauthenticated"));
       } else if (user?.banned) {
-        return res.status(403)
-          .json(errorResponse(info?.message||info||"User is banned"));
-
+        return next(new HttpError[403]("User is banned"));
       }
       if (!req.user && user) {
         req.user = {

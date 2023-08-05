@@ -17,6 +17,7 @@ import { graphQlRoute } from "../../src/graphql/routes";
 import { User } from "../../src/models/core_user";
 import { closeTestDb, initTestDb } from "../testingDatabase";
 import { initGraphQlSchema } from "../../src/graphql/schema";
+import { MockConsole } from "../testHelpers";
 
 import request from "supertest";
 import supertest from "supertest";
@@ -28,6 +29,7 @@ const app = jsonApp();
 graphQlRoute(app);
 app.finalize();
 
+const mockConsole = new MockConsole();
 
 initGraphQl();
 
@@ -36,6 +38,7 @@ const req = new JsonReq(app, "/graphql");
 beforeAll(initTestDb);
 
 afterAll(async () => {
+  mockConsole.restore();
   await closeTestDb();
   process.env = processEnv;
 });
@@ -132,7 +135,7 @@ describe("graphql endpoint auth", () => {
       .expect(401)
       .expect((response) => {
         expect(response.unauthorized).toBe(true)
-        matchErrorSupertest(response, "Unauthenticated");
+        matchErrorSupertest(response, "User does not exist");
       })
       .end(done);
   });

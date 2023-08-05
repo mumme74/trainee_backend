@@ -107,7 +107,7 @@
 
       const showMsg = (msg) => {
         const msgNode = document.getElementById("loginMsg");
-        msgNode.textContent = msg;
+        msgNode.innerHTML = msg.split('\n').join('<br/>');
         msgNode.classList.add("errorMsg");
         document.getElementById('loginDlg')
           .setAttribute("open", true);
@@ -131,18 +131,20 @@
             method: "POST",
           });
 
+          let resJson = {};
+          try { resJson = await res.json() } catch {}
+
           if (res.status !== 200) {
-            showMsg(`${res.status} ${res.statusText}`);
+            showMsg(`${res.status} ${res.statusText}\n${resJson?.error?.message}`);
             await loginDlg();
             return authFetcher(resource, options);
           } else {
-            const json = await res.json();
-            if (!json.success) {
-              await showMsg(`${res.status} ${res.statusText}`);
+            if (!resJson.success) {
+              await showMsg(`${res.status} ${res.statusText}\n${resJson?.error?.message}`);
               return authFetcher(resource, options);
             }
 
-            jwt = json.access_token;
+            jwt = resJson.access_token;
             const payload = tokenPayload();
             if (payload.roles.indexOf('super') < 0) {
               showMsg(`Insufficient privileges for ${loginObj.login}`);
