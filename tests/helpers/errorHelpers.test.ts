@@ -1,4 +1,3 @@
-import { MongoError } from "mongodb";
 import { UserError, errorResponse } from "../../src/helpers/errorHelpers";
 import { throwErr } from "../common";
 
@@ -61,12 +60,6 @@ describe("errorResponse", () => {
   });
   test("with UserError, dev mode, should have no stack nor type", () => {
     const err = throwErr(new UserError("test"));
-    const res = errorResponse(err);
-    expect(res).toEqual(matchObj("test"));
-    expect(Object.keys(res.error).length).toEqual(1);
-  });
-  test("with MongoError, dev mode, should have no stack nor type", () => {
-    const err = throwErr(new MongoError("test"));
     const res = errorResponse(err);
     expect(res).toEqual(matchObj("test"));
     expect(Object.keys(res.error).length).toEqual(1);

@@ -46,6 +46,18 @@ function userRoutes(
       controller.login);
 
   usersRouter
+    .route("/requestpasswordreset")
+    .post(
+      validateBody(schemas.requestPwdReset),
+      controller.requestPasswordReset);
+
+  usersRouter
+    .route("/setpasswordonreset")
+    .post(
+      validateBody(schemas.setPwdOnReset),
+      controller.setPasswordOnReset);
+
+  usersRouter
     .route("/oauth/google")
     .post(
       passportGoogle,

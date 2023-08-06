@@ -6,6 +6,7 @@ import {
   NextFunction,
   RequestHandler
 } from "express";
+import crypto from "crypto";
 
 
 import { comparePasswordHash } from "../helpers/password";
@@ -19,10 +20,16 @@ import { Op } from "sequelize";
 
 import type { IUserInfoResponse, AuthRequest } from "../types";
 import { UserError, errorResponse } from "../helpers/errorHelpers";
+import { PasswordReset } from "../models/core_password_reset";
+import { sendEmail } from "../services/email.service";
+import * as HttpError from "http-errors"
+import { getUtcDate } from "../helpers/dbHelpers";
 
 interface IUsersController {
   signup: RequestHandler;
   login: RequestHandler;
+  requestPasswordReset: RequestHandler;
+  setPasswordOnReset: RequestHandler;
   googleOAuthOk: RequestHandler;
   myInfo: RequestHandler;
   saveMyUserInfo: RequestHandler;
@@ -140,6 +147,84 @@ const UsersController: IUsersController = {
     // generate token
     const token = await signToken(authObj.user, 'local');
     return res.status(200).json(await loginResponse(token, authObj.user));
+  },
+
+  requestPasswordReset: async (req: Request, res:Response, next:NextFunction) => {
+    const email = req.body.email;
+    const user = await User.findOne({where: {email}});
+    if (!user) throw new UserError(`User ${email} not found`);
+
+    // check that we don't have an old pwResetToken laying around
+    const oldToken = await PasswordReset.findOne({where:{userId:user.id}});
+    if (oldToken) await oldToken.destroy();
+
+    // gen new token
+    const resetToken = crypto.randomBytes(128).toString('base64');
+    // sequelize hashes this token before save
+    const reset = await PasswordReset.create({userId:user.id, resetToken});
+
+    const uriEnc = encodeURIComponent(resetToken);
+
+    const link = `${process.env.CORS_HOST}/passwordReset?token=${uriEnc}&id=${reset.id}`;
+    const payload = {name:user.fullName(), link};
+    const result = await sendEmail(
+      user.email, 'Password reset',payload,'password.request.reset.pug');
+    if (result !== true) {
+      if (HttpError.isHttpError(result))
+        return next(result);
+      throw new HttpError[502](result+"");
+    }
+
+    return res.status(200).json({success:true});
+  },
+
+  setPasswordOnReset: async (
+    req: Request, res:Response, next:NextFunction
+  ) => {
+    const pwdReset = await PasswordReset.findOne({
+      where:{[Op.and]:[
+        {id:req.body.id},
+        {createdAt: // 5min ago
+          {[Op.gt]:getUtcDate((+new Date()) - 60000 * 5)}
+        }
+      ]}
+    });
+    console.log(getUtcDate((+new Date()) - 60000 * 5));
+
+    if (!pwdReset)
+      throw new HttpError[400]('Invalid or expired reset token');
+
+    const reqToken = req.body.token;
+
+    // tokens should never match, token must be set
+    if (reqToken === pwdReset.resetToken || !reqToken ||
+        !await comparePasswordHash(req.body.token, pwdReset.resetToken))
+    {
+      throw new HttpError[401]('Reset tokens mismatch');
+    }
+
+    // lookup user
+    const user = await User.findByPk(pwdReset.userId);
+    if (!user) throw new HttpError[403]('User not found');
+
+    // save new password, destroy reset token
+    user.password = req.body.password;
+    await user.save();
+    pwdReset.destroy();
+
+    // notify user that their password has reset
+    const result = await sendEmail(
+      user.email, 'Password changed',
+      {
+        name: user.fullName(),
+        host: process.env.CORS_HOST
+      }, "password has changed.");
+    if (result !== true){
+      console.error(
+        `Failed to mail ${user.email} when resetting password`);
+    }
+
+    return res.status(200).json({success:true});
   },
 
   googleOAuthOk: async (req: Request, res: Response, next: NextFunction) => {

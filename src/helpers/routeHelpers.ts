@@ -58,6 +58,14 @@ export const schemas = {
     ],
     password: password,
   }),
+  requestPwdReset: Joi.object().keys({
+    email: email
+  }),
+  setPwdOnReset: Joi.object().keys({
+    token: Joi.string().base64().required(),
+    id: Joi.number().required(),
+    password: password
+  }),
   newUserSchema: Joi.object().keys({
     firstName: firstName,
     lastName: lastName,

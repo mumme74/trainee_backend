@@ -1,5 +1,3 @@
-import { MongoError } from "mongodb";
-
 export interface IErrorResponse {
   success: false;
   error: { message: string; type?: string; stack?: string[] };
@@ -29,7 +27,7 @@ export const errorResponse = (err: Error | string): IErrorResponse => {
     if (
       process.env.NODE_ENV === "development" &&
       err.stack &&
-      !(err instanceof UserError || err instanceof MongoError)
+      !(err instanceof UserError)
     ) {
       error.stack = err.stack.split("\n");
       error.type = err.toString();

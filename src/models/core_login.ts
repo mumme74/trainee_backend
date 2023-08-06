@@ -3,7 +3,6 @@ import {
   DataTypes,
   Sequelize,
   InitOptions,
-  SyncOptions
 } from "sequelize";
 
 /**
@@ -33,9 +32,6 @@ export enum eLoginState {
  * - Date time it happened
  */
 export class Login extends Model {
-  constructor(arg1:any = {}, arg2:any = {}) {
-    super(arg1, arg2);
-  }
 
   declare id: number;
   declare userId: number;

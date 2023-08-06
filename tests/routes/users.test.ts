@@ -7,6 +7,7 @@ import type { CallbackHandler } from "supertest";
 import "../testProcess.env";
 
 import type { IUsersController } from "../../src/controllers/users";
+import UsersController from "../../src/controllers/users";
 import { User } from "../../src/models/core_user";
 import { Role, eRolesAvailable } from "../../src/models/core_role";
 import { Login, eLoginState } from "../../src/models/core_login";
@@ -37,6 +38,8 @@ function respond(req: Request, res: Response, next: NextFunction) {
 const mockController: IUsersController = {
   signup: jest.fn(respond),
   login: jest.fn(respond),
+  requestPasswordReset: jest.fn(UsersController.requestPasswordReset),
+  setPasswordOnReset: jest.fn(UsersController.setPasswordOnReset),
   googleOAuthOk: jest.fn(respond),
   myInfo: jest.fn(respond),
   saveMyUserInfo: jest.fn(respond),
