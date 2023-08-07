@@ -26,12 +26,20 @@ const passwdValidator = (cleartext?:string) => {
   if (fail) throw new UserError(fail);
 }
 
+const phoneValidator = (phone?:string) => {
+  return {
+    args: /^(?:(?!\s\S)|(?:(?:(?:\+|00)?\(?\d{2,3}\)?[-. ]?)|\d)\d{2,3}[- \.]?\d{4,7})$/,
+    msg: `Not a valid phone number`
+  }
+}
+
 export class User extends Model {
   declare id: number;
   declare userName: string;
   declare firstName: string;
   declare lastName: string;
   declare email: string;
+  declare phone: string | null;
   declare password: string | null;
   declare pictureId: number;
   declare organizationId: number;
@@ -107,6 +115,11 @@ export class User extends Model {
         allowNull: false,
         unique: true,
         validate: { isEmail: true }
+      },
+      phone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: { is: phoneValidator("phone") }
       },
       password:{
         type: DataTypes.STRING,

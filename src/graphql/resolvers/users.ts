@@ -264,6 +264,7 @@ export const transformUser = (user: User):
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    phone: user.phone,
     picture: async () => {
       if (!user.pictureId) return;
       const pic = await pictureLoader.load(user.pictureId);
@@ -302,6 +303,7 @@ const createUserAndRoles = async (
     userName: newUser.userName,
     firstName: newUser.firstName,
     lastName: newUser.lastName,
+    phone: newUser.phone,
     email: newUser.email,
     updatedBy: req.user.user.id,
   },{transaction});

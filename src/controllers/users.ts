@@ -67,11 +67,12 @@ const signToken = async (
 
 const userInfoResponse = async (user: User): Promise<IUserInfoResponse> => {
   return {
-    id: user.id,
-    userName: user.userName,
-    email: user.email,
+    id:        user.id,
+    userName:  user.userName,
+    email:     user.email,
     firstName: user.firstName,
-    lastName: user.lastName,
+    lastName:  user.lastName,
+    phone:     user.phone,
     pictureId: user.pictureId,
     domain: await user.domain(),
     updatedBy: user.updatedBy,
@@ -93,7 +94,7 @@ const loginResponse = async (token: string, user: User) => {
 const UsersController: IUsersController = {
   signup: async (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
-    const { email, password, userName, firstName, lastName } =
+    const { email, password, userName, firstName, lastName, phone } =
       authReq.value.body;
 
     //check if there is a user with same email
@@ -124,7 +125,7 @@ const UsersController: IUsersController = {
       userName,
       firstName,
       lastName,
-      roles: [eRolesAvailable.student],
+      phone,
     });
     if (!newUser)
       throw new UserError('Failed to create new user');
@@ -250,9 +251,14 @@ const UsersController: IUsersController = {
     if (!user)
       return res.status(404).json(errorResponse(USER_NOT_FOUND));
 
-    user.firstName = authReq.body.firstName;
-    user.lastName = authReq.body.lastName;
-    user.email = authReq.body.email;
+    if (authReq.body.firstName)
+      user.firstName = authReq.body.firstName;
+    if (authReq.body.lastName)
+      user.lastName = authReq.body.lastName;
+    if (authReq.body.email)
+      user.email = authReq.body.email;
+    if (authReq.body.phone)
+      user.phone = authReq.body.phone;
     user.updatedBy = authReq.body.id;
     user = await user.save();
 

@@ -45,6 +45,9 @@ const userName = Joi.string()
   .max(30)
   .required();
 const email = Joi.string().email().required();
+const phone = Joi.string()
+  .pattern(/^(?:(?!\s\S)|(?:(?:(?:\+|00)?\(?\d{2,3}\)?[-. ]?)|\d)\d{2,3}[- \.]?\d{4,7})$/)
+  .max(20);
 
 export const schemas = {
   loginSchema: Joi.object().keys({
@@ -71,12 +74,14 @@ export const schemas = {
     lastName: lastName,
     userName: userName,
     email: email,
+    phone: phone,
     password: password,
   }),
   saveMyUserInfoSchema: Joi.object().keys({
     firstName: firstName,
     lastName: lastName,
     email: email,
+    phone: phone,
     picture: Joi.string().uri().allow(""),
   }),
   passwordSchema: Joi.object().keys({

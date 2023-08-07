@@ -12,6 +12,7 @@ type core_user_Type {
   firstName: String!
   lastName: String!
   email: String!
+  phone: String
   picture: core_picture_Type
   organization: core_organization_Type!
   roles: [core_user_Roles!]!

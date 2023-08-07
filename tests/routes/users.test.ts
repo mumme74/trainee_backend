@@ -146,6 +146,19 @@ describe("signup", () => {
       });
   });
 
+  test("fail signup phone invalid", async () => {
+    await req
+      .post({ ...userObj, phone: "0987&3332" })
+      .expect(400)
+      .expect((res: request.Response) => {
+        expect(mockController.signup).not.toBeCalled();
+        matchErrorSupertest(
+          res,
+          '"phone" with value "0987&3332" fails to match',
+        );
+      });
+  });
+
   test("succeed signup", async () => {
     await req
       .post({ ...userObj })

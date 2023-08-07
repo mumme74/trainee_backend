@@ -12,6 +12,7 @@ export interface IUserInfoResponse {
   id:        User["id"];
   userName:  User["userName"];
   email:     User["email"];
+  phone:     User["phone"];
   firstName: User["firstName"];
   lastName:  User["lastName"];
   pictureId: User["pictureId"];

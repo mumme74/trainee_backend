@@ -11,6 +11,7 @@ export interface IGraphQl_UserType
   firstName: string;
   lastName: string;
   email: string;
+  phone: string | null;
   picture?: ()=> Promise<IGraphQl_PictureType | undefined>;
   organization?: ()=> Promise<IGraphQL_OrganizationType | undefined>;
   roles: ()=> Promise<string[]>;
@@ -26,6 +27,7 @@ export interface IGraphQl_UserCreateType {
   userName: string;
   roles: string[];
   email: string;
+  phone?: string;
   oauthId: string | null;
   oauthProvider: string | null;
   domain: string;

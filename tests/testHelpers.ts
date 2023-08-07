@@ -167,6 +167,7 @@ export const userPrimaryObj = {
   firstName: "Test",
   lastName: "Testson",
   userName: "tester1",
+  phone: "+46 70-5648944",
   method: "google",
   password: "SecretPass1$",
   email: "user1@testing.com",
