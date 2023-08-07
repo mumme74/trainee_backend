@@ -98,13 +98,6 @@ describe("composeErrorResponse", () => {
     const err = composeErrorResponse(e);
     expect(err).toEqual(matchObj({ message: "This is a UserError obj" }));
   });
-
-  test("with MongoError, no type, nor stack", () => {
-    process.env = { ...processEnv, NODE_ENV: "development" };
-    const e = throwToGetStack(new UserError("This is a MongoError obj"));
-    const err = composeErrorResponse(e);
-    expect(err).toEqual(matchObj({ message: "This is a MongoError obj" }));
-  });
 });
 
 describe("rolesFilter", () => {

@@ -11,7 +11,6 @@ import {
 import helmet from "helmet";
 //import xssClean from "xss-clean";
 import hpp from "hpp";
-import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 import xss from "xss";
 
@@ -55,7 +54,6 @@ export function preJsonParse(app: Express):
 export function postJsonParse(app: Express):
   void
 {
-  app.use(mongoSanitize());
   app.use((req: Request, res: Response, next: NextFunction): void => {
     req.body = xssClean(req.body);
     next();
