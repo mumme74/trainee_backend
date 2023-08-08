@@ -12,6 +12,7 @@ import {
 } from "../helpers/password";
 import { Organization } from "./core_organization";
 import { UserError } from "../helpers/errorHelpers";
+import { phoneRegex } from "../helpers/common";
 
 const nameValidator = (fld?:string)=>{
   return {
@@ -28,7 +29,7 @@ const passwdValidator = (cleartext?:string) => {
 
 const phoneValidator = (phone?:string) => {
   return {
-    args: /^(?:(?!\s\S)|(?:(?:(?:\+|00)?\(?\d{2,3}\)?[-. ]?)|\d)\d{2,3}[- \.]?\d{4,7})$/,
+    args: phoneRegex,
     msg: `Not a valid phone number`
   }
 }

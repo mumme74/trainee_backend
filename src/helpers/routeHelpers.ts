@@ -5,6 +5,7 @@ import type { IFilterOptions } from "./userHelpers";
 import { meetRoles } from "./userHelpers";
 import { UserError, errorResponse } from "./errorHelpers";
 import { passwdStrengthFail } from "./password";
+import { phoneRegex } from "./common";
 
 export const validateBody = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -46,7 +47,7 @@ const userName = Joi.string()
   .required();
 const email = Joi.string().email().required();
 const phone = Joi.string()
-  .pattern(/^(?:(?!\s\S)|(?:(?:(?:\+|00)?\(?\d{2,3}\)?[-. ]?)|\d)\d{2,3}[- \.]?\d{4,7})$/)
+  .pattern(phoneRegex)
   .max(20);
 
 export const schemas = {

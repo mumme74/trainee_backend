@@ -93,3 +93,6 @@ export function bytesToBase64(bytes:Uint8Array):
 export const getRootPath = (): string => {
   return path.resolve('./').replace(/\/build\/?/, '/')
 }
+
+export const phoneRegex =
+  /^(?:(?!\s\S)|(?:(?:(?:\+|00)?\(?\d{2,3}\)?[-. ]?)|\d)\d{2,3}[- .]?\d{4,7})$/;
