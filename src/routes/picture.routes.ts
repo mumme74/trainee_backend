@@ -10,7 +10,7 @@ import { passportJWT } from "../passport";
 import {
   IPicturesController,
   PicturesController
-} from "../controllers/pictures";
+} from "../controllers/picture.controller";
 
 export default function pictureRoutes(
   app: Express,

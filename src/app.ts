@@ -3,12 +3,13 @@ import dotenv from "dotenv";
 dotenv.config({ path: `.env.${nodeEnv}` }); // must be done before any other imports
 
 import express, { Request, Response } from "express";
+import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import cors from "cors";
 
 import { postJsonParse, preJsonParse } from "./helpers/sanitize";
-import initApi from "./routes";
-import pictureRoutes from "./routes/pictures";
+import initApi from "./routes/index.routes";
+import pictureRoutes from "./routes/picture.routes";
 import { graphQlRoute } from "./graphql/routes";
 import { initDb } from "./models"
 import { initGraphQl } from "./graphql";
@@ -17,6 +18,7 @@ import { ePluginEvents } from "./plugin/types";
 import { closeDb } from "./models"
 import { finalhandlerErrorToJson } from "./middlewares/error.finalhandler"
 import { finalhandlerAuthError } from "./middlewares/auth.fail.finalhandler";
+import { initService } from "./services/token.service";
 
 // create the global app
 const app = express();
@@ -28,7 +30,7 @@ export async function initApp() {
   await app.emit(ePluginEvents.beforeDatabaseStartup);
 
   try{
-    initDb();
+    await initDb();
   }catch(e){
     console.error(e)
   }
@@ -45,6 +47,9 @@ export async function initApp() {
     app.use(morgan("dev")); // don't clutter logs
   }
 
+  // parse cookies
+  app.use(cookieParser());
+
   // pictures
   pictureRoutes(app);
 
@@ -52,9 +57,10 @@ export async function initApp() {
 
   postJsonParse(app);
 
-
   // Routes
   initApi(app);
+  // reset token service
+  await initService();
 
   // graphql
   await app.emit(ePluginEvents.beforeGraphQl);

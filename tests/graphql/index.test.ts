@@ -11,6 +11,8 @@ import {
   userPrimaryObj,
   createTestUser,
   destroyTestUser,
+  TstRequest,
+  TstResponse,
 } from "../testHelpers";
 
 import { graphQlRoute } from "../../src/graphql/routes";
@@ -64,12 +66,12 @@ describe("graphql endpoint auth", () => {
   test("succeed HTTP OPTIONS", (done: CallbackHandler)=>{
     req.options()
       .expect(200)
-      .expect((response) => {
-        expect(response.unauthorized).toBe(false)
-        expect(response.headers['content-length']).toBe('0');
-        expect(response.headers['access-control-allow-headers'])
+      .expect((res:TstResponse) => {
+        expect(res.unauthorized).toBe(false)
+        expect(res.headers['content-length']).toBe('0');
+        expect(res.headers['access-control-allow-headers'])
           .toBe('Content-Type, Authorization');
-        expect(response.headers['access-control-allow-methods'])
+        expect(res.headers['access-control-allow-methods'])
           .toBe('POST,GET,OPTIONS');
       })
       .end(done);
@@ -79,65 +81,65 @@ describe("graphql endpoint auth", () => {
     req
       .post({})
       .expect(401)
-      .expect((response) => {
-        expect(response.unauthorized).toBe(true)
-        matchErrorSupertest(response, "No auth token");
+      .expect((res:TstResponse) => {
+        expect(res.unauthorized).toBe(true)
+        return matchErrorSupertest(res, "No auth token");
       })
       .end(done);
   });
 
   test("fail when token not yet valid", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id, notBefore: 5 }));
+    req.setToken(
+      signToken({ userId: user.id, notBefore: 5 }),
+      signToken({userId:user.id, secret: process.env.JWT_REFRESH_SECRET})
+    );
     req
       .post({})
       .expect(401)
-      .expect((response) => {
-        expect(response.unauthorized).toBe(true)
-        matchErrorSupertest(response, "jwt not active");
+      .expect((res:TstResponse) => {
+        expect(res.unauthorized).toBe(true)
+        return matchErrorSupertest(res, "jwt not active");
       })
       .end(done);
   });
 
-  test("fail when token expired", (done: CallbackHandler) => {
-    req.setToken(signToken({ userId: user.id, expiresInMinutes: 0 }));
+  test("fail when token expired", async () => {
+    await req.setToken(
+      signToken({ userId: user.id, expiresInMinutes: 0 }),
+      signToken({userId:user.id, secret: process.env.JWT_REFRESH_SECRET})
+    );
     req
       .post({})
       .expect(401)
-      .expect((response) => {
-        expect(response.unauthorized).toBe(true)
-        matchErrorSupertest(response, "jwt expired");
-      })
-      .end(done);
+      .expect((res:TstResponse) => {
+        expect(res.unauthorized).toBe(true)
+        return matchErrorSupertest(res, "jwt expired");
+      });
   });
 
-  test("fail when user banned", (done: any) => {
+  test("fail when user banned", async () => {
     user.banned = true;
-    user
-      .save()
-      .then(() => {
-        req.setToken(signToken({ userId: user.id }));
-        req
+    await user.save();
+    await req.mkTokenPairs(user)
           .post({})
           .expect(403)
-          .expect((response) => {
-            expect(response.forbidden).toBe(true)
-            matchErrorSupertest(response, "User is banned");
+          .expect((res:TstResponse) => {
+            expect(res.forbidden).toBe(true)
+            return matchErrorSupertest(res, "User is banned");
           })
-          .end(done);
-      })
-      .catch(done);
   });
 
-  test("fail when user deleted", (done: any) => {
-    req.setToken(signToken({ userId: 1234567890 }));
-    req
+  test("fail when user deleted", async () => {
+    await req.setToken(
+        signToken({ userId: 1234567890 }),
+        signToken({userId:user.id, secret: process.env.JWT_REFRESH_SECRET})
+      )
       .post({})
       .expect(401)
-      .expect((response) => {
-        expect(response.unauthorized).toBe(true)
-        matchErrorSupertest(response, "User does not exist");
+      .expect((res:TstResponse) => {
+        expect(res.unauthorized).toBe(true)
+        return matchErrorSupertest(res, "User does not exist");
       })
-      .end(done);
   });
 });
 
@@ -148,38 +150,36 @@ describe("GraphiQl", ()=>{
     req.setToken("");
   });
 
-  test("succeed get graphiql html when development", (done: CallbackHandler) => {
+  test("succeed get graphiql html when development", async () => {
     process.env = { ...processEnv, NODE_ENV: "development" };
     const app = jsonApp();
     graphQlRoute(app);
     app.finalize();
-    request(app).get('/graphiql')
+    await request(app).get('/graphiql')
       .expect(200)
       .expect("Content-Type", /text\/html/)
       .expect((response)=>{
         expect(response.unauthorized).toBe(false)
         expect(/(?:<!--.*-->)?<!DOCTYPE html/gi.test(response.text)).toEqual(true);
-      })
-      .end(done);
+      });
   });
 
-  test("fail graphiql when not development", (done: CallbackHandler) => {
+  test("fail graphiql when not development", async () => {
     process.env = { ...processEnv, NODE_ENV: "production" };
     const app = jsonApp();
     graphQlRoute(app);
     app.finalize();
-    request(app).get('/graphiql')
-    .expect(404)
-    .expect("Content-Type", /application\/json/)
-    .expect((response)=>{
-      expect(response.unauthorized).toBe(false)
-      expect(response.status).toEqual(404);
-      expect(response.body).toMatchObject({
-        error:{message:'Not found /graphiql'},
-        success:false
-      })
-    })
-    .end(done);
+    await request(app).get('/graphiql')
+      .expect(404)
+      .expect("Content-Type", /application\/json/)
+      .expect((response)=>{
+        expect(response.unauthorized).toBe(false)
+        expect(response.status).toEqual(404);
+        expect(response.body).toMatchObject({
+          error:{message:'Not found /graphiql'},
+          success:false
+        })
+      });
   });
 });
 
@@ -192,34 +192,33 @@ describe("Error responses", () => {
     req.setToken("");
   });
 
-  test("testError", (done: CallbackHandler) => {
-    req
+  test("testError", async () => {
+    await req.mkTokenPairs(user)
       .post({
         query: `query { testError {message type stack}}`,
         variables: null,
       })
       .expect(200)
-      .expect(({ text }) => {
-        const obj = JSON.parse(text);
-        expect(obj.data.testError).toEqual({
+      .expect((res:TstResponse) => {
+        const obj = JSON.parse(res.text);
+        return expect(obj.data.testError).toEqual({
           message: "This is a test error",
           type: null,
           stack: null,
         });
-      })
-      .end(done);
+      });
   });
 
-  test("testErrorResponse", (done: CallbackHandler) => {
-    req
+  test("testErrorResponse", async () => {
+    await req.mkTokenPairs(user)
       .post({
         query: `query { testErrorResponse {success error {message type stack}}}`,
         variables: null,
       })
       .expect(200)
-      .expect(({ text }) => {
-        const obj = JSON.parse(text);
-        expect(obj.data.testErrorResponse).toEqual({
+      .expect((res:TstResponse) => {
+        const obj = JSON.parse(res.text);
+        return expect(obj.data.testErrorResponse).toEqual({
           success: false,
           error: {
             message: "This is a test ErrorResponse",
@@ -227,30 +226,28 @@ describe("Error responses", () => {
             stack: null,
           },
         });
-      })
-      .end(done);
+      });
   });
 
-  test("testOkResponse", (done: CallbackHandler) => {
-    req
+  test("testOkResponse", async () => {
+    await req.mkTokenPairs(user)
       .post({
         query: `query { testOkResponse {success nrAffected, ids }}`,
         variables: null,
       })
       .expect(200)
-      .expect(({ text }) => {
-        const obj = JSON.parse(text);
-        expect(obj.data.testOkResponse).toEqual({
+      .expect((res:TstResponse) => {
+        const obj = JSON.parse(res.text);
+        return expect(obj.data.testOkResponse).toEqual({
           success: true,
           nrAffected: 0,
           ids: [9],
         });
-      })
-      .end(done);
+      });
   });
 
-  test("testMutationResponseOk", (done: CallbackHandler) => {
-    req
+  test("testMutationResponseOk", async () => {
+    await req.mkTokenPairs(user)
       .post({
         query: `query {
                   testMutationResponseOk {
@@ -265,19 +262,18 @@ describe("Error responses", () => {
         variables: null,
       })
       .expect(200)
-      .expect(({ text }) => {
-        const obj = JSON.parse(text);
-        expect(obj.data.testMutationResponseOk).toEqual({
+      .expect((res:TstResponse) => {
+        const obj = JSON.parse(res.text);
+        return expect(obj.data.testMutationResponseOk).toEqual({
           success: true,
           nrAffected: 0,
           ids: [10],
         });
       })
-      .end(done);
   });
 
-  test("testMutationResponseErr", (done: CallbackHandler) => {
-    req
+  test("testMutationResponseErr", async () => {
+    await req.mkTokenPairs(user)
       .post({
         query: `query {
                   testMutationResponseErr {
@@ -292,9 +288,9 @@ describe("Error responses", () => {
         variables: null,
       })
       .expect(200)
-      .expect(({ text }) => {
-        const obj = JSON.parse(text);
-        expect(obj.data.testMutationResponseErr).toEqual({
+      .expect((res:TstResponse) => {
+        const obj = JSON.parse(res.text);
+        return expect(obj.data.testMutationResponseErr).toEqual({
           success: false,
           error: {
             message: "This is a test ErrorResponse",
@@ -302,7 +298,6 @@ describe("Error responses", () => {
             stack: null,
           },
         });
-      })
-      .end(done);
+      });
   });
 });

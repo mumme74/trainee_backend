@@ -16,7 +16,7 @@ import { graphQlRoute } from "../../../src/graphql/routes";
 import { User } from "../../../src/models/core_user";
 import { eRolesAvailable } from "../../../src/models/core_role";
 import { closeTestDb, initTestDb } from "../../testingDatabase";
-import UsersController from "../../../src/controllers/users";
+import UsersController from "../../../src/controllers/user.controller";
 import { userLoader } from "../../../src/graphql/resolvers/users";
 
 const processEnv = process.env;

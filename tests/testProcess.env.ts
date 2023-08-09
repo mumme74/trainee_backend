@@ -1,6 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config({ path: `.env.test` }); // must be done before any other imports
+
+
 process.env.APP_NAME = "testing app";
 
-process.env.JWT_SECRET = "ThisIsASecretKey";
+process.env.JWT_AUTH_SECRET = "ThisIsASecretKey";
 process.env.GOOGLE_CLIENT_ID = "1234567890abcdefghijklmnop";
 
 process.env.ENABLE_AUTO_ROLE_TEACHER = "";

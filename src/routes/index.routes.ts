@@ -1,6 +1,6 @@
 import PromiseRouter from "express-promise-router";
 import { Express } from "express";
-import userRoutes from "./users";
+import userRoutes from "./user.routes";
 
 export default function initApi(app: Express) {
   const router = PromiseRouter();

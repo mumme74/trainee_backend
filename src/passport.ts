@@ -4,10 +4,13 @@ import passport from "passport";
 import { Request, Response, NextFunction } from "express";
 import * as HttpError from "http-errors"
 import { Strategy as JwtStrategy } from "passport-jwt";
+import { Strategy as CookieStrategy } from "passport-cookie";
 import { ExtractJwt } from "passport-jwt";
 import { Strategy as LocalStrategy} from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-verify-token";
 import { VerifiedCallback } from "passport-jwt";
+
+import * as tokens from "./services/token.service";
 
 import { User } from "./models/core_user";
 import { eRolesAvailable } from "./models/core_role";
@@ -21,6 +24,7 @@ import { OAuth } from "./models/core_oauth";
 import { Organization } from "./models/core_organization";
 import { Picture } from "./models/core_picture";
 import { Login, eLoginState } from "./models/core_login";
+import JWT from "jsonwebtoken";
 
 const userUrl = `${process.env.PROTOCOL}//${process.env.HOST}:${process.env.PORT}/users`;
 
@@ -29,28 +33,43 @@ passport.use(
   new JwtStrategy(
     {
       jwtFromRequest: ExtractJwt.fromHeader("authorization"),
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: process.env.JWT_AUTH_SECRET,
     },
     async (payload: any, done: VerifiedCallback) => {
       try {
         // find the user specified in token
-        const user = await User.findByPk(payload.sub);
+        const user = await User.findByPk(+payload.sub);
 
-        // if user doesn't exist, handle it
-        if (!user) {
-          return done(new HttpError[401]("User does not exist"));
-        } else if (user.banned) {
-          return done(new HttpError[403]("User is banned"));
-        } else {
-          // Otherwise, return the user
-          return done(null, user, "User found");
-        }
+        // check user
+        return checkUser(user, done)
 
       } catch (err: any) {
         return done(err, false, err.message);
       }
     },
   ),
+);
+
+// scan refresh token for validity on refreshing Auth token
+passport.use(
+  new CookieStrategy({
+    cookieName: 'refresh_token',
+  }, async function passportCookie (
+    req: Request,
+    token: string,
+    done: VerifiedCallback
+  ) {
+    if (!token)
+      return done(new HttpError[400](`Missing refresh token`));
+
+    if (!await tokens.validate(token, ""+process.env.JWT_REFRESH_SECRET))
+      return done(new HttpError[401](`Invalid or expired refresh token`));
+
+    const decoded = JWT.decode(token, {json:true}),
+          user = await User.findByPk(+(decoded?.sub || '0'));
+
+    return checkUser(user, done);
+  })
 );
 
 // local strategy, login via password
@@ -205,7 +224,7 @@ export const passportJWT = (
       session: false,
       failureFlash: errResponseJson,
     },
-    (err: any, user: any, info: any) => {
+    async (err: any, user: any, info: any) => {
       if (HttpError.isHttpError(err))
         return next(err);
       else if (err || !user) {
@@ -214,6 +233,17 @@ export const passportJWT = (
       } else if (user?.banned) {
         return next(new HttpError[403]("User is banned"));
       }
+      if (!req.cookies?.refresh_token)
+        return next(new HttpError[400]("No http token"));
+
+      if (!await tokens.validate(req.cookies.refresh_token,
+            ""+process.env.JWT_REFRESH_SECRET))
+        return next(new HttpError[401]('Expired or invalid http token'));
+
+      const decoded = JWT.decode(req.cookies.refresh_token, {json:true});
+      if (!decoded?.sub || +decoded.sub !== user.id)
+        return next(new HttpError[401]('Wrong info in http token'))
+
       if (!req.user && user) {
         req.user = {
           user,roles:[],oauth:null,pic:null
@@ -223,6 +253,21 @@ export const passportJWT = (
     },
   )(req, res, next);
 };
+
+// --------------------------------------------------------------------
+// private stuff
+
+const checkUser = (user:User | null, done: VerifiedCallback) => {
+  // if user doesn't exist, handle it
+  if (!user) {
+    return done(new HttpError[401]("User does not exist"));
+  } else if (user.banned) {
+    return done(new HttpError[403]("User is banned"));
+  } else {
+    // done! return the user
+    return done(null, user, "User found");
+  }
+}
 
 const logLogin = (
   state: eLoginState, user: User | null, oauth?: OAuth | null

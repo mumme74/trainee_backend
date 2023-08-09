@@ -16,6 +16,11 @@ import { Console } from "console";
 import internal, { Stream } from "stream";
 import { finalhandlerAuthError } from "../src/middlewares/auth.fail.finalhandler";
 import { finalhandlerErrorToJson } from "../src/middlewares/error.finalhandler";
+import cookieParser from "cookie-parser";
+import { toUtcDate } from "../src/helpers/dbHelpers";
+
+export type TstRequest = request.Test;
+export type TstResponse = request.Response;
 
 interface IJsonApp extends ExpressType {
   finalize: () => void;
@@ -25,6 +30,7 @@ export function jsonApp() {
 
   app.use(Express.json());
   app.use(Express.urlencoded({extended: true}));
+  app.use(cookieParser());
 
   app.finalize = () => {
 
@@ -85,14 +91,19 @@ export function matchError(
 export class JsonReq {
   private app: ExpressType;
   private basePath: string;
-  private headers: [string, string][];
+  private headers: {[key:string]: string}[];
   private token = "";
+  private refreshToken:string | undefined = "";
   private contentTypeMatcher = /application\/json/;
+  private endCalls  = 0;
+  public request: request.SuperTest<request.Test>;
+  public chainedReq: number;
   constructor(
     app: ExpressType,
     basePath: string,
-    headers: [string, string][] = [["Accept", "application/json"]],
+    headers: {[key:string]:string}[] = [{"Accept": "application/json"}],
     contentTypeMatcher?: RegExp,
+    chainedReq: number = 1, // number of requests after the other
   ) {
     this.app = app;
     this.basePath = basePath;
@@ -100,38 +111,64 @@ export class JsonReq {
     if (contentTypeMatcher) {
       this.contentTypeMatcher = contentTypeMatcher;
     }
+    this.request = request(app);
+    this.chainedReq = chainedReq;
   }
 
-  setToken(token: string) {
-    this.token = token;
-  }
-
-  private setHeaders(req: request.Test) {
+  private finalize(req:TstRequest, sendObj?: object | undefined){
     req.set("Accept", "application/json");
-    this.headers.forEach((header) => {
-      req.set(header[0], header[1]);
-    });
-    if (this.token) req.set("Authorization", this.token);
+    for (const header of this.headers)
+      for (const [key, vlu] of Object.entries(header))
+        req.set(key, vlu);
+    // do the send last in chain
+    if (sendObj) {
+      (req as any).end = (...args: any[])=>{
+        req.send(sendObj);
+        req.constructor.prototype.end.apply(req, args);
+      }
+    }
     return req;
   }
 
+  setToken(authToken: string, refreshToken?: string) {
+    this.token = authToken;
+    if (refreshToken)
+      this.setRefreshToken(refreshToken);
+    return this.setHeader("Authorization", authToken);
+  }
+
+  setRefreshToken(refreshToken: string) {
+    this.refreshToken = refreshToken;
+    return this.setHeader('Cookie', `refresh_token=${refreshToken}`);
+  }
+
+  mkTokenPairs(user: User) {
+    this.setToken(
+      signToken({userId:user.id, secret: process.env.JWT_AUTH_SECRET}),
+      signToken({userId:user.id, secret: process.env.JWT_REFRESH_SECRET})
+    );
+    return this;
+  }
+
+  setHeader(name:string, value:string) {
+    this.headers.push({[name]: value})
+    return this;
+  }
+
   options(path?: string) {
-    const req = request(this.app).options(this.basePath + (path || ""));
-    return this.setHeaders(req)
-      .send({})
+    return this.finalize(
+       this.request.options(this.basePath + (path || "")));
   }
 
   post(postObj: any, path?: string) {
-    const req = request(this.app).post(this.basePath + (path || ""));
-    return this.setHeaders(req)
-      .send(postObj)
+    return this.finalize(
+      this.request.post(this.basePath + (path || "")), postObj)
       .expect("Content-Type", this.contentTypeMatcher);
   }
 
   get(path?: string) {
-    const req = request(this.app).get(this.basePath + (path || ""));
-    return this.setHeaders(req)
-      .send()
+    return this.finalize(
+      this.request.get(this.basePath + (path || "")))
       .expect("Content-Type", this.contentTypeMatcher);
   }
 }
@@ -140,26 +177,28 @@ export function signToken({
   userId,
   expiresInMinutes = 60 * 8,
   notBefore = 0, // in seconds
-  roles,
+  roles, nowIsAt = new Date(),
+  secret = process.env.JWT_AUTH_SECRET+""
 }: {
   userId: number;
   expiresInMinutes?: number;
   notBefore?: number;
   roles?: eRolesAvailable[];
+  nowIsAt?: Date,
+  secret?: string;
 }): string {
   return JWT.sign(
     {
       iss: process.env.APP_NAME,
       sub: userId.toString(),
-      nbf: Math.floor(new Date().getTime() / 1000) + notBefore,
-      iat: Math.floor(new Date().getTime() / 1000), // need to be seconds not milliseconds
+      nbf: Math.floor(+nowIsAt / 1000) + notBefore,
+      iat: Math.floor(+nowIsAt / 1000), // need to be seconds not milliseconds
       exp: Math.floor(
-        new Date(new Date().getTime() + expiresInMinutes * 60000).getTime() /
-          1000,
+        +new Date(+nowIsAt + expiresInMinutes * 60000) / 1000,
       ),
       roles,
     },
-    process.env.JWT_SECRET + "",
+    secret,
   );
 }
 

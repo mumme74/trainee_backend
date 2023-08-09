@@ -31,7 +31,7 @@ export function finalhandlerAuthError (
   const statusCode = getHttpStatusCode({error, response});
   if (statusCode === 429) // Too many attempts
     response.setHeader('Retry-after', 60 * 10); // 10min
-  else if ([401, 403].indexOf(statusCode) === -1)
+  else if ([400, 401, 403].indexOf(statusCode) === -1)
     return next(error);
 
   const errMsg = error.message || ""+error;

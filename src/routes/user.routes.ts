@@ -1,11 +1,13 @@
 import PromiseRouter from "express-promise-router";
 import {
-  Express, Request,
-  Response, NextFunction, Router
+  Request,
+  Response,
+  NextFunction,
+  Router
 } from "express";
 import UsersController, {
    IUsersController
-} from "../controllers/users";
+} from "../controllers/user.controller";
 import {
   passportGoogle,
   passportLogin,
@@ -18,50 +20,17 @@ import {
   hasRoles
 } from "../helpers/routeHelpers";
 import { eRolesAvailable } from "../models/core_role";
+import { jsonHeaders } from "../middlewares/json.headers.middleware";
 
-function userRoutes(
+export default function userRoutes(
   router: Router,
   // pass in controller to ba able to mock when testing
   controller: IUsersController = UsersController,
 ) {
   const usersRouter = PromiseRouter();
   router.use("/users", usersRouter);
+  usersRouter.use(jsonHeaders);
 
-  usersRouter.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    next();
-  });
-
-  usersRouter
-    .route("/signup")
-    .post(
-      validateBody(schemas.newUserSchema),
-      controller.signup);
-
-  usersRouter
-    .route("/login")
-    .post(
-      validateBody(schemas.loginSchema),
-      passportLogin,
-      controller.login);
-
-  usersRouter
-    .route("/requestpasswordreset")
-    .post(
-      validateBody(schemas.requestPwdReset),
-      controller.requestPasswordReset);
-
-  usersRouter
-    .route("/setpasswordonreset")
-    .post(
-      validateBody(schemas.setPwdOnReset),
-      controller.setPasswordOnReset);
-
-  usersRouter
-    .route("/oauth/google")
-    .post(
-      passportGoogle,
-      controller.googleOAuthOk);
 
   usersRouter
     .route("/myinfo")
@@ -107,5 +76,3 @@ function userRoutes(
 
   return usersRouter;
 }
-
-export default userRoutes;
