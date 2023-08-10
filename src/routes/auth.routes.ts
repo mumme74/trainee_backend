@@ -61,6 +61,12 @@ export default function authRoutes(
         controller.invalidateUserTokens);
 
   authRouter
+    .route("/invalidateAllTokens")
+    .post(
+      passportJWT,
+      controller.invalidateAllTokens);
+
+  authRouter
     .route("/requestPasswordReset")
     .post(
       validateBody(schemas.requestPwdReset),

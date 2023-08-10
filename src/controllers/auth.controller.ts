@@ -176,18 +176,18 @@ const AuthController: IAuthController = {
   requestPasswordReset: async (req: Request, res:Response, next:NextFunction) => {
     const email = req.body.email;
     const user = await User.findOne({where: {email}});
-    if (!user) throw new UserError(`User ${email} not found`);
+    if (!user) throw new HttpError[403](`User ${email} not found`);
 
     // check that we don't have an old pwResetToken laying around
     const oldToken = await PasswordReset.findOne({where:{userId:user.id}});
     if (oldToken) await oldToken.destroy();
 
     // gen new token
-    const refreshToken = crypto.randomBytes(128).toString('base64');
+    const resetToken = crypto.randomBytes(128).toString('base64');
     // sequelize hashes this token before save
-    const reset = await PasswordReset.create({userId:user.id, refreshToken});
+    const reset = await PasswordReset.create({userId:user.id, resetToken});
 
-    const uriEnc = encodeURIComponent(refreshToken);
+    const uriEnc = encodeURIComponent(resetToken);
 
     const link = `${process.env.CORS_HOST}/passwordReset?token=${uriEnc}&id=${reset.id}`;
     const payload = {name:user.fullName(), link};
@@ -212,20 +212,20 @@ const AuthController: IAuthController = {
       where:{[Op.and]:[
         {id:req.body.id},
         {createdAt: // 5min ago
-          {[Op.gt]:(+new Date()) - 60000 * 5}
+          {[Op.gt]:((+new Date()) - 60000 * 5)}
         }
       ]}
     });
     console.log((+new Date()) - 60000 * 5);
 
     if (!pwdReset)
-      throw new HttpError[400]('Invalid or expired reset token');
+      throw new HttpError[401]('Invalid or expired reset token');
 
     const reqToken = req.body.token;
 
     // tokens should never match, token must be set
-    if (reqToken === pwdReset.refreshToken || !reqToken ||
-        !await comparePasswordHash(req.body.token, pwdReset.refreshToken))
+    if (reqToken === pwdReset.resetToken || !reqToken ||
+        !await comparePasswordHash(req.body.token, pwdReset.resetToken))
     {
       throw new HttpError[401]('Reset tokens mismatch');
     }
@@ -245,7 +245,7 @@ const AuthController: IAuthController = {
       {
         name: user.fullName(),
         host: process.env.CORS_HOST
-      }, "password has changed.");
+      }, "password.has.reset.pug");
     if (result !== true){
       console.error(
         `Failed to mail ${user.email} when resetting password`);

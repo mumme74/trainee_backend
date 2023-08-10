@@ -1,3 +1,8 @@
+jest.mock("nodemailer");
+
+import nodemailer from "nodemailer";
+import { sendEmail } from "../../src/services/email.service";
+
 import "../testProcess.env";
 
 import { NextFunction, Request, Response, response } from "express";
@@ -25,8 +30,13 @@ import {
   destroyTestUser,
   MockConsole,
   TstResponse,
+  testInSync,
 } from "../testHelpers";
 import { literal } from "sequelize";
+import { comparePasswordHash } from "../../src/helpers/password";
+import { PasswordReset } from "../../src/models/core_password_reset";
+import { getSequelize } from "../../src/models";
+import { toUtcDate } from "../../src/helpers/dbHelpers";
 
 const mockConsole = new MockConsole();
 
@@ -62,6 +72,7 @@ beforeEach(async () => {
   for (const mockFn of Object.values(mockController)) {
     await mockFn.mockClear();
   }
+  sendMailMock?.mockClear();
 });
 
 // helper functions
@@ -73,6 +84,20 @@ async function createUser() {
 async function destroyUser() {
   await destroyTestUser();
 }
+
+
+let sendMailMock: jest.Mock<any, any, any>;
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockImplementation(() => {
+    const o = {
+      sendMail: jest.fn(()=>{
+      //console.log('sendMail.called')
+      })
+    };
+    sendMailMock = o.sendMail;
+    return o;
+  }),
+}));
 
 // -----------------------------------------------------------------
 describe("signup", () => {
@@ -312,15 +337,15 @@ describe("login", () => {
       await req.post({password: 'Not@corre3tPla$e', login:user.email});
 
     // check on the 10th request
-    await req
+    const response = await req
       .post({password: 'NotThePa$3WdWeWan%t', login: user.userName })
       .expect(429)
-      .expect('Retry-After', '600')
-      .expect(async (response: request.Response) => {
-          const login = await Login.findOne({
-            where:{userId:user.id},order:[[literal('id'), 'DESC']]});
-          expect(login?.state).toBe(eLoginState.LoginSpam);
-      });
+      .expect('Retry-After', '600');
+
+    const login = await Login.findOne({
+      where:{userId:user.id},order:[[literal('id'), 'DESC']]
+    });
+    expect(login?.state).toBe(eLoginState.LoginSpam);
   });
 });
 
@@ -594,28 +619,216 @@ describe("invalidateUserTokens", ()=>{
   });
 });
 
-/*
+
 describe("invalidateAllTokens", ()=>{
-  test("User should fail to invalidate all, not logged in", async ()=>{});
-  test("User should succeed invalidate all", async ()=>{});
+  const createReq = ()=>new JsonReq(app, "/auth/invalidateAllTokens");
+  const req = createReq();
+
+  beforeAll(createUser);
+
+  afterAll(destroyUser);
+
+
+  test("User should fail to invalidate global, not logged in", async ()=>{
+    await req
+    .post({})
+    .expect(401)
+    .expect((res:TstResponse)=>{
+      expect(mockController.logout).not.toBeCalled();
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.message).toMatch(/No.*auth.*token/)
+    });
+  });
+
+
+  test("User should succeed invalidate global", async ()=>{
+    const authToken = signToken({userId:user.id}),
+          refreshToken = signToken({
+            expiresInMinutes:1, userId:user.id,
+            secret:process.env.JWT_REFRESH_SECRET});
+
+      const r1 = await request(app).post('/auth/invalidateAllTokens')
+        .set('Cookie',`refresh_token=${refreshToken}`)
+        .set('Authorization', authToken)
+        .expect(200)
+        .send({userId:user.id});
+
+      expect(mockController.invalidateAllTokens).toBeCalled();
+      expect(r1.body.success).toBe(true);
+      expect(r1.body.error).toBeFalsy();
+
+      const r2 = await request(app).post('/auth/logout')
+        .set('Cookie', [`refresh_token=${refreshToken}`])
+        .set('Authorization',authToken)
+        .expect(401)
+        .send({userId:user.id})
+
+      expect(r2.body.success).toBe(false);
+      expect(r2.body.error?.message).toMatch(/(?:Expired|invalid).+token/)
+  });
 });
+
 
 describe("requestPasswordReset", ()=>{
-  test("Should fail non existent user", async ()=>{});
-  test("Should succeed to create resetToken and mail", async ()=>{});
+  const createReq = ()=>new JsonReq(app, "/auth/requestPasswordReset");
+  const req = createReq();
+
+  beforeAll(createUser);
+  afterAll(destroyUser);
+
+
+  test("Should fail non existent user", async ()=>{
+    await req
+      .post({email:'nonexistant@dot.com'})
+      .expect(403)
+      .expect((res)=>{
+        expect(res.body.success).toBe(false);
+        expect(res.body.error?.message).toMatch(/user.+not.+found/i)
+      });
+  });
+
+  test("Should succeed to create resetToken and mail", async ()=>{
+    await req
+      .post({email:user.email})
+      .expect(200)
+      .expect(async (res)=>{
+        expect(res.body.success).toBe(true);
+        expect(sendMailMock).toHaveBeenCalled();
+        const call = sendMailMock.mock.lastCall?.at(0) as any;
+
+        expect(call?.to).toBe(user.email);
+        matchTokenAndId(call.html);
+      });
+  });
 });
 
+// common between 2 describes
+const matchTokenAndId = async (html:string) => {
+  const mat = /<a href="[^?]+\?token=([^"]+)&(?:amp;)?id=(\d+)/g.exec(html) as string[];
+  if (mat.length > 2) {
+    const token = decodeURIComponent(mat[1]), id=mat[2];
+    expect(+id).toBeGreaterThanOrEqual(1)
+    const pwRst = await PasswordReset.findOne({where:{userId:user.id}});
+    const comp = await comparePasswordHash(token, ""+pwRst?.resetToken);
+    expect(comp).toBe(true);
+    return {token, id:+id};
+  } else throw new Error('resetToken not generated i html')
+}
+
 describe("setPasswordOnReset", ()=>{
-  test("Should fail non existent userId", async ()=>{});
-  test("Should fail non existent no resetToken", async ()=>{});
-  test("Should fail non existent no password", async ()=>{});
-  test("Should fail non existent to weak password", async ()=>{});
-  test("Should fail non existent wrong resetToken", async ()=>{});
-  test("Should fail non existent to old resetToken", async ()=>{});
-  test("Should fail non existent future resetToken", async ()=>{});
-  test("Should succeed resetToken", async ()=>{});
+  const createReq = ()=>new JsonReq(app, "/auth/setPasswordOnReset");
+  const req = createReq();
+
+  beforeAll(createUser);
+  afterAll(async ()=>{
+    sendMailMock.mockClear();
+    await destroyUser();
+  });
+
+  test("Should fail no id", async ()=>{
+    await req
+    .post({password:'HejD¤GladeS3leman',
+          token:'MDg0ZmVkMDhiOTc4YWY0ZDdkMTk2YTc0NDZhODZiNTgwMDllNjM2YjYxMWRiMTYyMTFiNjVhOWFhZGZmMjljNQ=='})
+    .expect(400)
+    .expect((res)=>{
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.message).toMatch(/"id"/i)
+    });
+  });
+  test("Should fail non existent no resetToken", async ()=>{
+    await req
+    .post({id:0,password:'HejD¤GladeS3leman'})
+    .expect(400)
+    .expect((res)=>{
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.message).toMatch(/"token"/i)
+    });
+  });
+  test("Should fail non existent no password", async ()=>{
+    await req
+    .post({id:0,password:'HejDuGladeS3leman',token:'MDg0ZmVkMDhiOTc4YWY0ZDdkMTk2YTc0NDZhODZiNTgwMDllNjM2YjYxMWRiMTYyMTFiNjVhOWFhZGZmMjljNQ=='})
+    .expect(400)
+    .expect((res)=>{
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.message).toMatch(/"password"/i)
+    });
+  });
+  test("Should fail non existent to weak password", async ()=>{
+    await req
+    .post({id:0,token:'MDg0ZmVkMDhiOTc4YWY0ZDdkMTk2YTc0NDZhODZiNTgwMDllNjM2YjYxMWRiMTYyMTFiNjVhOWFhZGZmMjljNQ=='})
+    .expect(400)
+    .expect((res)=>{
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.message).toMatch(/"password"/i)
+    });
+  });
+
+  test("Should fail non existent invalid resetToken", async ()=>{
+    await req
+    .post({id:0,password:'HejD¤GladeS3leman',
+          token:'MDg0ZmVkMDhiOTc4YWY0ZDdkMTk2YTc0NDZhODZiNTgwMDllNjM2YjYxMWRiMTYyMTFiNjVhOWFhZGZmMjljNQ=='})
+    .expect(401)
+    .expect((res)=>{
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.message).toMatch(/invalid.+expired.+token/i)
+    });
+  });
+
+  test("Should fail to old resetToken", async ()=>{
+    await new Promise((resolve)=>setTimeout(resolve,1000))
+    let token:string, id:number;
+      const req1 = new JsonReq(app, '/auth/requestPasswordReset');
+      const r1 = await req1
+      .post({email:user.email})
+      .expect(200)
+      .expect(async (res)=>{
+      })
+
+    const call = sendMailMock.mock.calls?.at(-1)?.at(0) as any;
+    const obj = await matchTokenAndId(call?.html);
+    token= obj.token; id=obj.id;
+
+    await getSequelize().query(
+      'UPDATE core_PasswordResets SET createdAt=?', {
+        replacements:[
+        toUtcDate((+new Date()) - 1000*60*6)
+    ]})
+
+    const req2 = new JsonReq(app, '/auth/setPasswordOnReset');
+    const r2 = await req2
+      .post({id, token, password:'HejD¤GladeS3leman'})
+      .expect(401)
+
+    expect(r2.body.error?.message)
+      .toMatch(/invalid.+expired.+reset\s*Token/i);
+  });
+
+  test("Should succeed resetToken", async ()=>{
+    let token:string, id:number;
+      const req1 = new JsonReq(app, '/auth/requestPasswordReset')
+      const r1 = await req1
+      .post({email:user.email})
+      .expect(200)
+
+
+    const call = sendMailMock.mock.calls?.at(-1)?.at(0) as any;
+    const obj = await matchTokenAndId(call?.html);
+    token= obj.token; id=obj.id;
+
+    const req2 = new JsonReq(app, '/auth/setPasswordOnReset');
+    const r2 = await req2
+      .post({id, token, password:'HejD¤GladeS3leman'})
+      .expect(res=>{
+        console.log(res.body)
+      })
+      .expect(200)
+
+    expect(r2.body.success).toBe(true);
+    await new Promise((resolve)=>setTimeout(resolve, 1));
+    const cnt = await PasswordReset.findAndCountAll({where:{userId:user.id}})
+    expect(cnt.count).toBe(0);
+  });
 });
-*/
 
 
 describe("oauth google", () => {

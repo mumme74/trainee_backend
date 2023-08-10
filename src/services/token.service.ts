@@ -1,5 +1,5 @@
 import { QueryTypes } from "sequelize";
-import { fromUtcDate, toUtcDate } from "../helpers/dbHelpers";
+import { fromUtcDate, toUtcDate, withForeignKeysOff } from "../helpers/dbHelpers";
 import { getSequelize } from "../models";
 import { InvalidateToken } from "../models/core_invalidate_token";
 import { User } from "../models/core_user";
@@ -207,17 +207,22 @@ export const rejectGloballyBeforeIat = async (
 ) => {
   validateDate(minimumIatDate);
 
-  // clear all and insert a new record as the very first
-  await InvalidateToken.truncate({force:true});
-  const res = await InvalidateToken.create({
-    userId: 0, minimumIat: minimumIatDate
-  });
-  if (!res)
-    throw new Error(
-      `Database error, failed to set global minimumIat to invalidate tokens.`)
+  try {
+    await withForeignKeysOff(async ()=>{
+      // clear all and insert a new record as the very first
+      await InvalidateToken.truncate({force:true});
 
-  // update cache ms->s
-  globalMinimumIat = fromUtcDate(minimumIatDate).getTime() / 1000;
+      const res = await InvalidateToken.create({
+        userId: 0, minimumIat: minimumIatDate
+      });
+
+      // update cache ms->s
+      globalMinimumIat = fromUtcDate(minimumIatDate).getTime() / 1000;
+    });
+  } catch (err) {
+    throw new Error(
+      `Database error ${err}, failed to set global minimumIat to invalidate tokens.`)
+  }
 }
 
 /**

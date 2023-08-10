@@ -15,7 +15,7 @@ import { hashPasswordSync } from "../helpers/password";
 export class PasswordReset extends Model {
   declare id: number;
   declare userId: number;
-  declare refreshToken: string;
+  declare resetToken: string;
   declare createdAt: Date;
 
   static async bootstrap(options: InitOptions) {
@@ -29,14 +29,15 @@ export class PasswordReset extends Model {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      refreshToken: {
+      resetToken: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           len:[32,255]
         },
         set(token: string) {
-          this.setDataValue('refreshToken', hashPasswordSync(token))
+          const hash = hashPasswordSync(token);
+          this.setDataValue('resetToken', hash)
         }
       },
       createdAt: {

@@ -357,3 +357,26 @@ export class MockConsole extends Console {
     console.log('console restored');
   }
 }
+
+/**
+ * Run tests in sync, Ie test2 waits for test1 to finish first
+ * Use sparingly, for example when a database is updated
+ * and needs to be in sync
+ * @param {string} desc The Description for the test
+ * @param {function} cb  The callback
+ * @returns {any} what ever callback returns
+ */
+export async function testInSync(desc:string, cb:()=>Promise<void>) {
+  if (callStack.length > 1) {
+    let activate: ()=>void;
+    const promise = new Promise((resolve)=>{
+      activate = ()=>{resolve(true)};
+      callStack.push(activate);
+    });
+    await promise;
+  }
+  const retVlu = test(desc, cb);
+  callStack.shift()?.()
+  return retVlu;
+}
+const callStack: (()=>void)[] = [];

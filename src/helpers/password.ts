@@ -20,7 +20,7 @@ export function passwdStrengthFail(cleartext:string) {
     return 'Password must have mixed UPPER and lower case';
   } else if (!/\d+/.test(cleartext)) {
     return 'Password must have a number in it'
-  } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(cleartext)) {
+  } else if (!/[!@#$%^&*()¤~_+\-=\[\]{};':"\\|,.<>\/?]/.test(cleartext)) {
     // special chars
     return 'Password insufficient strength.\nMust contain special chars';
   }
